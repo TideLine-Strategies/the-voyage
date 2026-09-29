@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const MEMBERS = new Map([
-  ["c.kundsen@tidelinestrats.com", { id: "CK", name: "Cody" }],
+  ["c.knudsen@tidelinestrats.com", { id: "CK", name: "Cody" }],
   ["q.stewart@tidelinestrats.com", { id: "QS", name: "Quan" }],
 ]);
 const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "assistant_threads"]);
