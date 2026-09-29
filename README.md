@@ -10,4 +10,4 @@ Install dependencies with `npm ci` and validate with `npm run check`. Apply SQL 
 
 `scripts/import-artifact.mjs` converts a private UI export to SQL. `scripts/make-invites.mjs` creates one-time invitation links and their SHA-256 hashes. Keep exports, import SQL, and invitation links outside this repository. Only hashes are stored in D1.
 
-The Claude-only Muninn assistant is not connected in this hosted version; the CRM, notes, activity, and team chat use D1. The two member identities are enforced in the Worker and the invite database.
+Muninn calls OpenAI's `gpt-5.3-codex` model through the authenticated Worker. The Worker reads current CRM records from D1, sends a bounded snapshot with each question, requests `store: false`, and saves each member's conversation in D1. It cannot edit records or send messages. Set the `OPENAI_API_KEY` Worker secret on the `tideline` profile to enable answers; without it, the chat returns a clear 503 error. OpenAI API usage is billed separately from a Codex or ChatGPT subscription. The two member identities are enforced in the Worker and the invite database.

@@ -1326,12 +1326,13 @@ function hop(rv){if(rv.classList.contains("hop"))return;rv.classList.add("hop")}
     idleHop();
   },11000+Math.random()*7000);
 })();
-let sampleFn=null,sampleReady=false,chatTurns=[],chatCtl=null,chatBusy=false;
+let chatTurns=[],chatCtl=null,chatBusy=false;
 const CHIPS=["What's due today?","Which accounts have gone quiet?","What should I focus on this week?","Summarize my pipeline by stage"];
 function chipsInto(box,onPick){box.replaceChildren();CHIPS.forEach(c=>{const b=el("button",null,c);b.type="button";b.onclick=()=>onPick(c);box.append(b)})}
 function openChat(q){
   const c=$("chat");c.hidden=false;$("rvFloat").setAttribute("aria-expanded","true");
-  if(!chatTurns.length&&!$("chatBody").children.length)chatIntro();
+  if(!$("chatBody").children.length)renderChatTurns();
+  if(!q&&!chatBusy)loadChatTurns();
   if(q)sendChat(q);else setTimeout(()=>$("chatIn").focus(),30);
 }
 function closeChat(refocus=true){if(chatCtl)chatCtl.abort();$("chat").hidden=true;$("rvFloat").setAttribute("aria-expanded","false");if(refocus)$("rvFloat").focus()}
@@ -1347,66 +1348,42 @@ function chatIntro(){
   b.append(el("div","msg a","Hey "+nameOf(me)+", I'm Muninn. I keep track of every account, task, appointment, and touch in The Voyage. What do you want to know?"));
   const ch=el("div","chips");chipsInto(ch,q=>sendChat(q));b.append(ch);
 }
-function stripMd(t){return t.replace(/\*\*(.+?)\*\*/g,"$1").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[*]\s+/gm,"• ").replace(/^\s*-\s+/gm,"• ")}
-function crmContext(){
-  const t=today();
-  const acc=opps.map(o=>{
-    const nx=nextFor(o);
-    return [o.name,o.city+(o.state?", "+o.state:""),STAGES[o.stage],"owner "+nameOf(o.owner||"CK"),"rank "+(o.rank??"none"),o.verification?VER[o.verification]:"",o.employees?EMP_LABEL(o.employees):"employees unknown",o.activeStudents?RLABEL(ACT,o.activeStudents,"active students"):"active students unknown",o.inactiveStudents?RLABEL(INACT,o.inactiveStudents,"inactive students"):"",o.needs?"research still needs "+o.needs:"","last touch "+(o.lastTouch||"never"),nx?"next: "+nx.text:"no next step",(o.locations||[]).length?"other locations: "+o.locations.map(l=>l.label||l.city).join("/"):"",o.website||"",o.bio?"bio: "+o.bio.slice(0,280):"",o.notes?"notes: "+o.notes.slice(0,160):""].filter(Boolean).join(" | ");
-  });
-  const its=items.map(i=>[i.kind==="appt"?"Appointment":"Task",i.type,i.oppName||"no account",i.date||"no date",i.time||"",i.done?"done":"open","owner "+nameOf(i.owner||"CK"),(i.shared||[]).length?"shared with "+i.shared.map(nameOf).join("/"):"",i.notes?"notes: "+i.notes.slice(0,120):""].filter(Boolean).join(" | "));
-  const hist=acts.slice(0,60).map(a=>iso(new Date(a.ts))+" "+(a.by?nameOf(a.by)+": ":"")+a.text);
-  const focus=view==="account"?(opps.find(o=>o.id===acctId)||{}).name:null;
-  return `Today is ${t}. The person asking is ${nameOf(me)}. Team: ${team.map(m=>m.name).join(", ")}.
-Pipeline stages in order: ${STAGES.join(", ")}.
-They are currently on the ${view==="account"?"account page for "+focus:view} screen.
-
-ACCOUNTS (${opps.length}):
-${acc.join("\n")}
-
-TASKS AND APPOINTMENTS (${items.length}):
-${its.join("\n")||"none yet"}
-
-MEETING NOTES (newest first):
-${[...notes].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,40).map(n=>(n.date||"no date")+" "+n.type+" with "+n.oppName+": "+(n.text||"").replace(/\s+/g," ").slice(0,300)).join("\n")||"none yet"}
-
-TEAM CHAT (newest first):
-${msgs.slice(0,40).map(m=>iso(new Date(m.ts))+" "+nameOf(m.by)+" in "+chName(m.ch)+": "+m.text.replace(/\s+/g," ").slice(0,200)).join("\n")||"none yet"}
-
-RECENT ACTIVITY (newest first):
-${hist.join("\n")||"none yet"}`;
+function renderChatTurns(){
+  const b=$("chatBody");b.replaceChildren();
+  if(!chatTurns.length){chatIntro();return}
+  chatTurns.forEach(turn=>b.append(el("div","msg "+(turn.role==="user"?"u":"a"),stripMd(turn.text))));
+  b.scrollTop=b.scrollHeight;
 }
-const CHAT_RULES=`You are Muninn, the raven assistant inside The Voyage, the sales CRM TideLine Strategies uses to sell to gymnastics, cheer, dance, and activity businesses. Your name means "memory." Answer questions using only the CRM data below. Be brief, direct, and casual, like a sharp teammate. No exclamation points. Use short plain-text lists when listing things, no markdown headers or bold. If the data doesn't have the answer, say so plainly instead of guessing. You can't change records yourself: when something needs updating, tell them where in the app to do it (Accounts, Activity, Stages, or the account page). When asked to draft an email, text, or VITO letter, write it in a casual voice that sounds like a real person, with no exclamation points.`;
-function chatErr(code){return({not_granted:"Muninn needs your OK to use your Claude account. Ask again and allow it when prompted.",rate_limited:"Too many questions at once. Give it a few seconds and try again.",prompt_too_large:"Your CRM has grown too big for one question. Try a more specific one.",session_expired:"Your session expired. Reload the page and try again.",sampling_disabled:"Asking Claude is turned off for this account.",refused:"Muninn can't help with that one."})[code]||"Muninn couldn't answer that. Try again in a moment."}
+async function loadChatTurns(){
+  try{const r=await fetch("/api/muninn",{credentials:"same-origin"});if(r.ok){const data=await r.json();if(!chatBusy){chatTurns=data.turns||[];if(!$("chat").hidden)renderChatTurns()}}}catch(_){}
+}
+function stripMd(t){return t.replace(/\*\*(.+?)\*\*/g,"$1").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[*]\s+/gm,"• ").replace(/^\s*-\s+/gm,"• ")}
 async function sendChat(q){
   q=(q||"").trim();if(!q||chatBusy)return;
   const body=$("chatBody");body.querySelectorAll(".chips").forEach(c=>c.remove());
-  body.append(el("div","msg u",q));$("chatIn").value="";autoGrow();
-  if(!sampleFn){body.append(el("div","msg err",sampleReady?"Muninn is not connected to the live site yet.":"Muninn is still waking up. Try again in a second."));body.scrollTop=body.scrollHeight;return}
+  const questionBubble=el("div","msg u",q);body.append(questionBubble);$("chatIn").value="";autoGrow();
   const bubble=el("div","msg a wait","Thinking…");body.append(bubble);body.scrollTop=body.scrollHeight;
-  chatTurns.push({role:"user",content:q});
-  const turns=chatTurns.slice(-11);
-  const input=[{role:"user",content:CHAT_RULES+"\n\n"+crmContext()+"\n\nQuestion: "+turns[0].content},...turns.slice(1)];
-  if(turns.length===1)input.length=1;
   chatBusy=true;chatCtl=new AbortController();const send=$("chatSend");send.textContent="Stop";
   try{
-    const {text}=await sampleFn(input,{cache:false,signal:chatCtl.signal,onText:({text})=>{bubble.classList.remove("wait");bubble.textContent=stripMd(text);body.scrollTop=body.scrollHeight}});
-    bubble.classList.remove("wait");bubble.textContent=stripMd(text);chatTurns.push({role:"assistant",content:text});
+    const response=await fetch("/api/muninn",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({question:q}),signal:chatCtl.signal});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Muninn couldn't answer that. Try again in a moment.");
+    chatTurns=data.turns;bubble.classList.remove("wait");bubble.textContent=stripMd(data.answer);
   }catch(e){
-    chatTurns.pop();
-    if(e&&e.text){bubble.classList.remove("wait");bubble.textContent=stripMd(e.text)}else bubble.remove();
-    if(!e||e.code!=="cancelled")body.append(el("div","msg err",chatErr(e&&e.code)));
+    bubble.remove();questionBubble.remove();
+    $("chatIn").value=q;autoGrow();
+    if(e?.name!=="AbortError")body.append(el("div","msg err",e?.message||"Muninn couldn't answer that. Try again in a moment."));
   }finally{chatBusy=false;chatCtl=null;send.textContent="Send";body.scrollTop=body.scrollHeight}
 }
 function autoGrow(){const t=$("chatIn");t.style.height="auto";t.style.height=Math.min(120,t.scrollHeight)+"px"}
 $("rvFloat").onclick=()=>$("chat").hidden?openChat():closeChat();
 $("chatClose").onclick=closeChat;
-$("chatClear").onclick=()=>{if(chatCtl)chatCtl.abort();chatTurns=[];chatIntro();$("chatIn").focus()};
+$("chatClear").onclick=async()=>{if(chatCtl)chatCtl.abort();try{const r=await fetch("/api/muninn",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error();chatTurns=[];chatIntro()}catch(_){$("chatBody").append(el("div","msg err","Could not clear Muninn's history. Try again."))}$("chatIn").focus()};
 $("chatSend").onclick=()=>{if(chatBusy){chatCtl&&chatCtl.abort();return}sendChat($("chatIn").value)};
 $("chatIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!chatBusy)sendChat($("chatIn").value)}});
 $("chatIn").addEventListener("input",autoGrow);
 $("chat").addEventListener("keydown",e=>{if(e.key==="Escape")closeChat()});
-(async()=>{try{sampleFn=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){sampleFn=null}sampleReady=true})();
+loadChatTurns();
 render();renderActs();renderItems();
 (async()=>{
   db=window.voyageDb;
