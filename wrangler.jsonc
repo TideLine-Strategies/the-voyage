@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "the-voyage",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "the-voyage",
+    "database_id": "9369a2a5-318c-4178-98df-a79de8d1d6ec",
+    "migrations_dir": "migrations"
+  }],
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
+}
