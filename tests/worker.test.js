@@ -4,7 +4,8 @@ import worker, { memberForEmail, validateDocument } from "../src/worker.js";
 
 test("only the two approved TideLine identities map to members", () => {
   assert.equal(memberForEmail("Q.STEWART@TIDELINESTRATS.COM")?.id, "QS");
-  assert.equal(memberForEmail("c.kundsen@tidelinestrats.com")?.id, "CK");
+  assert.equal(memberForEmail("c.knudsen@tidelinestrats.com")?.id, "CK");
+  assert.equal(memberForEmail("c.kundsen@tidelinestrats.com"), null);
   assert.equal(memberForEmail("other@tidelinestrats.com"), null);
 });
 
