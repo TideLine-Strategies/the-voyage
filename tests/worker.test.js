@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { memberForEmail, validateDocument } from "../src/worker.js";
+import worker, { canWrite, memberForEmail, validateDocument } from "../src/worker.js";
+import { MEMBERS } from "../src/members.js";
 
 test("only the two approved TideLine identities map to members", () => {
   assert.equal(memberForEmail("Q.STEWART@TIDELINESTRATS.COM")?.id, "QS");
@@ -95,4 +96,32 @@ test("Muninn requires a server credential and keeps member conversation in SQL",
     await worker.fetch(muninnRequest("DELETE"), env);
     assert.equal(db.docs.has("assistant_threads/QS"), false);
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test("member list has unique IDs and emails and a known role", () => {
+  assert.equal(new Set(MEMBERS.map(member => member.id)).size, MEMBERS.length);
+  assert.equal(new Set(MEMBERS.map(member => member.email.toLowerCase())).size, MEMBERS.length);
+  for (const member of MEMBERS) assert.ok(["edit", "view"].includes(member.role), member.id);
+  assert.equal(memberForEmail("c.knudsen@tidelinestrats.com")?.role, "edit");
+});
+
+test("view-only members can only write their own presence, read marks, and Muninn thread", () => {
+  const viewer = { id: "VW", role: "view" };
+  assert.equal(canWrite(viewer, ["api", "collection", "opps"]), false);
+  assert.equal(canWrite(viewer, ["api", "document", "opps", "a1"]), false);
+  assert.equal(canWrite(viewer, ["api", "collection", "messages"]), false);
+  assert.equal(canWrite(viewer, ["api", "document", "reads", "QS"]), false);
+  assert.equal(canWrite(viewer, ["api", "document", "reads", "VW"]), true);
+  assert.equal(canWrite(viewer, ["api", "presence"]), true);
+  assert.equal(canWrite(viewer, ["api", "muninn"]), true);
+  assert.equal(canWrite({ id: "QS", role: "edit" }, ["api", "document", "opps", "a1"]), true);
+});
+
+test("team roster comes from the member list with roles", async () => {
+  const response = await worker.fetch(new Request("https://voyage.tidelinestrats.com/api/document/settings/team", {
+    headers: { cookie: `voyage_session=${"a".repeat(64)}` },
+  }), { DB: muninnDb() });
+  const { exists, data } = await response.json();
+  assert.equal(exists, true);
+  assert.deepEqual(data.members, MEMBERS.map(({ id, name, role }) => ({ id, name, role })));
 });

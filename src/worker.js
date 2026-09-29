@@ -1,9 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { MEMBERS as MEMBER_LIST } from "./members.js";
 
-const MEMBERS = new Map([
-  ["c.knudsen@tidelinestrats.com", { id: "CK", name: "Cody" }],
-  ["q.stewart@tidelinestrats.com", { id: "QS", name: "Quan" }],
-]);
+const ROLES = new Set(["edit", "view"]);
+const MEMBERS = new Map(MEMBER_LIST.map(({ id, name, email, role }) => {
+  if (!ROLES.has(role)) throw new Error(`Unknown role for ${id}`);
+  return [email.toLowerCase(), { id, name, role }];
+}));
+const TEAM = [...MEMBERS.values()];
 const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads"]);
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const MAX_BODY_BYTES = 65536;
@@ -29,7 +32,7 @@ async function memberForSession(request, env) {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
   const row = await env.DB.prepare("SELECT member_id FROM sessions WHERE token_hash = ? AND expires_at > ?")
     .bind(await tokenHash(token), Date.now()).first();
-  return row ? [...MEMBERS.values()].find(member => member.id === row.member_id) || null : null;
+  return row ? TEAM.find(member => member.id === row.member_id) || null : null;
 }
 
 function invitePage(token, valid) {
@@ -76,6 +79,13 @@ async function handleInvite(request, env, token) {
 
 export function memberForEmail(email) {
   return MEMBERS.get(String(email || "").toLowerCase()) || null;
+}
+
+// View-only members may still keep their own presence, read marks, and Muninn thread.
+export function canWrite(actor, path) {
+  if (actor.role === "edit") return true;
+  if (path[1] === "presence" || path[1] === "muninn") return true;
+  return path[1] === "document" && path[2] === "reads" && path[3] === actor.id;
 }
 
 function reply(data, status = 200) {
@@ -234,6 +244,7 @@ async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
+  if (method !== "GET" && !canWrite(actor, path)) return error("View-only access", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "presence") {
@@ -272,6 +283,7 @@ async function handleApi(request, env, actor, path) {
     if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) return error("Unknown document", 404);
     if (collection === "reads" && id !== actor.id) return error("Forbidden", 403);
     if (method === "GET") {
+      if (collection === "settings" && id === "team") return reply({ exists: true, data: { members: TEAM } });
       const data = await getDocument(env.DB, collection, id);
       return reply({ exists: data !== null, data });
     }

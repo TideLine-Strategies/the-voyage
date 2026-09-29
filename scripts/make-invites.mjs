@@ -1,16 +1,13 @@
 import fs from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
+import { MEMBERS as members } from "../src/members.js";
 
 const [baseUrl, sqlPath, linksPath, onlyEmail] = process.argv.slice(2);
 if (!baseUrl || !sqlPath || !linksPath) throw new Error("Usage: node scripts/make-invites.mjs https://site private-invites.sql private-links.json [member-email]");
-const members = [
-  { id: "QS", email: "q.stewart@tidelinestrats.com" },
-  { id: "CK", email: "c.knudsen@tidelinestrats.com" },
-];
 const quote = value => `'${value.replaceAll("'", "''")}'`;
 const expires = Date.now() + 30 * 86400000;
 const links = {};
-const selected = onlyEmail ? members.filter(member => member.email === onlyEmail) : members;
+const selected = onlyEmail ? members.filter(member => member.email.toLowerCase() === onlyEmail.toLowerCase()) : members;
 if (!selected.length) throw new Error("Unknown member email");
 const sql = selected.map(member => {
   const token = randomBytes(32).toString("base64url");
