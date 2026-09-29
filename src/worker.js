@@ -32,7 +32,7 @@ async function memberForSession(request, env) {
 
 function invitePage(token, valid) {
   const body = valid
-    ? `<form method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form>`
+    ? `<form id="open" method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form><p id="status" role="status"></p><script>document.getElementById('open').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;button.textContent='Opening…';try{const response=await fetch(event.target.action,{method:'POST',credentials:'same-origin'});if(!response.ok||!response.redirected)throw Error('Unable to sign in');const check=await fetch('/api/me',{credentials:'same-origin'});if(!check.ok)throw Error('Session was not saved');location.replace('/')}catch(_){document.getElementById('status').textContent='The invitation could not open in this browser. Try a different browser or ask Quan for a new link.';button.disabled=false;button.textContent='Open The Voyage'}})</script>`
     : "<p>This invitation has expired or was already used. Ask Quan for a new link.</p>";
   return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage invitation</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}button{background:#42b6d4;color:#071726;border:0;border-radius:8px;padding:14px 22px;font:inherit;font-weight:700;cursor:pointer}</style><h1>The Voyage</h1>${body}</html>`, {
     status: valid ? 200 : 410,
