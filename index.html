@@ -256,6 +256,33 @@ fieldset.addr legend{font-size:13px;font-weight:600;color:var(--muted);padding:0
 .ncard .grid2 label{margin-bottom:10px}
 .nfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .nfoot small{color:var(--muted);font-size:12px}
+.nav-chat{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.nbadge[hidden]{display:none}
+.nbadge{background:var(--red);color:#fff;border-radius:999px;font-size:11px;font-weight:600;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center}
+.tc{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px;height:calc(100vh - 190px);min-height:420px}
+.tc-side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;overflow-y:auto}
+.tc-ch{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 8px;font-size:14px;color:var(--muted)}
+.tc-ch:hover{color:var(--text);background:var(--card)}
+.tc-ch.on{background:var(--red-bg);color:var(--text);font-weight:600}
+.tc-ch.unread{color:var(--text);font-weight:600}
+.tc-ch span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tc-new{margin:10px 8px 4px;width:calc(100% - 16px)}
+.tc-main{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tc-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tc-b{flex:1;overflow-y:auto;padding:12px 16px}
+.tc-day{text-align:center;font-size:12px;color:var(--muted);margin:14px 0 8px}
+.tm{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:5px 0}
+.tm.cont{padding-top:0}.tm.cont .av{visibility:hidden}
+.tm-h{font-size:13px}.tm-h b{font-weight:600;margin-right:6px}.tm-h time{color:var(--muted);font-size:12px}
+.tm-t{font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.tm-r{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.tm-r button{border:1px solid var(--line-2);background:var(--card);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--text)}
+.tm-r button.mine{border-color:var(--red-soft);background:var(--red-bg)}
+.tm-r .add,.tm-r .del{opacity:0;transition:opacity .15s;color:var(--muted)}
+.tm:hover .tm-r .add,.tm:hover .tm-r .del,.tm:focus-within .tm-r .add,.tm:focus-within .tm-r .del{opacity:1}
+.tc-typing{font-size:12px;color:var(--muted);padding:0 16px;min-height:18px}
+.online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:4px}
+@media (max-width:860px){.tc{grid-template-columns:1fr;height:auto}.tc-side{max-height:180px}.tc-main{height:70vh}}
 .soon{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px;max-width:560px}
 .soon h2{margin:0 0 6px;font-size:22px}
 .soon p{color:var(--muted);margin:0}
@@ -310,12 +337,13 @@ textarea{min-height:70px;resize:vertical}
     <button class="nav" data-view="order">Order</button>
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
+    <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
     <div class="me"><label for="meSel" style="margin:0">Viewing as</label><select id="meSel"></select></div>
     <div class="tag">One voyage, start to finish.</div>
   </nav>
 
   <main>
-    <div id="banner" class="banner" hidden>Saving isn't available in this view, so changes here won't stick. Open the published artifact to save your opps.</div>
+    <div id="banner" class="banner" hidden>This GitHub Pages preview has no shared backend: opps, notes, and chat messages stay in this browser and will not sync with Cody or other devices.</div>
 
     <section id="view-dash">
       <div class="head">
@@ -390,7 +418,7 @@ textarea{min-height:70px;resize:vertical}
       <button class="back" id="acctBack">‹ Back to Stages</button>
       <div class="head">
         <div><h1 id="aName"></h1><div class="sub" id="aSub"></div><div class="links" id="aLinks"></div></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="aNotesBtn">Meeting notes</button><button class="btn" id="aEdit">Edit details</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="aTeamBtn">Discuss with team</button><button class="btn" id="aNotesBtn">Meeting notes</button><button class="btn" id="aEdit">Edit details</button></div>
       </div>
       <div class="prog" id="aProg" aria-label="Stage"></div>
       <div class="kpis" id="aKpis"></div>
@@ -427,6 +455,25 @@ textarea{min-height:70px;resize:vertical}
       <label class="nacct">Account<select id="nAcct"></select></label>
       <div class="ntabs" id="nTabs" role="tablist"></div>
       <div id="nBody"></div>
+    </section>
+
+    <section id="view-team" hidden>
+      <div class="head">
+        <div><h1>Team chat</h1><div class="sub" id="tcOnline">Talk deals with your crew in real time.</div><div class="city" id="tcMembers" style="margin-top:2px"></div></div>
+      </div>
+      <div class="tc">
+        <aside class="tc-side">
+          <div class="loc-k" style="padding:4px 8px">Chats</div>
+          <div id="tcChans"></div>
+          <button class="btn primary tc-new" id="tcNewThread">+ New chat</button>
+        </aside>
+        <div class="tc-main">
+          <div class="tc-h"><div><div class="nm" id="tcTitle"># general</div><div class="city" id="tcDesc"></div></div><div style="display:flex;gap:6px"><button class="btn" id="tcRename" hidden>Rename</button><button class="btn" id="tcOpenAcct" hidden>Open account</button></div></div>
+          <div class="tc-b" id="tcBody" aria-live="polite"></div>
+          <div class="tc-typing" id="tcTyping"></div>
+          <div class="chat-f"><textarea id="tcIn" rows="1" placeholder="Message #general" aria-label="Message"></textarea><button class="btn primary" id="tcSend">Send</button></div>
+        </div>
+      </div>
     </section>
 
     <section id="view-soon" hidden>
@@ -497,6 +544,21 @@ textarea{min-height:70px;resize:vertical}
       <div><button class="btn danger" id="tDel">Delete</button><button class="btn" id="tNotesBtn">Meeting notes ›</button></div>
       <div><button class="btn" id="tCancel">Cancel</button><button class="btn primary" id="tSave">Save</button></div>
     </div>
+  </div>
+</dialog>
+<dialog id="chdlg" aria-labelledby="chTitle">
+  <div class="dlg">
+    <h2 id="chTitle">New chat</h2>
+    <label>Chat name<input id="chName" autocomplete="off" maxlength="60" placeholder="OnePlace demo prep"></label>
+    <label>Link to an account (optional)<select id="chOpp"></select></label>
+    <div class="acts"><div><button class="btn danger" id="chDel">Delete chat</button></div><div><button class="btn" id="chCancel">Cancel</button><button class="btn primary" id="chSave">Create chat</button></div></div>
+  </div>
+</dialog>
+<dialog id="whodlg" aria-labelledby="whoTitle">
+  <div class="dlg">
+    <h2 id="whoTitle">Who's this?</h2>
+    <div class="sub" style="font-size:14px;margin-bottom:14px">Pick your name so your messages, tasks, and unread counts are yours. The Voyage will remember you on this account, on any device.</div>
+    <div class="who" id="whoList"></div>
   </div>
 </dialog>
 <dialog id="nsdlg" aria-labelledby="nsTitle">
@@ -761,7 +823,7 @@ $("sSave").onclick=async()=>{
   await write(()=>db.doc("activities/"+i.id).update({shared}),added.length?"Shared with "+added.map(nameOf).join(" and "):"Sharing updated");
 };
 $("scope").onclick=e=>{const v=e.target.dataset.s;if(!v)return;scope=v;[...$("scope").children].forEach(b=>b.classList.toggle("on",b.dataset.s===v));renderItems()};
-$("meSel").onchange=()=>{me=$("meSel").value;try{localStorage.setItem("voyage-me",me)}catch(e){}render();renderItems();renderActs()};
+$("meSel").onchange=()=>{if(myUid&&live){claimMember($("meSel").value);return}me=$("meSel").value;if(roomNs)roomNs.presence({who:me}).catch(()=>{});renderTeam();try{localStorage.setItem("voyage-me",me)}catch(e){}render();renderItems();renderActs()};
 function logAct(text,oppId){
   const a={ts:Date.now(),text,by:me,oppId:oppId||""};
   if(!live){acts.unshift(a);renderActs();renderAccount();return}
@@ -1016,6 +1078,140 @@ function openDrill(kind,refresh){
 $("drillClose").onclick=()=>$("drill").close();
 $("drill").addEventListener("close",()=>{drillKind=null;$("drill").hidden=true});
 $("drill").addEventListener("click",e=>{if(e.target===$("drill"))$("drill").close()});
+let myUid=null,whoAsked=false;
+function resolveIdentity(){
+  if(!myUid)return;
+  const mine=team.find(m=>m.uid===myUid);
+  if(mine){if(me!==mine.id){me=mine.id;try{localStorage.setItem("voyage-me",me)}catch(e){}fillMe();render();renderItems();renderActs();renderTeam();if(roomNs)roomNs.presence({who:me}).catch(()=>{})}return}
+  if(whoAsked||!live)return;whoAsked=true;
+  const w=$("whoList");w.replaceChildren();
+  team.forEach(m=>{const b=el("button","btn");b.style.display="flex";b.style.alignItems="center";b.style.gap="10px";b.style.width="100%";b.append(avatar(m.id),document.createTextNode("I'm "+m.name+(m.uid?" (claimed on another login)":"")));b.onclick=()=>{$("whodlg").close();claimMember(m.id)};w.append(b)});
+  $("whodlg").showModal();
+}
+async function claimMember(id){
+  me=id;try{localStorage.setItem("voyage-me",me)}catch(e){}
+  fillMe();render();renderItems();renderActs();renderTeam();if(roomNs)roomNs.presence({who:me}).catch(()=>{});
+  if(!live||!myUid)return;
+  const members=team.map(m=>{const c={...m};if(c.uid===myUid&&c.id!==id)delete c.uid;if(c.id===id)c.uid=myUid;return c});
+  try{await db.doc("settings/team").set({members})}catch(e){toast("Couldn't save who you are. You can still pick your name under Viewing as.")}
+}
+let msgs=[],tcCh="general",roomNs=null,peers=[],typingTimer=null,msgsLoaded=false;
+const REACTS=["👍","✅","🔥","👀"];
+const lastRead=()=>{try{return JSON.parse(localStorage.getItem("voyage-read-"+me)||"{}")}catch(e){return{}}};
+function markRead(ch){const r=lastRead();r[ch]=Date.now();try{localStorage.setItem("voyage-read-"+me,JSON.stringify(r))}catch(e){}}
+let channels=[],chEdit=null;
+const chDoc=ch=>channels.find(c=>c.id===ch);
+const chOppId=ch=>{const d=chDoc(ch);if(d)return d.oppId||"";return opps.some(o=>o.id===ch)?ch:""};
+function chName(ch){if(ch==="general")return"# general";const d=chDoc(ch);if(d&&d.name)return d.name;const o=opps.find(x=>x.id===ch);return o?o.name:"Chat"}
+function unreadFor(ch){const r=lastRead()[ch]||0;return msgs.filter(m=>m.ch===ch&&m.by!==me&&m.ts>r).length}
+function updateBadge(){const chs=[...new Set(msgs.map(m=>m.ch))];const n=chs.reduce((a,c)=>a+(view==="team"&&c===tcCh?0:unreadFor(c)),0);const b=$("teamBadge");b.hidden=!n;b.textContent=n>99?"99+":n;b.setAttribute("aria-label",n+" unread messages");document.title=(n?"("+n+") ":"")+"The Voyage"}
+function openTeam(ch){tcCh=ch||tcCh;go("team")}
+function renderTeam(){
+  updateBadge();
+  if(view!=="team")return;
+  markRead(tcCh);updateBadge();
+  const lastTs=c=>Math.max(0,...msgs.filter(m=>m.ch===c).map(m=>m.ts),(chDoc(c)||{}).ts||0);
+  const chs=["general",...[...new Set([...channels.map(c=>c.id),...msgs.filter(m=>m.ch!=="general").map(m=>m.ch)])].sort((a,b)=>lastTs(b)-lastTs(a))];
+  if(!chs.includes(tcCh))chs.splice(1,0,tcCh);
+  const cl=$("tcChans");cl.replaceChildren();
+  chs.forEach(c=>{const u=c===tcCh?0:unreadFor(c);const b=el("button","tc-ch"+(c===tcCh?" on":"")+(u?" unread":""));b.append(el("span","t",chName(c)));if(u)b.append(el("span","nbadge",u));b.onclick=()=>{tcCh=c;renderTeam();$("tcIn").focus()};cl.append(b)});
+  const o=opps.find(x=>x.id===chOppId(tcCh));
+  $("tcTitle").textContent=chName(tcCh);
+  $("tcDesc").textContent=tcCh==="general"?"Everything team-wide":(o?[(chName(tcCh)!==o.name?"About "+o.name:""),o.city,STAGES[o.stage],"Owner: "+nameOf(o.owner||"CK")].filter(Boolean).join(", "):(chDoc(tcCh)?"Started by "+nameOf(chDoc(tcCh).by):""));$("tcRename").hidden=tcCh==="general";
+  $("tcOpenAcct").hidden=!o;
+  $("tcIn").placeholder="Message "+chName(tcCh);
+  const body=$("tcBody");const atBottom=body.scrollHeight-body.scrollTop-body.clientHeight<60;
+  body.replaceChildren();
+  const list=msgs.filter(m=>m.ch===tcCh).sort((a,b)=>a.ts-b.ts);
+  if(!list.length)body.append(emptyRow(!msgsLoaded&&live?"Loading messages…":tcCh==="general"?"No messages yet. Say hi to the crew.":"Start the conversation about "+chName(tcCh)+"."));
+  let day="",prev=null;
+  list.forEach(m=>{
+    const d=new Date(m.ts);const dk=d.toDateString();
+    if(dk!==day){day=dk;prev=null;body.append(el("div","tc-day",iso(d)===today()?"Today":d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})))}
+    const cont=prev&&prev.by===m.by&&m.ts-prev.ts<5*60000;
+    const r=el("div","tm"+(cont?" cont":""));r.append(avatar(m.by||"CK"));
+    const c=el("div");
+    if(!cont){const h=el("div","tm-h");h.append(el("b",null,nameOf(m.by)),el("time",null,d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})));c.append(h)}
+    c.append(el("div","tm-t",m.text));
+    const rx=el("div","tm-r");const reacts=m.reactions||{};
+    Object.entries(reacts).filter(([,w])=>w&&w.length).forEach(([e,w])=>{const b=el("button",w.includes(me)?"mine":"",e+" "+w.length);b.title=w.map(nameOf).join(", ");b.onclick=()=>react(m,e);rx.append(b)});
+    REACTS.filter(e=>!(reacts[e]||[]).length).forEach(e=>{const b=el("button","add",e);b.setAttribute("aria-label","React "+e);b.onclick=()=>react(m,e);rx.append(b)});
+    if(m.by===me){const del=el("button","del","Delete");del.onclick=()=>delMsg(m);rx.append(del)}
+    c.append(rx);r.append(c);body.append(r);prev=m;
+  });
+  if(atBottom||tcForceScroll){body.scrollTop=body.scrollHeight;tcForceScroll=false}
+  renderTyping();
+}
+let tcForceScroll=true;
+function renderTyping(){
+  const t=peers.filter(p=>!p.isMe&&p.presence&&p.presence.typing===tcCh&&p.presence.who).map(p=>nameOf(p.presence.who));
+  const u=[...new Set(t)];$("tcTyping").textContent=u.length?u.join(" and ")+(u.length>1?" are":" is")+" typing…":"";
+  $("tcMembers").textContent="Members: "+team.map(m=>m.name+(m.id===me?" (you)":"")).join(", ");
+  const on=[...new Set(peers.filter(p=>p.presence&&p.presence.who).map(p=>p.presence.who))];
+  const el2=$("tcOnline");el2.replaceChildren();
+  if(on.length){el2.append(el("span","online-dot"),document.createTextNode("Online now: "+on.map(w=>nameOf(w)+(w===me?" (you)":"")).join(", ")))}
+  else el2.textContent="Talk deals with your crew in real time.";
+}
+async function sendMsg(){
+  const t=$("tcIn").value.trim();if(!t)return;
+  const m={ch:tcCh,text:t.slice(0,4000),by:me,ts:Date.now(),reactions:{}};
+  $("tcIn").value="";tcAutoGrow();setTyping(false);tcForceScroll=true;
+  if(!live){msgs.push({id:"m"+Date.now(),...m});renderTeam();return}
+  try{await db.collection("messages").add(m)}catch(e){$("tcIn").value=t;toast(e&&e.code==="quota_exceeded"?"Chat storage is full. Delete old messages to keep going.":"Message didn't send. Try again.")}
+}
+async function react(m,e){
+  const r={...(m.reactions||{})};const w=new Set(r[e]||[]);w.has(me)?w.delete(me):w.add(me);r[e]=[...w];
+  if(!live){m.reactions=r;renderTeam();return}
+  try{await db.doc("messages/"+m.id).update({reactions:r})}catch(_){toast("Couldn't add that reaction")}
+}
+async function delMsg(m){
+  if(!confirm("Delete this message?"))return;
+  if(!live){msgs=msgs.filter(x=>x!==m);renderTeam();return}
+  try{await db.doc("messages/"+m.id).delete()}catch(_){toast("Couldn't delete that message")}
+}
+function setTyping(on){if(!roomNs)return;clearTimeout(typingTimer);roomNs.presence({who:me,typing:on?tcCh:null}).catch(()=>{});if(on)typingTimer=setTimeout(()=>setTyping(false),3500)}
+function tcAutoGrow(){const t=$("tcIn");t.style.height="auto";t.style.height=Math.min(140,t.scrollHeight)+"px"}
+$("tcSend").onclick=sendMsg;
+$("tcIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg()}});
+$("tcIn").addEventListener("input",()=>{tcAutoGrow();setTyping(!!$("tcIn").value.trim())});
+$("tcOpenAcct").onclick=()=>{const id=chOppId(tcCh);if(id)openAccount(id,"team")};
+function openChDlg(edit){
+  chEdit=edit||null;
+  $("chTitle").textContent=edit?"Rename chat":"New chat";$("chSave").textContent=edit?"Save":"Create chat";
+  $("chName").value=edit?chName(edit):"";
+  const sel=$("chOpp");sel.replaceChildren(new Option("No account",""));[...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>sel.append(new Option(o.name,o.id)));
+  sel.value=edit?chOppId(edit):"";
+  $("chDel").hidden=!(edit&&chDoc(edit));
+  $("chdlg").showModal();setTimeout(()=>$("chName").focus(),30);
+}
+$("tcNewThread").onclick=()=>openChDlg(null);
+$("tcRename").onclick=()=>openChDlg(tcCh);
+$("chCancel").onclick=()=>$("chdlg").close();
+$("chSave").onclick=async()=>{
+  const name=$("chName").value.trim(),oppId=$("chOpp").value;
+  if(!name){toast("Give the chat a name");$("chName").focus();return}
+  $("chdlg").close();
+  if(chEdit){
+    const id=chEdit,ex=chDoc(id);const data={name,oppId,by:ex?ex.by:me,ts:ex?ex.ts:Date.now()};
+    if(!live){if(ex)Object.assign(ex,data);else channels.push({id,...data});renderTeam();return}
+    await write(()=>db.doc("channels/"+id).set(data),"Chat renamed");return;
+  }
+  const data={name,oppId,by:me,ts:Date.now()};
+  if(!live){const id="c"+Date.now();channels.push({id,...data});tcCh=id;tcForceScroll=true;renderTeam();$("tcIn").focus();return}
+  const ref=db.collection("channels").doc();channels.push({id:ref.id,...data});tcCh=ref.id;tcForceScroll=true;renderTeam();$("tcIn").focus();
+  await write(()=>ref.set(data),"Chat created");
+};
+$("chDel").onclick=async()=>{
+  const id=chEdit;const n=msgs.filter(m=>m.ch===id).length;
+  if(!confirm(`Delete "${chName(id)}"${n?" and its "+n+" message"+(n>1?"s":""):""}? This can't be undone.`))return;
+  $("chdlg").close();
+  const doomed=msgs.filter(m=>m.ch===id);
+  if(tcCh===id)tcCh="general";
+  if(!live){channels=channels.filter(c=>c.id!==id);msgs=msgs.filter(m=>m.ch!==id);renderTeam();return}
+  channels=channels.filter(c=>c.id!==id);renderTeam();
+  try{for(const m of doomed)await db.doc("messages/"+m.id).delete();await db.doc("channels/"+id).delete();toast("Chat deleted")}catch(e){toast("Couldn't finish deleting that chat")}
+};
+$("chName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("chSave").click()}});
 function renderLocations(o){
   fillAddr($("aHqAddr"),o,()=>openDlg(o));
   const locs=o.locations||[];
@@ -1068,7 +1264,7 @@ async function removeLoc(o,l){
 }
 $("aLocSel").onchange=()=>{locSelId=$("aLocSel").value||null;const o=opps.find(x=>x.id===acctId);if(o)renderLocations(o)};
 $("aAddLoc").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(!o)return;locSelId="new";renderLocations(o);setTimeout(()=>{const i=$("aLocDetail").querySelector("input");if(i)i.focus()},30)};
-function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
+function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
 function renderAccount(){
   if(view!=="account")return;
   const o=opps.find(x=>x.id===acctId);
@@ -1105,6 +1301,7 @@ function renderAccount(){
   hs.forEach(a=>{const d=new Date(a.ts);const r=el("div","h");const tm=el("time",null,(iso(d)===t?"Today":d.toLocaleDateString(undefined,{month:"short",day:"numeric"}))+" "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}));tm.dateTime=d.toISOString();const tx=el("div",null,a.text);if(a.by)tx.append(el("span","by",nameOf(a.by)));r.append(tm,tx);h.append(r)});
 }
 $("acctBack").onclick=()=>go(acctFrom);
+$("aTeamBtn").onclick=()=>{const c=channels.filter(c=>c.oppId===acctId).sort((a,b)=>b.ts-a.ts)[0];openTeam(c?c.id:acctId)};
 $("aNotesBtn").onclick=()=>openNotes(acctId,APPT_TYPES[Math.max(0,STAGES.indexOf(STAGES[(opps.find(x=>x.id===acctId)||{}).stage])-1)]);
 $("aEdit").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(o)openDlg(o)};
 $("aAddTask").onclick=()=>openT("task",null,acctId);
@@ -1117,8 +1314,8 @@ function go(v){
   if(v==="oden"){openChat();return}
   view=v;const navV=v==="account"?acctFrom:v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-notes").hidden=v!=="notes";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="notes")renderNotes(true);
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -1184,6 +1381,9 @@ ${its.join("\n")||"none yet"}
 MEETING NOTES (newest first):
 ${[...notes].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,40).map(n=>(n.date||"no date")+" "+n.type+" with "+n.oppName+": "+(n.text||"").replace(/\s+/g," ").slice(0,300)).join("\n")||"none yet"}
 
+TEAM CHAT (newest first):
+${msgs.slice(0,40).map(m=>iso(new Date(m.ts))+" "+nameOf(m.by)+" in "+chName(m.ch)+": "+m.text.replace(/\s+/g," ").slice(0,200)).join("\n")||"none yet"}
+
 RECENT ACTIVITY (newest first):
 ${hist.join("\n")||"none yet"}`;
 }
@@ -1217,6 +1417,7 @@ $("chatSend").onclick=()=>{if(chatBusy){chatCtl&&chatCtl.abort();return}sendChat
 $("chatIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!chatBusy)sendChat($("chatIn").value)}});
 $("chatIn").addEventListener("input",autoGrow);
 $("chat").addEventListener("keydown",e=>{if(e.key==="Escape")closeChat()});
+(async()=>{try{roomNs=window.claude&&window.claude.use?await window.claude.use("room"):null;if(roomNs){roomNs.presence({who:me,view}).catch(()=>{});roomNs.onPeers(ch=>{peers=[...ch.peers];if(view==="team")renderTyping()},()=>{roomNs=null})}}catch(e){roomNs=null}})();
 (async()=>{try{sampleFn=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){sampleFn=null}sampleReady=true})();
 render();renderActs();renderItems();
 (async()=>{
@@ -1226,9 +1427,18 @@ render();renderActs();renderItems();
   db.collection("opps").onSnapshot(snap=>{
     opps=snap.docs.map(d=>({id:d.id,...d.data()}));render();
   },()=>{live=false;$("banner").hidden=false});
+  try{const us=window.claude.use?await window.claude.use("user"):null;myUid=us?await us.id():null}catch(e){myUid=null}
   db.doc("settings/team").onSnapshot(d=>{
     const m=d.exists&&Array.isArray(d.data().members)&&d.data().members.length?d.data().members:TEAM_DEFAULT;
-    team=m;if(!team.some(x=>x.id===me))me=team[0].id;fillMe();render();renderItems();renderActs();
+    team=m;if(!team.some(x=>x.id===me))me=team[0].id;fillMe();render();renderItems();renderActs();resolveIdentity();
+  },()=>{});
+  db.collection("channels").onSnapshot(snap=>{channels=snap.docs.map(d=>({id:d.id,...d.data()}));renderTeam()},()=>{});
+  let firstMsgs=true;
+  db.collection("messages").orderBy("ts","desc").limit(500).onSnapshot(snap=>{
+    const prevIds=new Set(msgs.map(m=>m.id));
+    msgs=snap.docs.map(d=>({id:d.id,...d.data()}));msgsLoaded=true;
+    if(!firstMsgs){const fresh=msgs.filter(m=>!prevIds.has(m.id)&&m.by!==me);const n=fresh.sort((a,b)=>b.ts-a.ts)[0];if(n&&!(view==="team"&&tcCh===n.ch))toast(nameOf(n.by)+" in "+chName(n.ch)+": "+n.text.slice(0,60))}
+    firstMsgs=false;renderTeam();
   },()=>{});
   db.collection("notes").onSnapshot(snap=>{
     notes=snap.docs.map(d=>({id:d.id,...d.data()}));renderNotes();
