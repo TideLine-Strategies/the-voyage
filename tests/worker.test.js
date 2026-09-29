@@ -24,3 +24,11 @@ test("worker refuses requests without a verified member session", async () => {
   const response = await worker.fetch(request, { POLICY_AUD: "CONFIGURE_ACCESS_AUD_BEFORE_DEPLOY", TEAM_DOMAIN: "https://example.cloudflareaccess.com" });
   assert.equal(response.status, 403);
 });
+
+test("unauthenticated site root only shows invitation instructions", async () => {
+  const response = await worker.fetch(new Request("https://voyage.tidelinestrats.com/"), {});
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /private invitation/);
+  assert.doesNotMatch(html, /Team chat|Pipeline/);
+});

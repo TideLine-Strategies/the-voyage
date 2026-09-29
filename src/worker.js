@@ -40,6 +40,13 @@ function invitePage(token, valid) {
   });
 }
 
+function signInPage() {
+  return new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}p{max-width:30rem;line-height:1.5}</style><h1>The Voyage</h1><p>Open the private invitation sent to your TideLine email to sign in. Ask Quan for a new invitation if your link has expired.</p></html>', {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" },
+  });
+}
+
 async function handleInvite(request, env, token) {
   if (!INVITE_PATTERN.test(token)) return invitePage("", false);
   const hash = await tokenHash(token);
@@ -228,7 +235,7 @@ export default {
     const pathName = new URL(request.url).pathname;
     if (pathName.startsWith("/invite/")) return handleInvite(request, env, pathName.slice(8));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
-    if (!actor) return error("Sign in with the approved TideLine account", 403);
+    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage() : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
     if (!path) {
       const asset = await env.ASSETS.fetch(request);
