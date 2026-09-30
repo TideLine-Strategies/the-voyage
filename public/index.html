@@ -1341,6 +1341,7 @@ function hop(rv){if(rv.classList.contains("hop"))return;rv.classList.add("hop")}
   },11000+Math.random()*7000);
 })();
 let chatTurns=[],chatCtl=null,chatBusy=false;
+const MUNINN_BRIDGE="http://127.0.0.1:38917";
 const CHIPS=["What's due today?","Which accounts have gone quiet?","What should I focus on this week?","Summarize my pipeline by stage"];
 function chipsInto(box,onPick){box.replaceChildren();CHIPS.forEach(c=>{const b=el("button",null,c);b.type="button";b.onclick=()=>onPick(c);box.append(b)})}
 function openChat(q){
@@ -1359,7 +1360,7 @@ document.addEventListener("pointerdown",e=>{
 },true);
 function chatIntro(){
   const b=$("chatBody");b.replaceChildren();
-  b.append(el("div","msg a","Hey "+nameOf(me)+", I'm Muninn. I keep track of every account, task, appointment, and touch in The Voyage. What do you want to know?"));
+  b.append(el("div","msg a","Hey "+nameOf(me)+", I'm Muninn. I use your Codex on this computer to answer from The Voyage. What do you want to know?"));
   const ch=el("div","chips");chipsInto(ch,q=>sendChat(q));b.append(ch);
 }
 function renderChatTurns(){
@@ -1379,10 +1380,23 @@ async function sendChat(q){
   const bubble=el("div","msg a wait","Thinking…");body.append(bubble);body.scrollTop=body.scrollHeight;
   chatBusy=true;chatCtl=new AbortController();const send=$("chatSend");send.textContent="Stop";
   try{
-    const response=await fetch("/api/muninn",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({question:q}),signal:chatCtl.signal});
+    let health;
+    try{health=await fetch(MUNINN_BRIDGE+"/health",{signal:chatCtl.signal})}
+    catch(e){if(e?.name==="AbortError")throw e;throw Error("Muninn needs the local Codex connector on this computer.")}
+    if(!health.ok||(await health.json()).service!=="tideline-voyage-muninn")throw Error("Muninn's local Codex connector is unavailable.");
+    const contextResponse=await fetch("/api/muninn/context",{credentials:"same-origin",signal:chatCtl.signal});
+    if(!contextResponse.ok)throw Error("The live CRM data could not load.");
+    const {context}=await contextResponse.json();
+    let localResponse;
+    try{localResponse=await fetch(MUNINN_BRIDGE+"/answer",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:q,context,turns:chatTurns.slice(-8)}),signal:chatCtl.signal})}
+    catch(e){if(e?.name==="AbortError")throw e;throw Error("Muninn needs the local Codex connector on this computer.")}
+    const local=await localResponse.json();
+    if(!localResponse.ok)throw Error(local.error||"Codex could not answer right now.");
+    bubble.classList.remove("wait");bubble.textContent=stripMd(local.answer);
+    const response=await fetch("/api/muninn",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({question:q,answer:local.answer}),signal:chatCtl.signal});
     const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Muninn couldn't answer that. Try again in a moment.");
-    chatTurns=data.turns;bubble.classList.remove("wait");bubble.textContent=stripMd(data.answer);
+    if(!response.ok){body.append(el("div","msg err","Muninn answered, but the chat history could not be saved."));return}
+    chatTurns=data.turns;
   }catch(e){
     bubble.remove();questionBubble.remove();
     $("chatIn").value=q;autoGrow();

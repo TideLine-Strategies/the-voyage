@@ -69,33 +69,23 @@ function muninnRequest(method, body) {
   });
 }
 
-test("Muninn requires a server credential and keeps member conversation in SQL", async () => {
+test("Muninn serves live SQL context and stores a member conversation without an API key", async () => {
   const db = muninnDb();
   db.docs.set("opps/a1", { name: "Sample Gym", stage: 0 });
-  const env = { DB: db, OPENAI_API_KEY: "test-only" };
-  const missing = await worker.fetch(muninnRequest("POST", { question: "Which accounts?" }), { DB: db });
-  assert.equal(missing.status, 503);
-  const originalFetch = globalThis.fetch;
-  let upstream;
-  globalThis.fetch = async (url, init) => {
-    upstream = { url, init };
-    return Response.json({ output: [{ type: "message", content: [{ type: "output_text", text: "Sample Gym is in the pipeline." }] }] });
-  };
-  try {
-    const response = await worker.fetch(muninnRequest("POST", { question: "Which accounts?" }), env);
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).answer, "Sample Gym is in the pipeline.");
-    assert.equal(upstream.url, "https://api.openai.com/v1/responses");
-    const payload = JSON.parse(upstream.init.body);
-    assert.equal(payload.store, false);
-    assert.equal(payload.model, "gpt-5.3-codex");
-    assert.match(payload.input[0].content, /Sample Gym/);
-    assert.equal(upstream.init.headers.authorization, "Bearer test-only");
-    const history = await worker.fetch(muninnRequest("GET"), env);
-    assert.equal((await history.json()).turns.length, 2);
-    await worker.fetch(muninnRequest("DELETE"), env);
-    assert.equal(db.docs.has("assistant_threads/QS"), false);
-  } finally { globalThis.fetch = originalFetch; }
+  const env = { DB: db };
+  const context = await worker.fetch(new Request("https://voyage.tidelinestrats.com/api/muninn/context", {
+    headers: { cookie: `voyage_session=${"a".repeat(64)}` },
+  }), env);
+  assert.match((await context.json()).context, /Sample Gym/);
+  const invalid = await worker.fetch(muninnRequest("POST", { question: "Which accounts?" }), env);
+  assert.equal(invalid.status, 400);
+  const response = await worker.fetch(muninnRequest("POST", { question: "Which accounts?", answer: "Sample Gym is in the pipeline." }), env);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).answer, "Sample Gym is in the pipeline.");
+  const history = await worker.fetch(muninnRequest("GET"), env);
+  assert.equal((await history.json()).turns.length, 2);
+  await worker.fetch(muninnRequest("DELETE"), env);
+  assert.equal(db.docs.has("assistant_threads/QS"), false);
 });
 
 test("member list has unique IDs and emails and a known role", () => {
