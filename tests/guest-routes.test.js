@@ -1,0 +1,96 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { createHash } from "node:crypto";
+import { DatabaseSync } from "node:sqlite";
+import worker from "../src/worker.js";
+
+function fixture() {
+  const sqlite = new DatabaseSync(":memory:");
+  for (const name of ["0001_initial.sql", "0002_invite_sessions.sql"]) sqlite.exec(fs.readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"));
+  const db = {
+    prepare(sql) {
+      let args = [];
+      return {
+        bind(...values) { args = values; return this; },
+        async first() { return sqlite.prepare(sql).get(...args) || null; },
+        async all() { return { results: sqlite.prepare(sql).all(...args) }; },
+        async run() { const result = sqlite.prepare(sql).run(...args); return { meta: { changes: result.changes } }; },
+      };
+    },
+  };
+  const token = id => id.repeat(64);
+  const addSession = id => sqlite.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
+    .run(createHash("sha256").update(token(id)).digest("hex"), id === "a" ? "QS" : id === "b" ? "MJ" : "JK", Date.now() + 86400000, Date.now());
+  addSession("a");
+  sqlite.exec(fs.readFileSync(new URL("../migrations/0003_open_member_ids.sql", import.meta.url), "utf8"));
+  sqlite.prepare("INSERT INTO members (id,name,email,role) VALUES (?,?,?,?)").run("MJ", "Mary", "mary@example.com", "guest");
+  sqlite.prepare("INSERT INTO members (id,name,email,role) VALUES (?,?,?,?)").run("JK", "Jack", "jack@example.com", "guest");
+  addSession("b"); addSession("c");
+  sqlite.prepare("UPDATE sessions SET member_id = ? WHERE token_hash = ?").run("MJ", createHash("sha256").update(token("b")).digest("hex"));
+  sqlite.prepare("UPDATE sessions SET member_id = ? WHERE token_hash = ?").run("JK", createHash("sha256").update(token("c")).digest("hex"));
+  const seed = (collection, id, data) => sqlite.prepare("INSERT INTO documents (collection,id,data_json,updated_at) VALUES (?,?,?,?)")
+    .run(collection, id, JSON.stringify(data), Date.now());
+  const call = async (who, method, path, data) => worker.fetch(new Request(`https://voyage.example${path}`, {
+    method,
+    headers: { cookie: `voyage_session=${token(who)}`, ...(method !== "GET" ? { origin: "https://voyage.example" } : {}), ...(data ? { "content-type": "application/json" } : {}) },
+    ...(data ? { body: JSON.stringify(data) } : {}),
+  }), { DB: db });
+  return { sqlite, call, seed };
+}
+
+test("guest sees the full CRM and Muninn context but only the guest chat", async () => {
+  const { call, seed } = fixture();
+  seed("opps", "account", { name: "Gym", stage: 1 });
+  seed("notes", "note", { text: "Meeting details" });
+  seed("messages", "private", { ch: "general", text: "Editor secret", by: "QS", ts: 1 });
+  seed("guest_messages", "guest", { ch: "general", text: "Guest hello", by: "MJ", ts: 2 });
+  assert.equal((await (await call("b", "GET", "/api/me")).json()).role, "guest");
+  assert.equal((await (await call("b", "GET", "/api/collection/opps")).json()).docs[0].data.name, "Gym");
+  assert.equal((await (await call("b", "GET", "/api/collection/notes")).json()).docs[0].data.text, "Meeting details");
+  const guestMessages = (await (await call("b", "GET", "/api/collection/messages")).json()).docs;
+  assert.deepEqual(guestMessages.map(message => message.data.text), ["Guest hello"]);
+  assert.equal((await (await call("a", "GET", "/api/collection/messages")).json()).docs[0].data.text, "Editor secret");
+  assert.equal((await (await call("b", "GET", "/api/document/messages/private")).json()).exists, false);
+  const context = (await (await call("b", "GET", "/api/muninn/context")).json()).context;
+  assert.match(context, /Gym|Meeting details|Guest hello/);
+  assert.doesNotMatch(context, /Editor secret/);
+});
+
+test("guest changes existing CRM records but cannot create, delete, or change location membership", async () => {
+  const { call, seed, sqlite } = fixture();
+  seed("opps", "account", { name: "Gym", stage: 1, locations: [{ id: "loc1", city: "Austin" }] });
+  seed("activities", "task", { kind: "task", done: false });
+  assert.equal((await call("b", "PATCH", "/api/document/opps/account", { stage: 2 })).status, 200);
+  assert.equal((await call("b", "PATCH", "/api/document/activities/task", { done: true })).status, 200);
+  assert.equal((await call("b", "PATCH", "/api/document/opps/account", { locations: [{ id: "loc1", city: "Dallas" }] })).status, 200);
+  assert.equal((await call("b", "PATCH", "/api/document/opps/account", { locations: [] })).status, 403);
+  assert.equal((await call("b", "PATCH", "/api/document/opps/account", { locations: [{ id: "loc2" }] })).status, 403);
+  assert.equal((await call("b", "POST", "/api/collection/opps", { name: "New" })).status, 403);
+  assert.equal((await call("b", "PUT", "/api/document/notes/new", { text: "New" })).status, 403);
+  assert.equal((await call("b", "DELETE", "/api/document/activities/task")).status, 403);
+  assert.equal(JSON.parse(sqlite.prepare("SELECT data_json FROM documents WHERE collection='opps' AND id='account'").get().data_json).stage, 2);
+  assert.equal(JSON.parse(sqlite.prepare("SELECT data_json FROM documents WHERE collection='activities' AND id='task'").get().data_json).done, true);
+});
+
+test("guest chat ownership, presence grouping, and revoked access", async () => {
+  const { call, seed, sqlite } = fixture();
+  seed("guest_messages", "mary-msg", { ch: "general", text: "Mary", by: "MJ", ts: 1 });
+  seed("guest_messages", "jack-msg", { ch: "general", text: "Jack", by: "JK", ts: 2 });
+  assert.equal((await call("b", "DELETE", "/api/document/messages/jack-msg")).status, 403);
+  assert.equal((await call("b", "DELETE", "/api/document/messages/mary-msg")).status, 200);
+  assert.equal((await call("b", "PUT", "/api/document/channels/new-chat", { name: "Guest chat", by: "JK" })).status, 200);
+  const created = await call("b", "POST", "/api/collection/channels", { name: "Another guest chat", by: "JK" });
+  assert.equal(created.status, 201);
+  assert.equal((await (await call("c", "GET", `/api/document/channels/${(await created.json()).id}`)).json()).data.by, "MJ");
+  assert.equal((await call("c", "PATCH", "/api/document/channels/new-chat", { name: "Hijack" })).status, 403);
+  assert.equal((await call("b", "PATCH", "/api/document/channels/new-chat", { by: "JK" })).status, 400);
+  assert.equal((await (await call("b", "GET", "/api/document/channels/new-chat")).json()).data.by, "MJ");
+  assert.equal((await call("b", "DELETE", "/api/document/channels/new-chat")).status, 403);
+  await call("a", "POST", "/api/presence", { view: "team", typing: "general" });
+  await call("b", "POST", "/api/presence", { view: "team", typing: "general" });
+  const peers = (await (await call("b", "GET", "/api/presence")).json()).peers;
+  assert.deepEqual(peers.map(peer => peer.who), ["MJ"]);
+  sqlite.prepare("UPDATE members SET active = 0 WHERE id = 'MJ'").run();
+  assert.equal((await call("b", "GET", "/api/me")).status, 403);
+});

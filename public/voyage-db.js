@@ -14,7 +14,7 @@
     catch { throw new Error("The Voyage session has expired. Reload to sign in again."); }
     if (!response.ok) {
       const error = new Error(result.error || `Request failed (${response.status})`);
-      if (result.error === "View-only access") error.code = "view_only";
+      if (result.error === "Guest action not allowed") error.code = "guest_forbidden";
       throw error;
     }
     return result;
@@ -24,13 +24,14 @@
     for (const watcher of watchers) void watcher.poll();
   }
 
-  // View-only members can keep their own read marks. Any other write is refused here, and every
-  // watcher re-sends server data so screens drop changes they showed before saving.
-  function refuseIfViewOnly(collection) {
-    if (member?.role !== "view" || collection === "reads") return;
+  function checkGuestWrite(collection, method) {
+    if (member?.role !== "guest") return;
+    const allowed = collection === "reads" || collection === "channels" || collection === "messages" ||
+      (method === "PATCH" && ["opps", "activities", "activity", "notes"].includes(collection));
+    if (allowed) return;
     for (const watcher of watchers) watcher.resync();
-    const error = new Error("View-only access");
-    error.code = "view_only";
+    const error = new Error("Guests cannot create or delete CRM entries");
+    error.code = "guest_forbidden";
     throw error;
   }
 
@@ -67,9 +68,9 @@
     const url = `/api/document/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return {
       id,
-      async set(data) { refuseIfViewOnly(collection); await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(); },
-      async update(data) { refuseIfViewOnly(collection); await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(); },
-      async delete() { refuseIfViewOnly(collection); await request(url, { method: "DELETE" }); notifyWatchers(); },
+      async set(data) { checkGuestWrite(collection, "PUT"); await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(); },
+      async update(data) { checkGuestWrite(collection, "PATCH"); await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(); },
+      async delete() { checkGuestWrite(collection, "DELETE"); await request(url, { method: "DELETE" }); notifyWatchers(); },
       onSnapshot(callback, onError) { return watch(url, docSnapshot, callback, onError); },
     };
   }
@@ -81,7 +82,7 @@
     return {
       doc(id) { return documentRef(collection, id); },
       async add(data) {
-        refuseIfViewOnly(collection);
+        checkGuestWrite(collection, "POST");
         const { id } = await request(`/api/collection/${encodeURIComponent(collection)}`, { method: "POST", body: JSON.stringify(data) });
         notifyWatchers();
         return documentRef(collection, id);

@@ -1,13 +1,23 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { MEMBERS as MEMBER_LIST } from "./members.js";
-
-const ROLES = new Set(["edit", "view"]);
-const MEMBERS = new Map(MEMBER_LIST.map(({ id, name, email, role }) => {
-  if (!ROLES.has(role)) throw new Error(`Unknown role for ${id}`);
-  return [email.toLowerCase(), { id, name, role }];
-}));
-const TEAM = [...MEMBERS.values()];
 const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads"]);
+const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
+const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
+const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
+
+export async function memberForEmail(email, db) {
+  if (!email) return null;
+  return db.prepare("SELECT id, name, role FROM members WHERE email = ? AND active = 1")
+    .bind(String(email).trim()).first();
+}
+
+async function memberForId(id, db) {
+  return db.prepare("SELECT id, name, role FROM members WHERE id = ? AND active = 1").bind(id).first();
+}
+
+async function teamMembers(db) {
+  const { results } = await db.prepare("SELECT id, name, role FROM members WHERE active = 1 ORDER BY name").all();
+  return results;
+}
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const MAX_BODY_BYTES = 65536;
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
@@ -30,7 +40,7 @@ async function memberForSession(request, env) {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
   const row = await env.DB.prepare("SELECT member_id FROM sessions WHERE token_hash = ? AND expires_at > ?")
     .bind(await tokenHash(token), Date.now()).first();
-  return row ? TEAM.find(member => member.id === row.member_id) || null : null;
+  return row ? memberForId(row.member_id, env.DB) : null;
 }
 
 function invitePage(token, valid) {
@@ -55,7 +65,7 @@ async function handleInvite(request, env, token) {
   const hash = await tokenHash(token);
   const invite = await env.DB.prepare("SELECT member_id, email FROM invites WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
     .bind(hash, Date.now()).first();
-  const member = invite && memberForEmail(invite.email);
+  const member = invite && await memberForEmail(invite.email, env.DB);
   if (!member || member.id !== invite.member_id) return invitePage("", false);
   if (request.method === "GET") return invitePage(token, true);
   if (request.method !== "POST" || !checkWriteOrigin(request)) return error("Forbidden", 403);
@@ -75,15 +85,17 @@ async function handleInvite(request, env, token) {
   });
 }
 
-export function memberForEmail(email) {
-  return MEMBERS.get(String(email || "").toLowerCase()) || null;
-}
-
-// View-only members may still keep their own presence, read marks, and Muninn thread.
-export function canWrite(actor, path) {
+// Guests can change existing CRM records and use their private chat space.
+export function canWrite(actor, path, method) {
   if (actor.role === "edit") return true;
   if (path[1] === "presence" || path[1] === "muninn") return true;
-  return path[1] === "document" && path[2] === "reads" && path[3] === actor.id;
+  if (path[1] === "document" && path[2] === "reads") return path[3] === actor.id;
+  if (path[1] === "document" && CRM_COLLECTIONS.has(path[2])) return method === "PATCH";
+  if (CHAT_COLLECTIONS.has(path[2])) {
+    if (path[1] === "collection") return method === "POST";
+    return path[1] === "document" && (path[2] !== "channels" || method !== "DELETE");
+  }
+  return false;
 }
 
 function reply(data, status = 200) {
@@ -138,6 +150,10 @@ export function validateDocument(collection, id, data, actor, method) {
       data.ts = Date.now();
     }
   }
+  if (collection === "channels" && actor.role === "guest") {
+    if (method === "PATCH" && Object.keys(data).some(key => key !== "name" && key !== "oppId")) throw new Error("Only chat name and account can be updated");
+    if (method === "PUT" || method === "POST") data.by = actor.id;
+  }
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
   return data;
@@ -150,7 +166,7 @@ async function verifyAccess(request, env) {
   try {
     const keys = createRemoteJWKSet(new URL(`${env.TEAM_DOMAIN}/cdn-cgi/access/certs`));
     const { payload } = await jwtVerify(token, keys, { issuer: env.TEAM_DOMAIN, audience: env.POLICY_AUD });
-    return memberForEmail(payload.email);
+    return memberForEmail(payload.email, env.DB);
   } catch {
     return null;
   }
@@ -180,7 +196,7 @@ async function muninnContext(db, actor) {
     ["activity", "RECENT ACTIVITY", 100, 5000],
   ]) {
     const { results } = await db.prepare("SELECT data_json FROM documents WHERE collection = ? ORDER BY updated_at DESC LIMIT ?")
-      .bind(collection, limit).all();
+      .bind(storageCollection(actor, collection), limit).all();
     const lines = results.map(row => JSON.stringify(JSON.parse(row.data_json)).slice(0, 1000));
     sections.push(`${title} (${results.length}):\n${(lines.join("\n") || "none").slice(0, budget)}`);
   }
@@ -220,7 +236,7 @@ async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
-  if (method !== "GET" && !canWrite(actor, path)) return error("View-only access", 403);
+  if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
@@ -228,7 +244,7 @@ async function handleApi(request, env, actor, path) {
   }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
-      const { results } = await env.DB.prepare("SELECT member_id, view_name, typing_channel FROM presence WHERE seen_at > ?").bind(Date.now() - 15000).all();
+      const { results } = await env.DB.prepare("SELECT p.member_id, p.view_name, p.typing_channel FROM presence p JOIN members m ON m.id = p.member_id WHERE p.seen_at > ? AND m.active = 1 AND m.role = ?").bind(Date.now() - 15000, actor.role).all();
       return reply({ peers: results.map(row => ({ who: row.member_id, view: row.view_name, typing: row.typing_channel, isMe: row.member_id === actor.id })) });
     }
     if (method === "POST") {
@@ -246,13 +262,13 @@ async function handleApi(request, env, actor, path) {
     if (method === "GET") {
       const limit = Math.min(2000, Math.max(1, Number(new URL(request.url).searchParams.get("limit")) || 2000));
       const order = collection === "messages" || collection === "activity" ? "ORDER BY json_extract(data_json, '$.ts') DESC" : "ORDER BY updated_at DESC";
-      const { results } = await env.DB.prepare(`SELECT id, data_json FROM documents WHERE collection = ? ${order} LIMIT ?`).bind(collection, limit).all();
+      const { results } = await env.DB.prepare(`SELECT id, data_json FROM documents WHERE collection = ? ${order} LIMIT ?`).bind(storageCollection(actor, collection), limit).all();
       return reply({ docs: results.map(row => ({ id: row.id, data: JSON.parse(row.data_json) })) });
     }
     if (method === "POST") {
       const data = validateDocument(collection, crypto.randomUUID(), await readJson(request), actor, "POST");
       const id = crypto.randomUUID();
-      await env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?)").bind(collection, id, JSON.stringify(data), Date.now()).run();
+      await env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?)").bind(storageCollection(actor, collection), id, JSON.stringify(data), Date.now()).run();
       return reply({ id }, 201);
     }
     return error("Method not allowed", 405);
@@ -262,28 +278,45 @@ async function handleApi(request, env, actor, path) {
     if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) return error("Unknown document", 404);
     if (collection === "reads" && id !== actor.id) return error("Forbidden", 403);
     if (method === "GET") {
-      if (collection === "settings" && id === "team") return reply({ exists: true, data: { members: TEAM } });
-      const data = await getDocument(env.DB, collection, id);
+      if (collection === "settings" && id === "team") return reply({ exists: true, data: { members: await teamMembers(env.DB) } });
+      const data = await getDocument(env.DB, storageCollection(actor, collection), id);
       return reply({ exists: data !== null, data });
     }
     if (collection === "settings") return error("Forbidden", 403);
+    const stored = storageCollection(actor, collection);
     if (method === "DELETE") {
-      if (collection === "messages") {
-        const current = await getDocument(env.DB, collection, id);
+      if (collection === "messages" || actor.role === "guest" && collection === "channels") {
+        const current = await getDocument(env.DB, stored, id);
         if (current && current.by !== actor.id) return error("Forbidden", 403);
       }
-      await env.DB.prepare("DELETE FROM documents WHERE collection = ? AND id = ?").bind(collection, id).run();
+      await env.DB.prepare("DELETE FROM documents WHERE collection = ? AND id = ?").bind(stored, id).run();
       return reply({ ok: true });
     }
     const data = validateDocument(collection, id, await readJson(request), actor, method);
     if (method === "PUT") {
+      if (actor.role === "guest" && collection === "channels") {
+        const result = await env.DB.prepare("INSERT OR IGNORE INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?)")
+          .bind(stored, id, JSON.stringify(data), Date.now()).run();
+        return result.meta.changes ? reply({ id }) : error("Use update for existing chat", 403);
+      }
       await env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
-        .bind(collection, id, JSON.stringify(data), Date.now()).run();
+        .bind(stored, id, JSON.stringify(data), Date.now()).run();
       return reply({ id });
     }
     if (method === "PATCH") {
+      if (actor.role === "guest" && collection === "opps" && Object.hasOwn(data, "locations")) {
+        const current = await getDocument(env.DB, stored, id);
+        if (!current) return error("Document not found", 404);
+        const before = current.locations || [];
+        if (!Array.isArray(data.locations) || data.locations.length !== before.length ||
+          data.locations.some((location, index) => location?.id !== before[index]?.id)) return error("Guests cannot add or remove locations", 403);
+      }
+      if (actor.role === "guest" && collection === "channels") {
+        const current = await getDocument(env.DB, stored, id);
+        if (!current || current.by !== actor.id) return error("Forbidden", 403);
+      }
       const result = await env.DB.prepare("UPDATE documents SET data_json = json_patch(data_json, ?), revision = revision + 1, updated_at = ? WHERE collection = ? AND id = ?")
-        .bind(JSON.stringify(data), Date.now(), collection, id).run();
+        .bind(JSON.stringify(data), Date.now(), stored, id).run();
       return result.meta.changes ? reply({ id }) : error("Document not found", 404);
     }
   }
@@ -306,7 +339,7 @@ export default {
     }
     try { return await handleApi(request, env, actor, path); }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Messages cannot|Wrong member|Team settings)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },
