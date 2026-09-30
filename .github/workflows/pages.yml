@@ -1,10 +1,6 @@
-name: Deploy GitHub Pages
+name: Legacy Pages redirect (manual only)
 
 on:
-  push:
-    branches:
-      - main
-      - agent/codex/import-exact-claude-artifact-the-voyage-copy-20260929-035419-48d4
   workflow_dispatch:
 
 permissions:
