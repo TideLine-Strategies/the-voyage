@@ -317,6 +317,10 @@ textarea{min-height:70px;resize:vertical}
   h1{font-size:24px}
 }
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
+/* View-only members: hide every control that changes data. The Worker refuses these writes regardless. */
+body.viewer :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aEdit,#aAddTask,#aAddAppt,#aAddLoc,#tcNewThread,#tcRename,#saveBtn,#delBtn,#tSave,#tDel,#chSave,#chDel,#sSave,#nsDone,#nsBook,.addc,.shbtn,.bcard .mv,.nhead .btn,.nfoot button,.locf .acts button,.tm-r .add,.tm-r .del,#view-team .chat-f){display:none!important}
+body.viewer :is(.tm-r button,.ncard :is(input,select,textarea),.locf :is(input,textarea)){pointer-events:none}
 </style>
 </head>
 <body>
@@ -342,7 +346,7 @@ textarea{min-height:70px;resize:vertical}
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
-    <div class="me"><label for="meSel" style="margin:0">Signed in as</label><select id="meSel" disabled></select></div>
+    <div class="me"><label for="meSel" style="margin:0">Signed in as</label><select id="meSel" disabled></select><span class="view-badge" id="viewBadge" hidden>View only</span></div>
     <div class="tag">One voyage, start to finish.</div>
   </nav>
 
@@ -509,7 +513,7 @@ textarea{min-height:70px;resize:vertical}
     <div class="stagepick" id="fStage"></div>
     <div class="grid2">
       <label>Rank (0–100)<input id="fRank" type="number" min="0" max="100"></label>
-      <label>Owner<select id="fOwner"><option value="CK">Cody</option><option value="QS">Quan</option></select></label>
+      <label>Owner<select id="fOwner"></select></label>
     </div>
     <label>Next step<input id="fNext" placeholder="Discovery call" autocomplete="off"></label>
     <div class="grid2">
@@ -622,10 +626,19 @@ const TASK_TYPES=["Cold call","VITO letter","Phone call","Email","Video"];
 const APPT_TYPES=["Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const TEAM_DEFAULT=[{id:"CK",name:"Cody"},{id:"QS",name:"Quan"}];
 let team=TEAM_DEFAULT, scope="all", sItem=null;
-let me="QS";
+let me="QS", viewOnly=false;
 const nameOf=id=>(team.find(m=>m.id===id)||{name:id||"Someone"}).name;
+const editors=()=>team.filter(m=>m.role!=="view");
 function avatar(id){const a=el("span","av "+(["CK","QS"].includes(id)?id:"OT"),id);a.title=nameOf(id);return a}
-function fillMe(){const s=$("meSel");s.replaceChildren();team.forEach(m=>s.append(new Option(m.name,m.id)));s.value=me;s.disabled=true}
+function fillMe(){
+  const s=$("meSel");s.replaceChildren();team.forEach(m=>s.append(new Option(m.name,m.id)));s.value=me;s.disabled=true;
+  const fo=$("fOwner"),fv=fo.value;fo.replaceChildren();editors().forEach(m=>fo.append(new Option(m.name,m.id)));if(fv)fo.value=fv;
+}
+function lockForViewer(){
+  document.body.classList.add("viewer");$("viewBadge").hidden=false;
+  ["dlg","tdlg","chdlg","sdlg"].forEach(id=>$(id).querySelectorAll("input,select,textarea,#fStage,#tType").forEach(x=>{if("disabled" in x)x.disabled=true;else x.style.pointerEvents="none"}));
+  ["cancelBtn","tCancel","chCancel","sCancel"].forEach(id=>$(id).textContent="Close");
+}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
 
@@ -743,7 +756,7 @@ function itemRow(i,showOpp){
   const t=today(),k=i.kind;
       const r=el("div","item"+(i.done?" done":""));
       const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!i.done;cb.setAttribute("aria-label",(i.done?"Reopen ":"Complete ")+i.type+" for "+(i.oppName||"no opp"));
-      cb.onchange=()=>toggleDone(i,cb.checked);
+      cb.onchange=()=>toggleDone(i,cb.checked);cb.disabled=viewOnly;
       const b=el("button","item-b");
       const top=el("div");top.append(el("span","chip k-"+k,i.type));if(showOpp)top.append(el("span","nm",i.oppName||"No opp"));
       const wh=el("div","when"+(!i.done&&i.date&&i.date<t?" late":""),fmtDate(i.date)+(i.time?" at "+i.time:""));
@@ -765,7 +778,7 @@ function openT(kind,i,presetOpp,preset){
   const sel=$("tOpp");sel.replaceChildren();sel.append(new Option("No opp",""));
   [...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>sel.append(new Option(o.name,o.id)));
   sel.value=i?.oppId||presetOpp||"";
-  const os=$("tOwner");os.replaceChildren();team.forEach(m=>os.append(new Option(m.name,m.id)));os.value=i?.owner||me;
+  const os=$("tOwner");os.replaceChildren();editors().forEach(m=>os.append(new Option(m.name,m.id)));os.value=i?.owner||me;
   $("tDate").value=i?.date||preset.date||today();$("tTime").value=i?.time||preset.time||"";
   $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
@@ -830,6 +843,7 @@ $("sSave").onclick=async()=>{
 $("scope").onclick=e=>{const v=e.target.dataset.s;if(!v)return;scope=v;[...$("scope").children].forEach(b=>b.classList.toggle("on",b.dataset.s===v));renderItems()};
 $("meSel").onchange=()=>{fillMe()};
 function logAct(text,oppId){
+  if(viewOnly)return;
   const a={ts:Date.now(),text,by:me,oppId:oppId||""};
   if(!live){acts.unshift(a);renderActs();renderAccount();return}
   db.collection("activity").add(a).catch(()=>{});
@@ -846,7 +860,7 @@ function renderActs(){
   });
 }
 async function write(fn,okMsg){
-  try{await fn();toast(okMsg)}catch(e){toast(e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
+  try{await fn();toast(okMsg)}catch(e){toast(e&&e.code==="view_only"?"You have view-only access, so changes aren't saved.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
 }
 $("saveBtn").onclick=async()=>{
   const data=readForm();if(!data)return;
@@ -882,7 +896,7 @@ async function moveOpp(o,to){
   await write(()=>db.doc("opps/"+o.id).update({stage:to,stageTs:Date.now()}),"Moved to "+STAGES[to]);
 }
 function renderBoard(){
-  const ow=$("bOwner");if(ow.options.length!==team.length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's opps",""));team.forEach(m=>ow.append(new Option(m.name+"'s opps",m.id)));ow.value=v}
+  const ow=$("bOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's opps",""));editors().forEach(m=>ow.append(new Option(m.name+"'s opps",m.id)));ow.value=v}
   const q=$("bSearch").value.trim().toLowerCase(),own=ow.value,srt=$("bSort").value,t=today();
   const list=opps.filter(o=>(!own||(o.owner||"CK")===own)&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q)));
   const cmp={rank:(a,b)=>(b.rank||0)-(a.rank||0),name:(a,b)=>a.name.localeCompare(b.name),touch:(a,b)=>(a.lastTouch||"").localeCompare(b.lastTouch||""),age:(a,b)=>(a.stageTs||0)-(b.stageTs||0)}[srt];
@@ -893,7 +907,7 @@ function renderBoard(){
     const h=el("div","bcol-h");h.append(el("b",null,sn),el("span",null,inCol.length));
     const body=el("div","bcol-b");
     inCol.forEach(o=>{
-      const c=el("div","bcard");c.draggable=true;c.tabIndex=0;c.setAttribute("role","button");c.setAttribute("aria-label",o.name+", "+sn+". Press Enter to open the account.");
+      const c=el("div","bcard");c.draggable=!viewOnly;c.tabIndex=0;c.setAttribute("role","button");c.setAttribute("aria-label",o.name+", "+sn+". Press Enter to open the account.");
       const top=el("div","t");const nm=el("div");nm.append(el("div","nm",o.name),el("div","city",o.city||""));
       top.append(nm,el("span","rank",o.rank??"–"));c.append(top);
       const nx=nextFor(o);
@@ -934,7 +948,7 @@ function renderAccounts(){
   if(view!=="accounts")return;
   const st=$("acStage");if(st.options.length===1){st.append(new Option("Past Prospecting (all)","past"));STAGES.forEach((x,i)=>st.append(new Option(x,String(i))))}
   if(acctStage!==null){st.value=acctStage;acctStage=null}
-  const ow=$("acOwner");if(ow.options.length!==team.length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's accounts",""));team.forEach(m=>ow.append(new Option(m.name+"'s accounts",m.id)));ow.value=v}
+  const ow=$("acOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's accounts",""));editors().forEach(m=>ow.append(new Option(m.name+"'s accounts",m.id)));ow.value=v}
   const ev=$("acEmp").value,av=$("acAct").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
   const cmp={name:(a,b)=>a.name.localeCompare(b.name),rank:(a,b)=>(b.rank??-1)-(a.rank??-1)||a.name.localeCompare(b.name),city:(a,b)=>(a.city||"").localeCompare(b.city||"")||a.name.localeCompare(b.name),stage:(a,b)=>b.stage-a.stage||a.name.localeCompare(b.name)}[so];
   const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
@@ -1401,7 +1415,7 @@ loadChatTurns();
 render();renderActs();renderItems();
 (async()=>{
   db=window.voyageDb;
-  try{const actor=await db.init();me=actor.id;live=true;fillMe();render();renderItems();renderActs()}
+  try{const actor=await db.init();me=actor.id;viewOnly=actor.role==="view";if(viewOnly)lockForViewer();live=true;fillMe();render();renderItems();renderActs()}
   catch(_){$("boot").textContent="The Voyage could not connect. Reload to try again.";return}
   roomNs=window.voyageRoom;
   roomNs.presence({who:me,view}).catch(()=>{});
