@@ -12,12 +12,27 @@
     let result;
     try { result = await response.json(); }
     catch { throw new Error("The Voyage session has expired. Reload to sign in again."); }
-    if (!response.ok) throw new Error(result.error || `Request failed (${response.status})`);
+    if (!response.ok) {
+      const error = new Error(result.error || `Request failed (${response.status})`);
+      if (result.error === "Guest action not allowed") error.code = "guest_forbidden";
+      throw error;
+    }
     return result;
   }
 
   function notifyWatchers() {
     for (const watcher of watchers) void watcher.poll();
+  }
+
+  function checkGuestWrite(collection, method) {
+    if (member?.role !== "guest") return;
+    const allowed = collection === "reads" || collection === "channels" || collection === "messages" ||
+      (method === "PATCH" && ["opps", "activities", "activity", "notes"].includes(collection));
+    if (allowed) return;
+    for (const watcher of watchers) watcher.resync();
+    const error = new Error("Guests cannot create or delete CRM entries");
+    error.code = "guest_forbidden";
+    throw error;
   }
 
   function watch(path, convert, callback, onError, interval = 3000) {
@@ -37,6 +52,7 @@
         } catch (error) { if (onError) onError(error); }
         finally { busy = false; }
       },
+      resync() { previous = ""; void watcher.poll(); },
     };
     watchers.add(watcher);
     void watcher.poll();
@@ -52,9 +68,9 @@
     const url = `/api/document/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return {
       id,
-      async set(data) { await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(); },
-      async update(data) { await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(); },
-      async delete() { await request(url, { method: "DELETE" }); notifyWatchers(); },
+      async set(data) { checkGuestWrite(collection, "PUT"); await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(); },
+      async update(data) { checkGuestWrite(collection, "PATCH"); await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(); },
+      async delete() { checkGuestWrite(collection, "DELETE"); await request(url, { method: "DELETE" }); notifyWatchers(); },
       onSnapshot(callback, onError) { return watch(url, docSnapshot, callback, onError); },
     };
   }
@@ -66,6 +82,7 @@
     return {
       doc(id) { return documentRef(collection, id); },
       async add(data) {
+        checkGuestWrite(collection, "POST");
         const { id } = await request(`/api/collection/${encodeURIComponent(collection)}`, { method: "POST", body: JSON.stringify(data) });
         notifyWatchers();
         return documentRef(collection, id);

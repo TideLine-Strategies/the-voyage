@@ -31,6 +31,6 @@ deployment. Coordinate the order of a migration and dependent code so either
 version of the Worker can run during the change. Keep customer exports and
 one-time invitation links out of Git.
 
-Current production access is limited to Quan and Cody. A PR that adds members,
-guests, or new visibility into CRM records needs an explicit access decision
-before merging or applying its migration.
+Quan and Cody are editors. Mary and Jack are approved guests with edit access to
+existing CRM entries, no CRM creation or deletion, and a separate guest chat.
+Additional members or broader visibility require an explicit access decision.
