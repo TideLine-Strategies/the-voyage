@@ -16,6 +16,18 @@ Install dependencies with `npm ci` and validate locally with `npm run check`. SQ
 
 `scripts/import-artifact.mjs` converts a private UI export to SQL. `scripts/make-invites.mjs` creates one-time invitation links and their SHA-256 hashes. Keep exports, import SQL, and invitation links outside this repository. Only hashes are stored in D1.
 
+The Claude-only Muninn assistant is not connected in this hosted version; the CRM, notes, activity, and team chat use D1. The two member identities are enforced in the Worker and the invite database.
+
+## Summarize meeting notes with your own agent
+
+The Worker has no AI service and holds no API key. Instead each person runs the agent they are already signed in to on their own computer: Claude Code for Cody, Codex for Quan. Plan logins are only used through those tools, never by the site.
+
+1. Sign in once: run `claude` (Claude Code) or `codex login` (Codex).
+2. In a note, add the notes or upload a transcript, then click **Copy prompt**.
+3. Run `node scripts/voyage-summarize.mjs`. It picks Claude Code first, then Codex; force one with `--agent claude` or `--agent codex` (or set `VOYAGE_AGENT`).
+4. Back in the note, click **Paste summary**, review it, add any action items as tasks, and save the note.
+
+The script only accepts a prompt copied from the app, runs the agent with tools off in an empty temporary folder, and puts the summary JSON back on the clipboard. It needs Node 18 or newer and no dependencies.
 ## Muninn with local Codex
 
 Muninn uses the signed-in Codex CLI on **each member's own computer**. Install the current Node.js and Codex CLI, run `codex login`, then run `node bridge/muninn-bridge.mjs` while using The Voyage. On macOS, `sh bridge/install-macos.sh` installs the bridge as a per-user LaunchAgent. Quan's Codex account is never exposed to Cody. Cody needs his own Codex sign-in and local connector.
