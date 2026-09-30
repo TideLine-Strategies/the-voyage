@@ -6,6 +6,10 @@ The original Claude artifact is https://claude.ai/artifact/3EebdbpJ2S6TF3uJi8tV5
 
 ## Run and deploy
 
+Quan and Cody use short-lived branches, pull requests, a passing check, and
+review before merging. See [CONTRIBUTING.md](CONTRIBUTING.md) for the shared
+workflow and the distinction between production and Cody's sandbox Worker.
+
 Cloudflare Workers Builds connects `TideLine-Strategies/the-voyage` to the existing `the-voyage` Worker. A push to `main` runs `npm run check` and then `npx wrangler deploy`. Preview builds are disabled. Submit changes through a pull request and merge reviewed changes to `main` to deploy them. Check the Cloudflare build and Worker deployment receipts before treating a release as live.
 
 Install dependencies with `npm ci` and validate locally with `npm run check`. SQL migrations are separate from the automatic code deployment: an operator with access to the TideLine Cloudflare account runs `npm run migrate:remote` after reviewing the migration and its data impact. The `tideline` Wrangler profile is used for that command. The D1 ID is in `wrangler.jsonc`.
