@@ -4,7 +4,7 @@ const MEMBERS = new Map([
   ["c.knudsen@tidelinestrats.com", { id: "CK", name: "Cody" }],
   ["q.stewart@tidelinestrats.com", { id: "QS", name: "Quan" }],
 ]);
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "assistant_threads"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads"]);
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const MAX_BODY_BYTES = 65536;
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
@@ -32,11 +32,18 @@ async function memberForSession(request, env) {
 
 function invitePage(token, valid) {
   const body = valid
-    ? `<form method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form>`
+    ? `<form id="open" method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form><p id="status" role="status"></p><script>document.getElementById('open').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;button.textContent='Opening…';try{const response=await fetch(event.target.action,{method:'POST',credentials:'same-origin'});if(!response.ok||!response.redirected)throw Error('Unable to sign in');const check=await fetch('/api/me',{credentials:'same-origin'});if(!check.ok)throw Error('Session was not saved');location.replace('/')}catch(_){document.getElementById('status').textContent='The invitation could not open in this browser. Try a different browser or ask Quan for a new link.';button.disabled=false;button.textContent='Open The Voyage'}})</script>`
     : "<p>This invitation has expired or was already used. Ask Quan for a new link.</p>";
   return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage invitation</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}button{background:#42b6d4;color:#071726;border:0;border-radius:8px;padding:14px 22px;font:inherit;font-weight:700;cursor:pointer}</style><h1>The Voyage</h1>${body}</html>`, {
     status: valid ? 200 : 410,
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" },
+  });
+}
+
+function signInPage() {
+  return new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}p{max-width:30rem;line-height:1.5}</style><h1>The Voyage</h1><p>Open the private invitation sent to your TideLine email to sign in. Ask Quan for a new invitation if your link has expired.</p></html>', {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" },
   });
 }
 
@@ -109,7 +116,7 @@ export function validateDocument(collection, id, data, actor, method) {
   if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) throw new Error("Unknown document path");
   if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected an object");
   if (collection === "settings") throw new Error("Team settings cannot be changed here");
-  if ((collection === "reads" || collection === "assistant_threads") && id !== actor.id) throw new Error("Wrong member");
+  if (collection === "reads" && id !== actor.id) throw new Error("Wrong member");
   if (collection === "messages") {
     if (method === "PATCH") {
       if (Object.keys(data).some(key => key !== "reactions")) throw new Error("Only reactions can be updated");
@@ -155,11 +162,59 @@ async function getDocument(db, collection, id) {
   return row ? JSON.parse(row.data_json) : null;
 }
 
+async function muninnContext(db, actor) {
+  const sections = [];
+  for (const [collection, title, limit, budget] of [
+    ["opps", "ACCOUNTS", 250, 40000], ["activities", "TASKS AND APPOINTMENTS", 250, 12000],
+    ["notes", "MEETING NOTES", 80, 5000], ["messages", "TEAM CHAT", 80, 4000],
+    ["activity", "RECENT ACTIVITY", 100, 5000],
+  ]) {
+    const { results } = await db.prepare("SELECT data_json FROM documents WHERE collection = ? ORDER BY updated_at DESC LIMIT ?")
+      .bind(collection, limit).all();
+    const lines = results.map(row => JSON.stringify(JSON.parse(row.data_json)).slice(0, 1000));
+    sections.push(`${title} (${results.length}):\n${(lines.join("\n") || "none").slice(0, budget)}`);
+  }
+  return `Today is ${new Date().toISOString().slice(0, 10)}. The person asking is ${actor.name}. Pipeline stages: Prospecting, Discovery, Alignment, Assessment, Validation, Proposal, Business review.\n\n${sections.join("\n\n")}`;
+}
+
+function muninnTurns(data) {
+  return Array.isArray(data?.turns) ? data.turns.filter(turn =>
+    (turn.role === "user" || turn.role === "assistant") && typeof turn.text === "string"
+  ).slice(-20) : [];
+}
+
+async function handleMuninn(request, env, actor) {
+  if (request.method === "GET") {
+    const thread = await getDocument(env.DB, "assistant_threads", actor.id);
+    return reply({ turns: muninnTurns(thread) });
+  }
+  if (request.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM documents WHERE collection = 'assistant_threads' AND id = ?").bind(actor.id).run();
+    return reply({ turns: [] });
+  }
+  if (request.method !== "POST") return error("Method not allowed", 405);
+  const body = await readJson(request);
+  const question = typeof body.question === "string" ? body.question.trim() : "";
+  if (!question || question.length > 1000) return error("Question must be 1 to 1000 characters", 400);
+  const answer = typeof body.answer === "string" ? body.answer.trim() : "";
+  if (!answer || answer.length > 4000) return error("Answer must be 1 to 4000 characters", 400);
+  const thread = await getDocument(env.DB, "assistant_threads", actor.id);
+  const turns = muninnTurns(thread).slice(-10);
+  const saved = { turns: [...turns, { role: "user", text: question }, { role: "assistant", text: answer }].slice(-20) };
+  await env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES ('assistant_threads', ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
+    .bind(actor.id, JSON.stringify(saved), Date.now()).run();
+  return reply({ answer, turns: saved.turns });
+}
+
 async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
+  if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
+  if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
+    return reply({ context: await muninnContext(env.DB, actor) });
+  }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
       const { results } = await env.DB.prepare("SELECT member_id, view_name, typing_channel FROM presence WHERE seen_at > ?").bind(Date.now() - 15000).all();
@@ -176,7 +231,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 3 && path[1] === "collection") {
     const collection = path[2];
     if (!COLLECTIONS.has(collection)) return error("Unknown collection", 404);
-    if (collection === "reads" || collection === "assistant_threads") return error("Use a member document", 400);
+    if (collection === "reads") return error("Use a member document", 400);
     if (method === "GET") {
       const limit = Math.min(2000, Math.max(1, Number(new URL(request.url).searchParams.get("limit")) || 2000));
       const order = collection === "messages" || collection === "activity" ? "ORDER BY json_extract(data_json, '$.ts') DESC" : "ORDER BY updated_at DESC";
@@ -194,7 +249,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 4 && path[1] === "document") {
     const [, , collection, id] = path;
     if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) return error("Unknown document", 404);
-    if ((collection === "reads" || collection === "assistant_threads") && id !== actor.id) return error("Forbidden", 403);
+    if (collection === "reads" && id !== actor.id) return error("Forbidden", 403);
     if (method === "GET") {
       const data = await getDocument(env.DB, collection, id);
       return reply({ exists: data !== null, data });
@@ -228,7 +283,7 @@ export default {
     const pathName = new URL(request.url).pathname;
     if (pathName.startsWith("/invite/")) return handleInvite(request, env, pathName.slice(8));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
-    if (!actor) return error("Sign in with the approved TideLine account", 403);
+    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage() : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
     if (!path) {
       const asset = await env.ASSETS.fetch(request);
