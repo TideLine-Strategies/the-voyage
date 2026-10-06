@@ -1,5 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors"]);
+// Editors only: guests can neither see nor change these.
+const EDITOR_COLLECTIONS = new Set(["vendors"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -156,6 +158,9 @@ export function validateDocument(collection, id, data, actor, method) {
   }
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
+  if (collection === "vendors" && (method !== "PATCH" || Object.hasOwn(data, "name"))) {
+    if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 200) throw new Error("Invalid vendor name");
+  }
   return data;
 }
 
@@ -194,6 +199,7 @@ async function muninnContext(db, actor) {
     ["opps", "ACCOUNTS", 250, 40000], ["activities", "TASKS AND APPOINTMENTS", 250, 12000],
     ["notes", "MEETING NOTES", 80, 5000], ["messages", "TEAM CHAT", 80, 4000],
     ["activity", "RECENT ACTIVITY", 100, 5000],
+    ...(actor.role === "edit" ? [["vendors", "VENDORS AND PARTNERS", 200, 8000]] : []),
   ]) {
     const { results } = await db.prepare("SELECT data_json FROM documents WHERE collection = ? ORDER BY updated_at DESC LIMIT ?")
       .bind(storageCollection(actor, collection), limit).all();
@@ -236,6 +242,7 @@ async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
+  if (EDITOR_COLLECTIONS.has(path[2]) && (path[1] === "collection" || path[1] === "document") && actor.role !== "edit") return error("Not available to guests", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
@@ -339,7 +346,7 @@ export default {
     }
     try { return await handleApi(request, env, actor, path); }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

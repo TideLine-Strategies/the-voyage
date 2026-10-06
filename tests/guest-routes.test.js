@@ -94,3 +94,24 @@ test("guest chat ownership, presence grouping, and revoked access", async () => 
   sqlite.prepare("UPDATE members SET active = 0 WHERE id = 'MJ'").run();
   assert.equal((await call("b", "GET", "/api/me")).status, 403);
 });
+
+test("vendors are editor-only: editors manage them, guests cannot see or change them", async () => {
+  const { call, seed } = fixture();
+  seed("vendors", "photo", { name: "Jordan Lee", kind: "Photographer", email: "jordan@example.com" });
+  const created = await call("a", "POST", "/api/collection/vendors", { name: "Print Shop", kind: "Printer" });
+  assert.equal(created.status, 201);
+  const { id } = await created.json();
+  assert.equal((await call("a", "PATCH", `/api/document/vendors/${id}`, { phone: "555-0100" })).status, 200);
+  const names = (await (await call("a", "GET", "/api/collection/vendors")).json()).docs.map(doc => doc.data.name).sort();
+  assert.deepEqual(names, ["Jordan Lee", "Print Shop"]);
+  assert.equal((await call("a", "POST", "/api/collection/vendors", { name: " " })).status, 400);
+  assert.equal((await call("a", "PATCH", `/api/document/vendors/${id}`, { name: "" })).status, 400);
+  assert.match((await (await call("a", "GET", "/api/muninn/context")).json()).context, /Jordan Lee/);
+  assert.equal((await call("b", "GET", "/api/collection/vendors")).status, 403);
+  assert.equal((await call("b", "GET", "/api/document/vendors/photo")).status, 403);
+  assert.equal((await call("b", "PATCH", "/api/document/vendors/photo", { name: "Changed" })).status, 403);
+  assert.equal((await call("b", "POST", "/api/collection/vendors", { name: "New" })).status, 403);
+  assert.equal((await call("b", "DELETE", "/api/document/vendors/photo")).status, 403);
+  assert.doesNotMatch((await (await call("b", "GET", "/api/muninn/context")).json()).context, /Jordan Lee/);
+  assert.equal((await call("a", "DELETE", `/api/document/vendors/${id}`)).status, 200);
+});

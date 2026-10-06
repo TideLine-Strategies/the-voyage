@@ -320,6 +320,13 @@ textarea{min-height:70px;resize:vertical}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+/* Vendors are for editors only; the Worker refuses guest reads and writes. */
+body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!important}
+.vtbl .row{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr)}
+.vtbl .row a{color:var(--blue);text-decoration:none;font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtbl .row a:hover{text-decoration:underline}
+.vtbl .co{color:var(--muted);font-size:13px;margin-top:2px}
+@media (max-width:860px){.vtbl .row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.vtbl .row>:nth-child(3),.vtbl .row>:nth-child(4){display:none}}
 </style>
 </head>
 <body>
@@ -337,6 +344,7 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
     <div class="brand"><span class="logo" role="img" aria-label="TideLine longship"></span><div><div class="wm">The Voyage</div><div class="by">by TideLine Strategies</div></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
+    <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
     <button class="nav" data-view="notes">Notes</button>
     <button class="nav" data-view="stages">Stages</button>
@@ -390,6 +398,16 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
       </div>
       <div class="cnt" id="acCount"></div>
       <div class="tbl atbl" id="acList"></div>
+    </section>
+
+    <section id="view-vendors" hidden>
+      <div class="head"><div><h1>Vendors</h1><div class="sub">The people and companies you work with. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="vNew">+ New vendor</button></div>
+      <div class="bhead">
+        <input id="vSearch" type="search" placeholder="Find a name, company, or service" aria-label="Find a vendor">
+        <select id="vType" aria-label="What they do"><option value="">Everything they do</option></select>
+      </div>
+      <div class="cnt" id="vCount"></div>
+      <div class="tbl vtbl" id="vList"></div>
     </section>
 
     <section id="view-activity" hidden>
@@ -532,6 +550,30 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
     <div class="acts">
       <div><button class="btn danger" id="delBtn">Delete</button></div>
       <div><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save opp</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="vdlg" aria-labelledby="vdlgTitle">
+  <div class="dlg">
+    <h2 id="vdlgTitle">New vendor</h2>
+    <div class="grid2">
+      <label>Name<input id="vName" autocomplete="off" maxlength="200" placeholder="Jordan Lee"></label>
+      <label>Company<input id="vCompany" autocomplete="off" placeholder="Lee Creative"></label>
+    </div>
+    <label>What they do<input id="vKind" autocomplete="off" list="vKinds" placeholder="Photographer"></label>
+    <datalist id="vKinds"></datalist>
+    <div class="grid2">
+      <label>Email<input id="vEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label>
+      <label>Phone<input id="vPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555"></label>
+    </div>
+    <div class="grid2">
+      <label>Website<input id="vWeb" type="url" inputmode="url" autocomplete="off" placeholder="example.com"></label>
+      <label>Related account<select id="vOpp"></select></label>
+    </div>
+    <label>Notes<textarea id="vNotes" placeholder="Rates, what they've done for you, how to reach them"></textarea></label>
+    <div class="acts">
+      <div><button class="btn danger" id="vDel">Delete</button></div>
+      <div><button class="btn" id="vCancel">Cancel</button><button class="btn primary" id="vSave">Save vendor</button></div>
     </div>
   </div>
 </dialog>
@@ -1304,6 +1346,54 @@ $("aNotesBtn").onclick=()=>openNotes(acctId,APPT_TYPES[Math.max(0,STAGES.indexOf
 $("aEdit").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(o)openDlg(o)};
 $("aAddTask").onclick=()=>openT("task",null,acctId);
 $("aAddAppt").onclick=()=>openT("appt",null,acctId);
+
+let vendors=[], vEdit=null;
+const V_KINDS=["Photographer","Videographer","Designer","Printer","Web developer","Marketing","Consultant","Software","Accountant","Attorney"];
+function renderVendors(){
+  const kinds=[...new Set([...V_KINDS,...vendors.map(v=>v.kind).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+  $("vKinds").replaceChildren(...kinds.map(k=>new Option(k)));
+  const ts=$("vType"),tv=ts.value,used=[...new Set(vendors.map(v=>v.kind).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  ts.replaceChildren(new Option("Everything they do",""),...used.map(k=>new Option(k)));ts.value=used.includes(tv)?tv:"";
+  if(view!=="vendors")return;
+  const q=$("vSearch").value.trim().toLowerCase(),kv=ts.value;
+  const list=vendors.filter(v=>(!kv||v.kind===kv)&&(!q||[v.name,v.company,v.kind,v.email,v.phone,v.notes].join(" ").toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name));
+  $("vCount").textContent=list.length===vendors.length?`${vendors.length} ${vendors.length===1?"vendor":"vendors"}`:`Showing ${list.length} of ${vendors.length} vendors`;
+  const w=$("vList");w.replaceChildren();
+  const hd=el("div","row hd");["Name","What they do","Email","Phone"].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
+  if(!list.length){w.append(emptyRow(vendors.length?"No vendors match that search.":"No vendors yet. Use + New vendor to save someone you work with."));return}
+  const link=(text,href)=>{if(!text)return el("span","city","");const a=el("a",null,text);a.href=href;a.onclick=e=>e.stopPropagation();return a};
+  list.forEach(v=>{
+    const r=el("button","row");
+    const n=el("div");n.append(el("div","nm",v.name));if(v.company)n.append(el("div","co",v.company));
+    r.append(n,el("span","city",v.kind||""),link(v.email,"mailto:"+v.email),link(v.phone,"tel:"+(v.phone||"").replace(/[^\d+]/g,"")));
+    r.onclick=()=>openV(v);w.append(r);
+  });
+}
+function openV(v){
+  vEdit=v||null;
+  $("vdlgTitle").textContent=v?v.name:"New vendor";
+  $("vName").value=v?.name||"";$("vCompany").value=v?.company||"";$("vKind").value=v?.kind||"";
+  $("vEmail").value=v?.email||"";$("vPhone").value=v?.phone||"";$("vWeb").value=v?.website||"";$("vNotes").value=v?.notes||"";
+  const os=$("vOpp");os.replaceChildren(new Option("None",""));[...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>os.append(new Option(o.name,o.id)));os.value=v?.oppId||"";
+  $("vDel").hidden=!v;$("vdlg").showModal();setTimeout(()=>$("vName").focus(),30);
+}
+$("vNew").onclick=()=>openV(null);
+$("vCancel").onclick=()=>$("vdlg").close();
+$("vSearch").oninput=renderVendors;$("vType").onchange=renderVendors;
+$("vSave").onclick=async()=>{
+  const name=$("vName").value.trim();if(!name){toast("Add a name first");$("vName").focus();return}
+  const was=vEdit;
+  const data={name,company:$("vCompany").value.trim(),kind:$("vKind").value.trim(),email:$("vEmail").value.trim(),phone:$("vPhone").value.trim(),website:normUrl($("vWeb").value),oppId:$("vOpp").value,notes:$("vNotes").value.trim(),createdTs:was?.createdTs||Date.now(),by:was?.by||me,updatedTs:Date.now()};
+  $("vdlg").close();
+  if(!live){if(was)Object.assign(was,data);else vendors.push({id:"v"+Date.now(),...data});renderVendors();toast("Saved for this session only");return}
+  await write(()=>was?db.doc("vendors/"+was.id).set(data):db.collection("vendors").add(data),was?"Vendor saved":"Vendor added");
+};
+$("vDel").onclick=async()=>{
+  const v=vEdit;if(!v||!confirm("Delete "+v.name+" from your vendors?"))return;
+  $("vdlg").close();
+  if(!live){vendors=vendors.filter(x=>x!==v);renderVendors();return}
+  await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
+};
 const SOON={
   cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
   order:["Order","Where opps land once they're won: orders placed, what was sold, and what's been delivered."],
@@ -1312,8 +1402,8 @@ function go(v){
   if(v==="oden"){openChat();return}
   view=v;const navV=v==="account"?acctFrom:v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -1434,6 +1524,9 @@ render();renderActs();renderItems();
     if(!firstMsgs){const fresh=msgs.filter(m=>!prevIds.has(m.id)&&m.by!==me);const n=fresh.sort((a,b)=>b.ts-a.ts)[0];if(n&&!(view==="team"&&tcCh===n.ch))toast(nameOf(n.by)+" in "+chName(n.ch)+": "+n.text.slice(0,60))}
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
+  if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
+    vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
+  },failed)}
   db.collection("notes").onSnapshot(snap=>{
     notes=snap.docs.map(d=>({id:d.id,...d.data()}));renderNotes();loaded("notes");
   },failed);
