@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import worker, { deviceFrom } from "../src/worker.js";
+import worker, { deviceFrom, parseTime } from "../src/worker.js";
 
 function fixture() {
   const sqlite = new DatabaseSync(":memory:");
@@ -200,4 +200,81 @@ test("profiles: anyone can read the directory, but each member edits only their 
   assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { role: "edit" })).status, 400);
   assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { bio: "x".repeat(1501) })).status, 400);
   assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { hours: "9–5" })).status, 200);
+});
+
+const migrate = (sqlite, name) => sqlite.exec(fs.readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"));
+
+test("audit log: the server records changes with labels, never chat text; only editors read it", async () => {
+  const { call, seed, sqlite } = fixture();
+  assert.equal((await call("a", "POST", "/api/collection/opps", { name: "Before migration" })).status, 201, "changes work before the audit table exists");
+  migrate(sqlite, "0005_audit_calendar.sql");
+  seed("opps", "gym", { name: "Sample Gym", stage: 1 });
+  const created = await (await call("a", "POST", "/api/collection/opps", { name: "New Studio", stage: 0 })).json();
+  await call("b", "PATCH", "/api/document/opps/gym", { stage: 2 });
+  await call("a", "DELETE", `/api/document/opps/${created.id}`);
+  await call("a", "POST", "/api/collection/messages", { ch: "general", text: "secret plans" });
+  await call("a", "PUT", "/api/document/reads/QS", { marks: {} });
+  await call("b", "POST", "/api/collection/opps", { name: "Guest cannot create" });
+  assert.equal((await call("b", "GET", "/api/admin/audit")).status, 403);
+  const { entries } = await (await call("a", "GET", "/api/admin/audit?days=7")).json();
+  const lines = entries.map(e => `${e.who} ${e.action} ${e.collection} ${e.label}`);
+  assert.ok(lines.includes("QS Created opps New Studio"));
+  assert.ok(lines.includes("MJ Updated opps Sample Gym"));
+  assert.ok(lines.includes("QS Deleted opps New Studio"));
+  assert.ok(lines.includes("QS Created messages Chat message"));
+  assert.ok(!lines.some(line => /secret plans|reads|Guest cannot create/.test(line)));
+  assert.ok(entries.find(e => e.action === "Created" && e.label === "New Studio").doc_id === created.id);
+  await call("b", "POST", "/api/me/signout", { scope: "this" });
+  const after = (await (await call("a", "GET", "/api/admin/audit")).json()).entries;
+  assert.ok(after.some(e => e.who === "MJ" && e.action === "Signed out"));
+});
+
+test("calendar link: private feed of a member's own appointments", async () => {
+  const { call, seed, sqlite } = fixture();
+  assert.equal((await call("a", "POST", "/api/me/calendar")).status, 503, "explains the missing migration");
+  migrate(sqlite, "0005_audit_calendar.sql");
+  seed("activities", "a1", { kind: "appt", type: "Discovery", oppName: "Sample Gym", date: "2026-10-20", time: "2pm", owner: "QS" });
+  seed("activities", "a2", { kind: "appt", type: "Demo", oppName: "Shared Studio", date: "2026-10-21", time: "", owner: "CK", shared: ["QS"] });
+  seed("activities", "a3", { kind: "appt", type: "Proposal", oppName: "Not Mine", date: "2026-10-22", time: "10:00", owner: "CK" });
+  seed("activities", "a4", { kind: "task", type: "Cold call", oppName: "Task Only", date: "2026-10-20", owner: "QS" });
+  assert.equal((await (await call("a", "GET", "/api/me/calendar")).json()).enabled, false);
+  const { url } = await (await call("a", "POST", "/api/me/calendar")).json();
+  const path = new URL(url).pathname;
+  const feed = await worker.fetch(new Request(`https://voyage.example${path}`), { DB: { prepare: sql => fixtureDb(sqlite, sql) } });
+  assert.equal(feed.status, 200);
+  assert.match(feed.headers.get("content-type"), /text\/calendar/);
+  const ics = await feed.text();
+  assert.match(ics, /SUMMARY:Discovery with Sample Gym/);
+  assert.match(ics, /DTSTART:20261020T140000/);
+  assert.match(ics, /SUMMARY:Demo with Shared Studio[\s\S]*?|DTSTART;VALUE=DATE:20261021/);
+  assert.match(ics, /SUMMARY:Demo with Shared Studio/);
+  assert.match(ics, /DTSTART;VALUE=DATE:20261021/);
+  assert.doesNotMatch(ics, /Not Mine|Task Only/);
+  assert.doesNotMatch(JSON.stringify(sqlite.prepare("SELECT * FROM calendar_feeds").all()), new RegExp(path.slice(5, 69)));
+  const second = (await (await call("a", "POST", "/api/me/calendar")).json()).url;
+  assert.notEqual(second, url);
+  assert.equal((await worker.fetch(new Request(`https://voyage.example${path}`), { DB: { prepare: sql => fixtureDb(sqlite, sql) } })).status, 404, "old link stops working");
+  await call("a", "DELETE", "/api/me/calendar");
+  assert.equal((await worker.fetch(new Request(`https://voyage.example${new URL(second).pathname}`), { DB: { prepare: sql => fixtureDb(sqlite, sql) } })).status, 404);
+  assert.equal((await worker.fetch(new Request("https://voyage.example/cal/not-a-token.ics"), { DB: { prepare: sql => fixtureDb(sqlite, sql) } })).status, 404);
+});
+
+function fixtureDb(sqlite, sql) {
+  let args = [];
+  return {
+    bind(...values) { args = values; return this; },
+    async first() { return sqlite.prepare(sql).get(...args) || null; },
+    async all() { return { results: sqlite.prepare(sql).all(...args) }; },
+    async run() { const result = sqlite.prepare(sql).run(...args); return { meta: { changes: result.changes } }; },
+  };
+}
+
+test("appointment times", () => {
+  assert.deepEqual(parseTime("10:30"), [10, 30]);
+  assert.deepEqual(parseTime("2pm"), [14, 0]);
+  assert.deepEqual(parseTime("2:15 PM"), [14, 15]);
+  assert.deepEqual(parseTime("3"), [15, 0], "bare afternoon hours");
+  assert.deepEqual(parseTime("12am"), [0, 0]);
+  assert.equal(parseTime("tomorrow"), null);
+  assert.equal(parseTime(""), null);
 });

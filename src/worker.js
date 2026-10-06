@@ -77,6 +77,7 @@ async function handleInvite(request, env, token) {
   const result = await env.DB.prepare("UPDATE invites SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
     .bind(now, hash, now).run();
   if (!result.meta.changes) return invitePage("", false);
+  await audit(env, member.id, "Signed in", null, null, "Opened invitation link");
   const session = randomToken();
   await env.DB.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
     .bind(await tokenHash(session), member.id, now + SESSION_MAX_AGE * 1000, now).run();
@@ -291,6 +292,76 @@ async function handleUsage(request, env, actor) {
   }
 }
 
+// Audit entries are written by the Worker. A missing table (before migration 0005) never blocks a change.
+export async function audit(env, memberId, action, collection, docId, label) {
+  try {
+    await env.DB.prepare("INSERT INTO audit_log (ts, member_id, action, collection, doc_id, label) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(Date.now(), memberId, action, collection, docId, label ? String(label).slice(0, 120) : null).run();
+  } catch { /* audit table not created yet */ }
+}
+
+// A short, human label for the record being changed. Chat text is never recorded.
+async function auditLabel(request, env, actor, path) {
+  const pick = data => data && (data.name || data.oppName || data.title || data.type || null);
+  if (path[2] === "messages") return "Chat message";
+  if (path[2] === "profiles") return "Own profile";
+  if (request.method === "DELETE" || request.method === "PATCH") {
+    const current = path[3] && await getDocument(env.DB, storageCollection(actor, path[2]), path[3]).catch(() => null);
+    if (request.method === "DELETE") return pick(current);
+    const body = await request.clone().json().catch(() => null);
+    return pick(current) || pick(body);
+  }
+  return pick(await request.clone().json().catch(() => null));
+}
+
+const icsText = value => String(value || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+// "10:30", "2pm", "2:15 PM" -> [hour, minute]; bare hours before 8 are read as afternoon.
+export function parseTime(text) {
+  const match = String(text || "").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?m?\.?$/i);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0), meridiem = (match[3] || "").toLowerCase();
+  if (hour > 23 || minute > 59) return null;
+  if (meridiem === "p" && hour < 12) hour += 12;
+  if (meridiem === "a" && hour === 12) hour = 0;
+  if (!meridiem && hour >= 1 && hour < 8) hour += 12;
+  return [hour, minute];
+}
+
+// Private subscription feed of a member's appointments, for Google Calendar, Outlook, or Apple Calendar.
+async function calendarFeed(env, file) {
+  const token = file.replace(/\.ics$/, "");
+  if (!/^[a-f0-9]{64}$/.test(token)) return new Response("Not found", { status: 404 });
+  let feed;
+  try { feed = await env.DB.prepare("SELECT member_id FROM calendar_feeds WHERE token_hash = ?").bind(await tokenHash(token)).first(); } catch { feed = null; }
+  const member = feed && await memberForId(feed.member_id, env.DB);
+  if (!member) return new Response("Not found", { status: 404 });
+  const { results } = await env.DB.prepare("SELECT id, data_json FROM documents WHERE collection = 'activities'").all();
+  const pad = n => String(n).padStart(2, "0");
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const events = results.map(row => ({ id: row.id, ...JSON.parse(row.data_json) }))
+    .filter(item => item.kind === "appt" && /^\d{4}-\d{2}-\d{2}$/.test(item.date || "") && ((item.owner || "CK") === member.id || (item.shared || []).includes(member.id)))
+    .map(item => {
+      const day = item.date.replace(/-/g, "");
+      const time = parseTime(item.time);
+      let when;
+      if (time) {
+        const end = new Date(Date.UTC(2000, 0, 1, time[0] + 1, time[1]));
+        const endDay = time[0] === 23 ? new Date(Date.parse(item.date) + 86400000).toISOString().slice(0, 10).replace(/-/g, "") : day;
+        when = [`DTSTART:${day}T${pad(time[0])}${pad(time[1])}00`, `DTEND:${endDay}T${pad(end.getUTCHours())}${pad(end.getUTCMinutes())}00`];
+      } else {
+        const next = new Date(Date.parse(item.date) + 86400000).toISOString().slice(0, 10).replace(/-/g, "");
+        when = [`DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${next}`];
+      }
+      return ["BEGIN:VEVENT", `UID:${item.id}@the-voyage`, `DTSTAMP:${stamp}`, ...when,
+        `SUMMARY:${icsText(`${item.type || "Meeting"}${item.oppName ? ` with ${item.oppName}` : ""}`)}`,
+        `DESCRIPTION:${icsText(`${item.done ? "Completed. " : ""}Open The Voyage for details.`)}`, "END:VEVENT"].join("\r\n");
+    });
+  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//TideLine Strategies//The Voyage//EN", "CALSCALE:GREGORIAN",
+    `X-WR-CALNAME:${icsText(`The Voyage: ${member.name}`)}`, ...events, "END:VCALENDAR", ""].join("\r\n");
+  return new Response(body, { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+}
+
 function currentSessionHash(request) {
   const token = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
   return token ? tokenHash(token) : Promise.resolve("");
@@ -314,7 +385,28 @@ async function handleProfile(request, env, actor, path) {
     }[scope];
     if (!sql) return error("Expected scope: this, others, or all", 400);
     const result = await env.DB.prepare(sql).bind(actor.id, current).run();
+    await audit(env, actor.id, "Signed out", null, null, { this: "This device", others: "Other devices", all: "All devices" }[scope]);
     return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  if (path[2] === "calendar") {
+    try {
+      if (request.method === "GET") {
+        const feed = await env.DB.prepare("SELECT created_at FROM calendar_feeds WHERE member_id = ?").bind(actor.id).first();
+        return reply({ enabled: Boolean(feed), created_at: feed?.created_at || null });
+      }
+      if (request.method === "DELETE") {
+        await env.DB.prepare("DELETE FROM calendar_feeds WHERE member_id = ?").bind(actor.id).run();
+        await audit(env, actor.id, "Turned off calendar link", null, null, null);
+        return reply({ enabled: false });
+      }
+      if (request.method === "POST") {
+        const token = randomToken();
+        await env.DB.prepare("INSERT INTO calendar_feeds (member_id, token_hash, created_at) VALUES (?, ?, ?) ON CONFLICT(member_id) DO UPDATE SET token_hash = excluded.token_hash, created_at = excluded.created_at")
+          .bind(actor.id, await tokenHash(token), Date.now()).run();
+        await audit(env, actor.id, "Created calendar link", null, null, null);
+        return reply({ enabled: true, url: `${new URL(request.url).origin}/cal/${token}.ics` });
+      }
+    } catch { return error("Calendar links are not set up yet. Apply migration 0005.", 503); }
   }
   return error("Not found", 404);
 }
@@ -327,7 +419,17 @@ async function handleAdmin(request, env, actor, path) {
     const { member } = await readJson(request);
     if (typeof member !== "string" || !ID_PATTERN.test(member)) return error("Expected a member", 400);
     const result = await env.DB.prepare("DELETE FROM sessions WHERE member_id = ?").bind(member).run();
+    await audit(env, actor.id, "Signed someone out", "members", member, `${result.meta.changes} device(s)`);
     return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  if (path.length === 3 && path[2] === "audit" && request.method === "GET") {
+    const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));
+    try {
+      await env.DB.prepare("DELETE FROM audit_log WHERE ts < ?").bind(now - 365 * 86400000).run();
+      const { results } = await env.DB.prepare("SELECT ts, member_id AS who, action, collection, doc_id, label FROM audit_log WHERE ts > ? ORDER BY ts DESC, id DESC LIMIT 2000")
+        .bind(now - days * 86400000).all();
+      return reply({ days, entries: results });
+    } catch { return error("The audit log is not set up yet. Apply migration 0005.", 503); }
   }
   if (path.length !== 2 || request.method !== "GET") return error("Not found", 404);
   const cookie = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
@@ -450,6 +552,7 @@ export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
     if (pathName.startsWith("/invite/")) return handleInvite(request, env, pathName.slice(8));
+    if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
     if (!actor) return request.method === "GET" && pathName === "/" ? signInPage() : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
@@ -460,7 +563,16 @@ export default {
       headers.set("x-content-type-options", "nosniff");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    try { return await handleApi(request, env, actor, path); }
+    try {
+      const change = request.method !== "GET" && (path[1] === "collection" || path[1] === "document") && path[2] !== "reads" && path[2] !== "activity";
+      const label = change ? await auditLabel(request, env, actor, path) : null;
+      const response = await handleApi(request, env, actor, path);
+      if (change && response.ok) {
+        const id = path[3] || (await response.clone().json().catch(() => ({}))).id || null;
+        await audit(env, actor.id, { POST: "Created", PUT: "Saved", PATCH: "Updated", DELETE: "Deleted" }[request.method], path[2], id, label);
+      }
+      return response;
+    }
     catch (cause) {
       if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);

@@ -25,3 +25,13 @@ Editors see an **Admin** page with Overview, Usage, Security, Data health, and S
 - Usage records page views and action labels per member (never record contents or typed text), with device type and the coarse city/region/country Cloudflare reports. Rows older than 180 days are deleted when an editor loads usage. Apply `migrations/0004_usage_events.sql` before or after deploying; until it exists, usage writes are ignored and the Usage tab says it is off.
 - Security lists members, signed-in devices, and invitation status, and lets an editor sign a member out of every device. Token hashes are never returned.
 - Data health and System are computed from existing records.
+
+## Search, import/export, calendar, and audit log
+
+- **Search everything** (left menu, or press `/`) covers accounts, tasks and appointments, meeting notes, vendors (editors), team chat, and people, using records already loaded in the browser.
+- **Lead source** is a field on each account, filterable on Accounts and summarized under Admin › Data health.
+- **Import** (Accounts page, editors) reads a CSV with an Organization or Name column; duplicates by name are skipped. **Export** (Admin › System) downloads CSVs; cells that look like formulas are prefixed so spreadsheets treat them as text.
+- **Calendar**: appointments can be downloaded as `.ics`, and each member can create a private subscription link under Profile (`/cal/<secret>.ics`; only a hash is stored; making a new link revokes the old one).
+- **Audit log** (Admin › Audit log) is written by the Worker on every create, update, and delete, plus sign-ins and sign-outs. Labels come from record names; chat text is never stored. Kept 365 days.
+- `migrations/0005_audit_calendar.sql` creates the audit and calendar tables. Until it is applied, changes still work, nothing is audited, and calendar links report that setup is needed.
+- **Daily brief** on Home asks Muninn for today's priorities.

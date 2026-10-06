@@ -319,6 +319,15 @@ textarea{min-height:70px;resize:vertical}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 .view-badge[hidden]{display:none}
+.gsearch{position:relative;padding:2px 4px 8px}
+.gsearch input{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text)}
+.gres{position:absolute;left:4px;top:calc(100% - 4px);z-index:30;width:min(440px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
+.gres .gh{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px 4px}
+.gres button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;color:var(--text);font-size:14px}
+.gres button:hover,.gres button.sel{background:var(--card)}
+.gres button small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gres .none{padding:12px 10px;color:var(--muted);font-size:14px}
+@media (max-width:860px){.gsearch{min-width:170px;padding:2px}}
 .nav.nav-profile{display:flex;align-items:center;gap:10px;color:var(--text)}
 .nav-profile .pn{display:flex;flex-direction:column;min-width:0;line-height:1.25}
 .nav-profile .pn b{font-weight:600;font-size:14px}.nav-profile .pn small{color:var(--muted);font-size:12px}
@@ -339,7 +348,7 @@ textarea{min-height:70px;resize:vertical}
 .dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
 @media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
-body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+body.guest :is(#newBtn,#acNew,#acImport,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
 body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!important}
 body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
@@ -363,7 +372,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 .itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.2fr);cursor:default}
 .ytbl .row{grid-template-columns:minmax(0,1.6fr) 5rem 6rem minmax(0,1fr);cursor:default}
 .stbl .row:hover,.itbl .row:hover,.ytbl .row:hover{background:none}
-.city.warn{color:var(--amber)}
+.city.warn{color:var(--amber)}.warnx{color:var(--red)}
 @media (max-width:860px){.stbl .row{grid-template-columns:minmax(0,1fr) auto}.stbl .row>:nth-child(2),.stbl .row>:nth-child(3),.stbl .row>:nth-child(4){display:none}.itbl .row>:nth-child(2){display:none}.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .uhl{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;padding:0 16px 10px}
 @media (max-width:860px){.ucols{grid-template-columns:1fr}.utbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.utbl .row>:nth-child(n+3){display:none}.ulog .row{grid-template-columns:6rem minmax(0,1fr)}.ulog .row>:nth-child(2),.ulog .row>:nth-child(4){display:none}}
@@ -387,6 +396,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <div class="app" id="app" hidden>
   <nav class="side" aria-label="Main">
     <div class="brand"><span class="logo" role="img" aria-label="TideLine longship"></span><div><div class="wm">The Voyage</div><div class="by">by TideLine Strategies</div></div></div>
+    <div class="gsearch"><input id="gSearch" type="search" placeholder="Search everything  /" aria-label="Search everything" autocomplete="off"><div class="gres" id="gRes" role="listbox" hidden></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
     <button class="nav" data-view="vendors">Vendors</button>
@@ -413,7 +423,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
           <h1 id="greet">Good morning, Cody</h1>
           <div class="sub" id="subline"></div>
         </div>
-        <button class="btn primary" id="newBtn">+ New opp</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" id="briefBtn">Daily brief</button><button class="btn primary" id="newBtn">+ New opp</button></div>
       </div>
 
       <h2 class="lb">Pipeline</h2>
@@ -433,7 +443,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </section>
 
     <section id="view-accounts" hidden>
-      <div class="head"><div><h1>Accounts</h1><div class="sub">Every organization in The Voyage. Click one to open it.</div></div><button class="btn primary" id="acNew">+ New account</button></div>
+      <div class="head"><div><h1>Accounts</h1><div class="sub">Every organization in The Voyage. Click one to open it.</div></div><div style="display:flex;gap:8px"><button class="btn" id="acImport">Import</button><button class="btn primary" id="acNew">+ New account</button></div><input type="file" id="acFile" accept=".csv,text/csv" hidden></div>
       <div class="bhead">
         <input id="acSearch" type="search" placeholder="Find an account or city" aria-label="Find an account or city">
         <select id="acStage" aria-label="Stage"><option value="">All stages</option></select>
@@ -441,6 +451,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
         <select id="acEmp" aria-label="Number of employees"><option value="">Any size</option></select>
         <select id="acAct" aria-label="Active students"><option value="">Any active students</option></select>
         <select id="acOwner" aria-label="Owner"><option value="">Everyone's accounts</option></select>
+        <select id="acSrc" aria-label="Lead source"><option value="">Any lead source</option></select>
         <select id="acSort" aria-label="Sort by"><option value="name">Sort by name</option><option value="rank">Sort by rank</option><option value="city">Sort by city</option><option value="stage">Sort by stage</option></select>
       </div>
       <div class="cnt" id="acCount"></div>
@@ -466,6 +477,11 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <div class="usec"><h2>Settings</h2><div class="hint">Saved on this device.</div>
         <div class="tbl"><div class="ubar pset"><span class="nm">Appearance</span><select id="pTheme" aria-label="Appearance"><option value="">Match this device</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
       </div>
+      <div class="usec"><h2>Calendar</h2><div class="hint">Subscribe once in Google Calendar, Outlook, or Apple Calendar and your Voyage appointments show up there automatically. The link is private: anyone who has it can see your appointment times and account names.</div>
+        <div class="tbl"><div class="ubar pset"><span class="nm">Calendar link</span><span class="city" id="calStatus">Checking…</span></div></div>
+        <div id="calNew" hidden style="margin-top:10px"><div class="city" style="margin-bottom:6px">Copy this link now. For your security it won't be shown again.</div><input id="calUrl" readonly style="width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text)"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="calMake">Create calendar link</button><button class="btn" id="calCopy" hidden>Copy link</button><button class="btn danger" id="calOff" hidden>Turn off link</button></div>
+      </div>
       <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only Quan and Cody see this.</div>
         <button class="btn primary" id="pAdmin">Open admin dashboard</button>
       </div>
@@ -479,7 +495,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <button class="back" id="adBack">‹ Back to Profile</button>
       <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
       <div class="ntabs" id="adTabs" role="tablist">
-        <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="system">System</button>
+        <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="audit">Audit log</button><button data-t="system">System</button>
       </div>
       <div id="adOverview"></div>
       <div id="adUsage" hidden>
@@ -492,6 +508,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div id="adSecurity" hidden></div>
       <div id="adHealth" hidden></div>
+      <div id="adAudit" hidden></div>
       <div id="adSystem" hidden></div>
     </section>
 
@@ -630,6 +647,10 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <label>Active students<select id="fAct"></select></label>
       <label>Inactive students<select id="fInact"></select></label>
     </div>
+    <div class="grid2">
+      <label>Lead source<select id="fSrc"></select></label>
+      <label>Source details<input id="fSrcNote" autocomplete="off" maxlength="200" placeholder="Referred by Jordan Lee"></label>
+    </div>
     <label>Bio<textarea id="fBio" placeholder="Who they are, what they offer, and their mission"></textarea></label>
     <label>Notes<textarea id="fNotes"></textarea></label>
     <div class="acts">
@@ -700,7 +721,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <label>Notes<textarea id="tNotes"></textarea></label>
     <label class="chk"><input type="checkbox" id="tDone"><span id="tDoneLbl">Done</span></label>
     <div class="acts">
-      <div><button class="btn danger" id="tDel">Delete</button><button class="btn" id="tNotesBtn">Meeting notes ›</button></div>
+      <div><button class="btn danger" id="tDel">Delete</button><button class="btn" id="tNotesBtn">Meeting notes ›</button><button class="btn" id="tIcs">Add to calendar</button></div>
       <div><button class="btn" id="tCancel">Cancel</button><button class="btn primary" id="tSave">Save</button></div>
     </div>
   </div>
@@ -875,9 +896,12 @@ function openDlg(o,preset){
   $("fRank").value=o?.rank??"";$("fOwner").value=o?.owner||me;
   $("fNext").value=o?.next?.label||"";$("fDate").value=o?.next?.date||"";$("fTime").value=o?.next?.time||"";
   $("fNotes").value=o?.notes||"";$("fBio").value=o?.bio||"";$("fVer").value=o?.verification||"";$("fEmp").value=o?.employees||"";$("fAct").value=o?.activeStudents||"";$("fInact").value=o?.inactiveStudents||"";$("fWeb").value=o?.website||"";$("fAddr").value=o?.address||"";$("fAddr2").value=o?.address2||"";$("fState").value=o?o.state||"":"IL";$("fZip").value=o?.zip||"";$("fLi").value=o?.linkedin||"";
+  fillSources($("fSrc"),"Not set");$("fSrc").value=o?.source||"";$("fSrcNote").value=o?.sourceNote||"";
   $("delBtn").hidden=!o;
   $("dlg").showModal();$("fName").focus();
 }
+const LEAD_SOURCES=["Referral","Cold call","Walk-in","Event","Website or inbound","Social media","Partner","Existing customer","Other"];
+function fillSources(sel,blank){if(sel.options.length)return;sel.append(new Option(blank,""));LEAD_SOURCES.forEach(s=>sel.append(new Option(s)))}
 function normUrl(v){v=(v||"").trim();if(!v)return"";return /^https?:\/\//i.test(v)?v:"https://"+v}
 function readForm(){
   const name=$("fName").value.trim();
@@ -886,7 +910,7 @@ function readForm(){
   const label=$("fNext").value.trim();
   return {name,city:$("fCity").value.trim(),stage:pickStage,rank,owner:$("fOwner").value,
     next:label?{label,date:$("fDate").value||"",time:$("fTime").value.trim()}:null,
-    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
+    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
 }
 function fmtDate(d){if(!d)return"No date";const t=today();if(d===t)return"Today";const x=new Date(d+"T00:00");return x.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}
 function renderItems(){
@@ -933,7 +957,7 @@ function openT(kind,i,presetOpp,preset){
   $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
   $("tDoneLbl").textContent=kind==="task"?"Done":"Completed";
-  $("tDel").hidden=!i;$("tNotesBtn").hidden=!(i&&kind==="appt"&&i.oppId);$("tdlg").showModal();
+  $("tDel").hidden=!i;$("tNotesBtn").hidden=!(i&&kind==="appt"&&i.oppId);$("tIcs").hidden=!(i&&kind==="appt"&&i.date);$("tdlg").showModal();
 }
 async function toggleDone(i,done){
   const upd={done,doneTs:done?Date.now():null};
@@ -1095,14 +1119,15 @@ const SIZE_LINE=o=>[o.employees?EMP_LABEL(o.employees):"",o.activeStudents?RLABE
 const VER={owner_confirmed:"Owner confirmed",google_verified:"Google verified",needs_review:"Needs review"};
 function renderAccounts(){
   const es=$("acEmp");if(es.options.length===1)EMP.forEach(([v,l])=>es.append(new Option(l+" employees",v)));
+  const sr=$("acSrc");if(sr.options.length===1){LEAD_SOURCES.forEach(s=>sr.append(new Option(s)));sr.append(new Option("Not set","_none"))}
   const as=$("acAct");if(as.options.length===1)ACT.forEach(([v,l])=>as.append(new Option(l+" active students",v)));
   if(view!=="accounts")return;
   const st=$("acStage");if(st.options.length===1){st.append(new Option("Past Prospecting (all)","past"));STAGES.forEach((x,i)=>st.append(new Option(x,String(i))))}
   if(acctStage!==null){st.value=acctStage;acctStage=null}
   const ow=$("acOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's accounts",""));editors().forEach(m=>ow.append(new Option(m.name+"'s accounts",m.id)));ow.value=v}
-  const ev=$("acEmp").value,av=$("acAct").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
+  const ev=$("acEmp").value,av=$("acAct").value,srcv=$("acSrc").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
   const cmp={name:(a,b)=>a.name.localeCompare(b.name),rank:(a,b)=>(b.rank??-1)-(a.rank??-1)||a.name.localeCompare(b.name),city:(a,b)=>(a.city||"").localeCompare(b.city||"")||a.name.localeCompare(b.name),stage:(a,b)=>b.stage-a.stage||a.name.localeCompare(b.name)}[so];
-  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
+  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!srcv||(srcv==="_none"?!o.source:o.source===srcv))&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
   $("acCount").textContent=list.length===opps.length?`${opps.length} accounts`:`Showing ${list.length} of ${opps.length} accounts`;
   const w=$("acList");w.replaceChildren();
   const hd=el("div","row hd");["Organization","City","Stage","Website","Rank",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
@@ -1116,7 +1141,7 @@ function renderAccounts(){
   });
 }
 ["acSearch"].forEach(id=>$(id).oninput=renderAccounts);
-["acStage","acVer","acEmp","acAct","acOwner","acSort"].forEach(id=>$(id).onchange=renderAccounts);
+["acStage","acVer","acEmp","acAct","acOwner","acSrc","acSort"].forEach(id=>$(id).onchange=renderAccounts);
 $("acNew").onclick=()=>openDlg(null);
 function emptyRow(text){const e=el("div","empty",text);e.style.border="0";return e}
 function addrLines(a){
@@ -1576,7 +1601,7 @@ function renderUsage(){
 $("uDays").onchange=loadUsage;$("uWho").onchange=renderUsage;$("uRefresh").onclick=loadAdmin;
 
 let admin=null,adTab="overview",adminErr="";
-const AD_PANELS={overview:"adOverview",usage:"adUsage",security:"adSecurity",health:"adHealth",system:"adSystem"};
+const AD_PANELS={overview:"adOverview",usage:"adUsage",security:"adSecurity",health:"adHealth",audit:"adAudit",system:"adSystem"};
 $("adTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;adTab=t;renderAdmin();track("action","Opened Admin "+t)};
 async function loadAdmin(){
   adminErr="";renderAdmin();
@@ -1608,6 +1633,11 @@ function healthChecks(){
 function renderHealth(){
   const w=$("adHealth");w.replaceChildren();const checks=healthChecks();
   w.append(adTiles([[opps.length,"accounts"],[items.filter(i=>!i.done).length,"open tasks and appointments"],[checks[0].list.length+checks[1].list.length,"overdue"],[checks[2].list.length,"untouched 30+ days"]]));
+  const src=usageSection("Where accounts come from","Lead source for each account, and how many moved past Prospecting. Set it in each account's Edit form.");
+  const groups=[...LEAD_SOURCES,""].map(s=>{const list=opps.filter(o=>(o.source||"")===s);return [s||"Not set",list.length,list.filter(o=>o.stage>=1).length]}).filter(g=>g[1]).sort((a,b)=>b[1]-a[1]);
+  const smax=Math.max(1,...groups.map(g=>g[1])),st=el("div","tbl");
+  groups.forEach(([label,n,adv])=>{const r=el("div","ubar"+(label==="Not set"?" zero":""));const tr=el("div","track"),f=el("div","fill");f.style.width=Math.max(2,n/smax*100)+"%";tr.append(f);r.append(el("span",null,label),tr,el("small",null,`${n}, ${Math.round(adv/n*100)}% advanced`));st.append(r)});
+  src.append(groups.length?st:el("div","empty","No accounts yet."));w.append(src);
   checks.forEach(c=>{
     const s=usageSection(c.title+` (${c.list.length})`,c.hint);
     if(!c.list.length){s.append(el("div","empty","All clear."));w.append(s);return}
@@ -1661,8 +1691,125 @@ function renderSystem(){
   const s=usageSection("What's stored","Everything lives in TideLine's Cloudflare D1 database.");
   s.append(adTable("ytbl",["Kind","Records","Size","Last changed"],admin.storage.map(x=>{const r=el("div","row");r.append(el("span","nm",COLLECTION_NAMES[x.collection]||x.collection),cell(x.records.toLocaleString()),cell(((x.bytes||0)/1024).toFixed(1)+" KB"),cell(x.updated?fmtDay(x.updated):"–"));return r})));
   w.append(s);
+  const ex=usageSection("Export","Download spreadsheets (CSV) for backup or analysis. They open in Excel or Google Sheets. Handle them like customer data.");
+  const eb=el("div");eb.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  Object.keys(EXPORTS).forEach(k=>{const b=el("button","btn",k);b.onclick=()=>exportCsv(k);eb.append(b)});
+  ex.append(eb);w.append(ex);
   if(admin.usageEvents==null){const n=usageSection("Usage tracking is off","Apply migration 0004_usage_events.sql to start recording usage.");w.append(n)}
 }
+
+// CSV export. Cells that start like a formula are prefixed so spreadsheets show them as text.
+function csvCell(v){let s=v==null?"":String(v);if(/^[=+\-@\t\r]/.test(s))s="'"+s;return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+function downloadCsv(name,rows){
+  const text="﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+const EXPORTS={
+  "Accounts":()=>[["Organization","Stage","City","State","ZIP","Address","Website","Owner","Rank","Lead source","Source details","Next step","Next step date","Last touched","Notes"],...opps.map(o=>[o.name,STAGES[o.stage],o.city,o.state,o.zip,[o.address,o.address2].filter(Boolean).join(", "),o.website,nameOf(o.owner||"CK"),o.rank??"",o.source,o.sourceNote,o.next?.label,o.next?.date,o.lastTouch,o.notes])],
+  "Tasks and appointments":()=>[["Kind","Type","Account","Date","Time","Owner","Done","Notes"],...items.map(i=>[i.kind==="appt"?"Appointment":"Task",i.type,i.oppName,i.date,i.time,nameOf(i.owner||"CK"),i.done?"Yes":"No",i.notes])],
+  "Meeting notes":()=>[["Account","Meeting type","Date","Written by","Notes"],...notes.map(n=>[n.oppName,n.type,n.date,nameOf(n.by),n.text])],
+  "Vendors":()=>[["Name","Company","What they do","Email","Phone","Website","Related account","Notes"],...vendors.map(v=>[v.name,v.company,v.kind,v.email,v.phone,v.website,opps.find(o=>o.id===v.oppId)?.name||"",v.notes])],
+  "Activity log":()=>[["When","Who","What"],...acts.map(a=>[new Date(a.ts).toLocaleString(),nameOf(a.by),a.text])],
+};
+function exportCsv(kind){downloadCsv(`voyage-${kind.toLowerCase().replace(/\s+/g,"-")}-${today()}.csv`,EXPORTS[kind]());track("action","Exported "+kind.toLowerCase())}
+
+// CSV import for accounts: maps common column names, skips blanks and names that already exist.
+function parseCsv(text){
+  const rows=[];let row=[],cur="",q=false;text=text.replace(/^﻿/,"");
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(cur);cur=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cur);rows.push(row);row=[];cur=""}else cur+=c}
+  if(cur||row.length){row.push(cur);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()));
+}
+const IMPORT_COLS={name:["organization","name","account","company","business"],city:["city","town"],state:["state"],zip:["zip","zip code","postal code"],address:["address","street","street address"],website:["website","url","web"],stage:["stage"],owner:["owner","rep"],rank:["rank","score"],source:["lead source","source"],sourceNote:["source details","referred by"],notes:["notes","note","comments"]};
+async function importAccounts(file){
+  const rows=parseCsv(await file.text());
+  if(rows.length<2){toast("That file has no rows to import");return}
+  const head=rows[0].map(h=>h.trim().toLowerCase()),col={};
+  Object.entries(IMPORT_COLS).forEach(([k,names])=>{const i=head.findIndex(h=>names.includes(h));if(i>=0)col[k]=i});
+  if(col.name==null){alert("Couldn't find a name column. The first row needs a header such as \"Organization\" or \"Name\".");return}
+  const norm=s=>(s||"").toLowerCase().replace(/[^a-z0-9]/g,""),seen=new Set(opps.map(o=>norm(o.name)));
+  const get=(r,k)=>col[k]==null?"":(r[col[k]]||"").trim();
+  const add=[];let dupes=0;
+  rows.slice(1,1001).forEach(r=>{const name=get(r,"name");if(!name)return;if(seen.has(norm(name))){dupes++;return}seen.add(norm(name));
+    const st=STAGES.findIndex(s=>s.toLowerCase()===get(r,"stage").toLowerCase());
+    const ow=team.find(m=>m.role==="edit"&&[m.id.toLowerCase(),m.name.toLowerCase()].includes(get(r,"owner").toLowerCase()));
+    const srcRaw=get(r,"source"),src=LEAD_SOURCES.find(s=>s.toLowerCase()===srcRaw.toLowerCase());
+    const rank=Number(get(r,"rank"));
+    add.push({name,city:get(r,"city"),state:get(r,"state").toUpperCase().slice(0,2),zip:get(r,"zip"),address:get(r,"address"),address2:"",website:normUrl(get(r,"website")),stage:st<0?0:st,owner:ow?ow.id:me,rank:get(r,"rank")!==""&&Number.isFinite(rank)?Math.max(0,Math.min(100,rank)):null,
+      source:src||(srcRaw?"Other":""),sourceNote:src?get(r,"sourceNote"):[srcRaw,get(r,"sourceNote")].filter(Boolean).join(": "),notes:get(r,"notes"),next:null,verification:"",employees:"",activeStudents:"",inactiveStudents:"",needs:"",bio:"",linkedin:"",locations:[]})});
+  if(!add.length){toast(dupes?`All ${dupes} accounts already exist`:"No accounts found in that file");return}
+  const mapped=Object.keys(col).map(k=>({name:"name",city:"city",state:"state",zip:"ZIP",address:"address",website:"website",stage:"stage",owner:"owner",rank:"rank",source:"lead source",sourceNote:"source details",notes:"notes"}[k])).join(", ");
+  if(!confirm(`Import ${add.length} new account${add.length===1?"":"s"}?${dupes?`\n${dupes} already in The Voyage will be skipped.`:""}${rows.length>1001?"\nOnly the first 1,000 rows are imported.":""}\n\nColumns used: ${mapped}.`))return;
+  if(!live){add.forEach((o,i)=>opps.push({id:"imp"+Date.now()+i,...o}));render();toast("Imported for this session only");return}
+  let done=0;
+  for(const o of add){try{await db.collection("opps").add(o);done++;if(done%10===0)toast(`Imported ${done} of ${add.length}…`)}catch(_){}}
+  logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
+  toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
+}
+// Audit log: written by the server on every change, sign-in, and sign-out.
+let auditRows=null,auditDays="30",auditWho="",auditWhat="";
+const AUDIT_KINDS={opps:"Account",activities:"Task or appointment",activity:"Activity log",notes:"Meeting note",channels:"Chat",messages:"Chat message",vendors:"Vendor",profiles:"Profile",members:"Member"};
+async function loadAudit(){
+  const w=$("adAudit");w.replaceChildren(el("div","empty","Loading…"));
+  try{const r=await fetch("/api/admin/audit?days="+auditDays,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);auditRows=j.entries;renderAudit()}
+  catch(e){w.replaceChildren(el("div","empty",e.message||"The audit log could not load."))}
+}
+function renderAudit(){
+  const w=$("adAudit");w.replaceChildren();
+  w.append(el("div","hint",null));w.lastChild.style.cssText="color:var(--muted);font-size:13px;margin-bottom:10px";w.lastChild.textContent="Every change to CRM records, plus sign-ins and sign-outs, recorded by the server. Kept for a year. Chat text is never recorded.";
+  const bar=el("div","bhead");
+  const mk=(opts,val,on)=>{const s=document.createElement("select");opts.forEach(([v,l])=>s.append(new Option(l,v)));s.value=val;s.onchange=()=>on(s.value);bar.append(s);return s};
+  mk([["7","Last 7 days"],["30","Last 30 days"],["90","Last 90 days"],["365","Last year"]],auditDays,v=>{auditDays=v;loadAudit()});
+  mk([["","Everyone"],...team.map(m=>[m.id,m.name])],auditWho,v=>{auditWho=v;renderAudit()});
+  mk([["","All changes"],["Deleted","Deletions only"],["Signed","Sign-ins and sign-outs"]],auditWhat,v=>{auditWhat=v;renderAudit()});
+  w.append(bar);
+  const rows=(auditRows||[]).filter(e=>(!auditWho||e.who===auditWho)&&(!auditWhat||e.action.startsWith(auditWhat)));
+  if(!rows.length){w.append(el("div","empty","No entries for these filters."));return}
+  w.append(adTable("ulog",["When","Who","What","Record"],rows.slice(0,500).map(e=>{const r=el("div","row");const d=new Date(e.ts);
+    r.append(cell(d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+", "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})),el("span",null,nameOf(e.who)),el("span",e.action==="Deleted"?"warnx":null,[e.action,AUDIT_KINDS[e.collection]?.toLowerCase()].filter(Boolean).join(" ")),cell(e.label||"–"));return r})));
+  if(rows.length>500)w.append(el("div","empty",`Showing the latest 500 of ${rows.length}.`));
+}
+
+// Calendar: one appointment as a downloadable .ics file, and a private subscription link per member.
+function apptTime(text){
+  const m=String(text||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?m?\.?$/i);if(!m)return null;
+  let h=Number(m[1]);const mi=Number(m[2]||0),ap=(m[3]||"").toLowerCase();if(h>23||mi>59)return null;
+  if(ap==="p"&&h<12)h+=12;if(ap==="a"&&h===12)h=0;if(!ap&&h>=1&&h<8)h+=12;return [h,mi];
+}
+function downloadIcs(i){
+  const pad=n=>String(n).padStart(2,"0"),d=i.date.replace(/-/g,""),t=apptTime(i.time),esc=s=>String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+  const next=x=>{const y=new Date(i.date+"T00:00");y.setDate(y.getDate()+x);return iso(y).replace(/-/g,"")};
+  const when=t?[`DTSTART:${d}T${pad(t[0])}${pad(t[1])}00`,`DTEND:${t[0]===23?next(1):d}T${pad((t[0]+1)%24)}${pad(t[1])}00`]:[`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${next(1)}`];
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//TideLine Strategies//The Voyage//EN","BEGIN:VEVENT",`UID:${i.id}@the-voyage`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z")}`,...when,`SUMMARY:${esc(i.type+(i.oppName?" with "+i.oppName:""))}`,`DESCRIPTION:${esc(i.notes||"From The Voyage")}`,"END:VEVENT","END:VCALENDAR",""].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download=(i.oppName||"appointment").replace(/[^\w -]/g,"")+".ics";document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  track("action","Added an appointment to a calendar");
+}
+$("tIcs").onclick=()=>{if(tEdit)downloadIcs(tEdit)};
+async function loadCalendar(){
+  try{const r=await fetch("/api/me/calendar",{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);showCalendar(j.enabled,j.created_at)}
+  catch(e){$("calStatus").textContent=e.message||"Unavailable";$("calMake").hidden=true}
+}
+function showCalendar(on,since){
+  $("calStatus").textContent=on?"On, created "+fmtDay(since):"Off";$("calMake").hidden=false;
+  $("calMake").textContent=on?"Make a new link":"Create calendar link";$("calOff").hidden=!on;
+}
+$("calMake").onclick=async()=>{
+  if($("calOff").hidden===false&&!confirm("Make a new link? Your old link stops working, so update any calendar that uses it."))return;
+  try{const r=await fetch("/api/me/calendar",{method:"POST",credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.error);
+    $("calUrl").value=j.url;$("calNew").hidden=false;$("calCopy").hidden=false;showCalendar(true,Date.now());$("calUrl").select();track("action","Created a calendar link")}
+  catch(e){toast(e.message||"That didn't work. Try again.")}
+};
+$("calCopy").onclick=async()=>{try{await navigator.clipboard.writeText($("calUrl").value);toast("Link copied. Paste it into your calendar's “subscribe from URL” option.")}catch(_){$("calUrl").select();toast("Select the link and copy it")}};
+$("calOff").onclick=async()=>{
+  if(!confirm("Turn off your calendar link? Calendars using it will stop updating."))return;
+  try{const r=await fetch("/api/me/calendar",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error();$("calNew").hidden=true;$("calCopy").hidden=true;showCalendar(false);toast("Calendar link turned off")}
+  catch(_){toast("That didn't work. Try again.")}
+};
+
+$("acImport").onclick=()=>{$("acFile").value="";$("acFile").click()};
+$("acFile").onchange=()=>{const f=$("acFile").files[0];if(f)importAccounts(f)};
 function renderOverview(){
   const w=$("adOverview");w.replaceChildren();
   const checks=healthChecks(),attention=[];
@@ -1731,6 +1878,44 @@ function openProfileEdit(){
   $("pdlg").showModal();setTimeout(()=>$("peTitle").focus(),30);
 }
 $("pEdit").onclick=openProfileEdit;
+
+// Search everything already loaded in the app. Results only include what this member can see.
+function searchAll(q){
+  q=q.trim().toLowerCase();if(q.length<2)return[];
+  const words=q.split(/\s+/),hit=(...f)=>{const s=f.filter(Boolean).join(" ").toLowerCase();return words.every(w=>s.includes(w))};
+  const snip=text=>{text=String(text||"");const i=text.toLowerCase().indexOf(words[0]);return i<0?text.slice(0,80):(i>30?"…":"")+text.slice(Math.max(0,i-30),i+60)};
+  const groups=[
+    ["Accounts",opps.filter(o=>hit(o.name,o.city,o.notes,o.bio,o.sourceNote,(o.locations||[]).map(l=>[l.label,l.city,l.contact,l.notes].join(" ")).join(" "))).map(o=>({t:o.name,s:[o.city,STAGES[o.stage]].filter(Boolean).join(" · "),go:()=>openAccount(o.id,"accounts")}))],
+    ["Tasks and appointments",items.filter(i=>hit(i.type,i.oppName,i.notes)).map(i=>({t:i.type+(i.oppName?" with "+i.oppName:""),s:fmtDate(i.date)+(i.done?" · done":""),go:()=>openT(i.kind,i)}))],
+    ["Meeting notes",notes.filter(n=>hit(n.oppName,n.type,n.text)).map(n=>({t:n.type+" notes: "+(n.oppName||""),s:snip(n.text),go:()=>openNotes(n.oppId,n.type)}))],
+    ...(guest?[]:[["Vendors",vendors.filter(v=>hit(v.name,v.company,v.kind,v.email,v.phone,v.notes)).map(v=>({t:v.name+(v.company?" · "+v.company:""),s:v.kind||"",go:()=>{go("vendors");openV(v)}}))]]),
+    ["Team chat",msgs.filter(m=>hit(m.text)).map(m=>({t:nameOf(m.by)+" in "+chName(m.ch),s:snip(m.text),go:()=>{tcCh=m.ch;go("team")}}))],
+    ["People",team.filter(m=>{const p=profOf(m.id);return hit(m.name,p.title,p.location,p.focus,p.bio)}).map(m=>({t:m.name,s:profOf(m.id).title||(m.role==="guest"?"Guest":"Editor"),go:()=>go("profile")}))],
+  ];
+  return groups.filter(g=>g[1].length).map(([h,list])=>[h,list.slice(0,6),list.length]);
+}
+let gSel=0,gFlat=[];
+function renderSearch(){
+  const box=$("gRes"),q=$("gSearch").value;box.replaceChildren();gFlat=[];
+  if(q.trim().length<2){box.hidden=true;return}
+  const res=searchAll(q);box.hidden=false;
+  if(!res.length){box.append(el("div","none","Nothing matches “"+q.trim()+"”."));return}
+  res.forEach(([h,list,total])=>{box.append(el("div","gh",h+(total>list.length?` (${list.length} of ${total})`:"")));list.forEach(r=>{const b=el("button",null,r.t);b.type="button";b.setAttribute("role","option");if(r.s)b.append(el("small",null,r.s));b.onmousedown=e=>e.preventDefault();b.onclick=()=>pickSearch(r);gFlat.push([b,r]);box.append(b)})});
+  gSel=0;markSearch();
+}
+function markSearch(){gFlat.forEach(([b],i)=>b.classList.toggle("sel",i===gSel));gFlat[gSel]?.[0].scrollIntoView({block:"nearest"})}
+function pickSearch(r){$("gSearch").value="";$("gRes").hidden=true;$("gSearch").blur();r.go();track("action","Used search")}
+$("gSearch").oninput=renderSearch;
+$("gSearch").onfocus=renderSearch;
+$("gSearch").onblur=()=>setTimeout(()=>{$("gRes").hidden=true},150);
+$("gSearch").onkeydown=e=>{
+  if(e.key==="ArrowDown"&&gFlat.length){e.preventDefault();gSel=(gSel+1)%gFlat.length;markSearch()}
+  else if(e.key==="ArrowUp"&&gFlat.length){e.preventDefault();gSel=(gSel-1+gFlat.length)%gFlat.length;markSearch()}
+  else if(e.key==="Enter"&&gFlat[gSel]){e.preventDefault();pickSearch(gFlat[gSel][1])}
+  else if(e.key==="Escape"){$("gSearch").value="";$("gRes").hidden=true;$("gSearch").blur()}
+};
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||"")&&!document.querySelector("dialog[open]")){e.preventDefault();$("gSearch").focus()}});
+$("briefBtn").onclick=()=>{openChat("Give me my daily brief for today: what is due or overdue for me, which of my accounts need a touch and why, and the three most important things I should do today, in order.");track("action","Asked for a daily brief")};
 $("peCancel").onclick=()=>$("pdlg").close();
 $("peSave").onclick=async()=>{
   const data={title:$("peTitle").value.trim(),phone:$("pePhone").value.trim(),location:$("peLoc").value.trim(),timezone:$("peTz").value,hours:$("peHours").value.trim(),contact:$("peContact").value,linkedin:normUrl($("peLi").value),focus:$("peFocus").value.trim(),bio:$("peBio").value.trim()};
@@ -1739,7 +1924,7 @@ $("peSave").onclick=async()=>{
   await write(()=>db.doc("profiles/"+me).set(data),"Profile saved");
 };
 async function loadProfile(){
-  renderProfile();
+  renderProfile();loadCalendar();
   try{const r=await fetch("/api/me/profile",{credentials:"same-origin",cache:"no-store"});if(!r.ok)throw Error();profile=await r.json()}catch(_){profile=null}
   renderProfile();
 }
@@ -1773,7 +1958,7 @@ $("pSignOut").onclick=()=>profileSignOut(false);
 function renderAdmin(){
   [...$("adTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===adTab));
   Object.entries(AD_PANELS).forEach(([t,id])=>$(id).hidden=t!==adTab);
-  if(adTab==="overview")renderOverview();else if(adTab==="security")renderSecurity();else if(adTab==="health")renderHealth();else if(adTab==="system")renderSystem();
+  if(adTab==="overview")renderOverview();else if(adTab==="security")renderSecurity();else if(adTab==="health")renderHealth();else if(adTab==="system")renderSystem();else if(adTab==="audit")loadAudit();
 }
 const SOON={
   cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
