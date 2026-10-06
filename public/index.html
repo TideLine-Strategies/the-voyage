@@ -318,8 +318,160 @@ textarea{min-height:70px;resize:vertical}
 }
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
+.view-badge[hidden]{display:none}
+/* Deals */
+.nav[data-view="deals"]{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#dsTabs span{display:inline-block;min-width:18px;margin-left:6px;font-size:11px;background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-weight:600}#dsTabs span[hidden]{display:none}
+.dlgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.dlsec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.dlsec h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.dlsec h2 span{width:22px;height:22px;border-radius:50%;background:var(--red-bg);color:var(--red-soft);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.dlsec.locked{opacity:.85}.dlsec.locked :is(input,select,textarea,button.lx){pointer-events:none}
+.dlsec .grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dllines .row{grid-template-columns:minmax(0,1.6fr) 7rem 4.5rem 6.5rem 4.5rem 6rem 28px;cursor:default;align-items:center}
+.dllines .row:hover{background:none}
+.dllines input,.dllines select{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:7px;padding:6px 7px;font-size:13px;color:var(--text);margin:0}
+.dllines .amt{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.dllines .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
+.dllines .list{font-size:11px;color:var(--muted)}
+.dladd{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.dladd select{background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text);min-width:220px}
+.dlside{position:sticky;top:20px}
+.dlsum{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.dlsum .k{font-size:12px;color:var(--muted)}.dlsum .big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;margin:2px 0 12px}
+.dlnums{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.dlnums span{display:block;font-size:12px;color:var(--muted)}.dlnums b{font-variant-numeric:tabular-nums}
+.dlflag{font-size:13px;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.dlflag.warn{background:color-mix(in srgb,var(--amber) 15%,transparent)}.dlflag.ok{background:var(--green-bg);color:var(--green)}.dlflag.bad{background:var(--red-bg)}
+.dlflag ul{margin:4px 0 0;padding-left:18px}
+.dlunsaved{font-size:13px;color:var(--amber);font-weight:600}.dlunsaved[hidden]{display:none}
+.dlacts{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dlacts .btn{width:100%}
+#dlNote{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text);margin:4px 0 8px}
+.spill{font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--card);color:var(--muted);border:1px solid var(--line-2)}
+.spill.pending,.spill.changes{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);border-color:transparent}
+.spill.approved{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue);border-color:transparent}
+.spill.won{background:var(--green-bg);color:var(--green);border-color:transparent}.spill.lost{background:var(--red-bg);color:var(--red);border-color:transparent}
+.dtbl .row{grid-template-columns:minmax(0,1.7fr) 8rem 6rem 7rem 7rem 2.5rem}
+.dtbl .money,.ftbl .money{text-align:right;font-variant-numeric:tabular-nums}
+.dhist{font-size:13px;border-left:2px solid var(--line-2);padding:2px 0 10px 12px;position:relative}
+.dhist::before{content:"";position:absolute;left:-5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.dhist small{color:var(--muted)}.dhist div{white-space:pre-wrap;margin-top:2px}
+.ctbl .row{grid-template-columns:minmax(0,1.4fr) 8rem 7rem minmax(0,1.6fr) 5rem 4.5rem;cursor:default}.ctbl .row:hover{background:none}
+.ctbl input,.ctbl select{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:7px;padding:6px 7px;font-size:13px;color:var(--text);margin:0}
+.fbars{display:flex;align-items:end;gap:10px;height:160px;padding:14px 16px 0}
+.fbars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:4px;font-size:11px;color:var(--muted);min-width:0}
+.fbars i{display:block;width:100%;max-width:46px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px}
+.fbars b{font-size:11px;color:var(--text);font-weight:600;white-space:nowrap}
+@media (max-width:980px){.dlgrid{grid-template-columns:1fr}.dlside{position:static}}
+@media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:minmax(0,1fr) 5rem 28px}.dllines .row>:nth-child(n+2):not(:nth-child(6)):not(:last-child){display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
+.pphead{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+.ppres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.ppres>div{background:var(--card);border-radius:10px;padding:10px 12px}.ppres span{display:block;font-size:12px;color:var(--muted)}.ppres b{font-size:18px;font-variant-numeric:tabular-nums}
+.ppres .good b{color:var(--green)}.ppres .bad b{color:var(--red)}.ppres .wide{grid-column:1/-1;font-size:13px}
+.dlproc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-2px 0 12px;padding-top:10px;border-top:1px solid var(--line)}.dlproc span{display:block;font-size:12px;color:var(--muted)}.dlproc b{font-variant-numeric:tabular-nums;color:var(--green)}
+.dlproc[hidden]{display:none}
+@media (max-width:860px){.ppres{grid-template-columns:1fr 1fr}}
+.docbox{border:1px dashed var(--line-2);border-radius:10px;padding:12px;margin:0 0 14px}.docbox.over{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.docrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.docrow:last-child{border-bottom:0}.docrow a{color:var(--blue);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.docrow .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
+.docdrop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.docdrop select{background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--text)}
+#dcReq{font-weight:600;text-transform:none;letter-spacing:0;margin-left:6px}#dcReq.ok{color:var(--green)}#dcReq.no{color:var(--red)}
+/* Calendar */
+.cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
+.cxseg{display:flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.cxseg button{background:var(--panel);border:0;padding:7px 14px;font-size:14px;color:var(--muted)}.cxseg button.on{background:var(--red-bg);color:var(--text);font-weight:600}
+.cxfilters{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:12px;font-size:13px}
+.cxfilters select{background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:6px 8px;font-size:13px;color:var(--text)}
+.cxk{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--text);white-space:nowrap;cursor:pointer}
+.cxk input{display:inline-block;width:auto;margin:0;padding:0;accent-color:var(--c)}
+.cxk::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.cx-appt{--c:var(--green)}.cx-task{--c:var(--violet)}.cx-next{--c:var(--blue)}.cx-ext{--c:var(--muted)}
+.cxmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cxdow{font-size:12px;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);text-align:center}
+.cxday{min-height:112px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:0;cursor:pointer}
+.cxday:nth-child(7n+1){border-left:0}.cxday.out{background:var(--bg);opacity:.75}.cxday.over{outline:2px dashed var(--blue);outline-offset:-3px}
+.cxnum{font-size:12px;color:var(--muted);align-self:flex-start;border:0;background:none;padding:2px 6px;border-radius:999px}
+.cxday.today .cxnum{background:var(--red);color:#fff;font-weight:600}
+.ev{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--text);border-radius:5px;padding:2px 6px;font-size:12px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.ev.cx-ext{border-left-style:dashed;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted)}
+.ev.done{opacity:.55;text-decoration:line-through}.ev.late{box-shadow:inset 0 0 0 1px var(--red)}.ev.clash::after{content:" ⚠"}
+.ev[draggable=true]{cursor:grab}.ev b{font-weight:600}
+.cxmore{font-size:12px;color:var(--muted);background:none;border:0;text-align:left;padding:0 6px}
+.cxweek{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cxwh,.cxwa,.cxwg{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr))}
+.cxwh div{font-size:12px;color:var(--muted);padding:8px 4px;text-align:center;border-left:1px solid var(--line)}.cxwh div.today{color:var(--red);font-weight:600}
+.cxwa{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.cxwa>div{border-left:1px solid var(--line);padding:3px;display:flex;flex-direction:column;gap:2px;min-height:28px;min-width:0}
+.cxwa>div:first-child,.cxwh div:first-child{border-left:0;font-size:11px;color:var(--muted);padding:6px 4px}
+.cxwg{position:relative;max-height:620px;overflow-y:auto}
+.cxhrs div{height:48px;font-size:11px;color:var(--muted);text-align:right;padding-right:6px;transform:translateY(-6px)}
+.cxcol{position:relative;border-left:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0 47px,var(--line) 47px 48px);cursor:pointer}
+.cxcol .ev{position:absolute;white-space:normal;padding:3px 5px}
+.cxnow{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:2}
+.cxag .cxagd{font-size:13px;font-weight:600;padding:14px 2px 6px;color:var(--muted)}.cxag .cxagd.today{color:var(--red)}
+.cxag .ev{white-space:normal;font-size:14px;padding:8px 10px;margin-bottom:4px;display:grid;grid-template-columns:5.5rem minmax(0,1fr);gap:10px}
+.cxag .ev small{display:block;color:var(--muted);font-size:12px}
+.xhelp{font-size:13px;border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:6px}.xhelp summary{cursor:pointer;font-weight:600}.xhelp ol{margin:6px 0 2px;padding-left:20px}
+@media (max-width:860px){.cxday{min-height:64px}.cxday .ev{font-size:0;padding:0;height:6px;border-left-width:0;background:var(--c)}.cxday .ev.cx-ext{background:var(--muted)}.cxmore{font-size:10px}.cxwh,.cxwa,.cxwg{grid-template-columns:36px repeat(7,minmax(0,1fr))}.cxcol .ev{font-size:10px}}
+.gsearch{position:relative;padding:2px 4px 8px}
+.gsearch input{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text)}
+.gres{position:absolute;left:4px;top:calc(100% - 4px);z-index:30;width:min(440px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
+.gres .gh{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px 4px}
+.gres button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;color:var(--text);font-size:14px}
+.gres button:hover,.gres button.sel{background:var(--card)}
+.gres button small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gres .none{padding:12px 10px;color:var(--muted);font-size:14px}
+@media (max-width:860px){.gsearch{min-width:170px;padding:2px}}
+.nav.nav-profile{display:flex;align-items:center;gap:10px;color:var(--text)}
+.nav-profile .pn{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.nav-profile .pn b{font-weight:600;font-size:14px}.nav-profile .pn small{color:var(--muted);font-size:12px}
+.nav-profile .view-badge{margin-top:4px;align-self:flex-start}
+.pcard{display:flex;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.av.pbig{width:56px;height:56px;font-size:20px}
+.pinfo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin-top:-10px;padding:18px 16px 14px;font-size:14px}
+.pinfo:empty{display:none}
+.pinfo .k{color:var(--muted);font-size:12px}.pinfo .full{grid-column:1/-1;white-space:pre-wrap}
+.pinfo a{color:var(--blue);text-decoration:none;word-break:break-all}
+.pdir{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.pdc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pdc .top{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.pdc a{color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:860px){.pinfo{grid-template-columns:1fr}}
+.pset{grid-template-columns:minmax(0,10rem) minmax(0,1fr)!important}
+.pset select{justify-self:start;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;color:var(--text);font-size:14px}
+.dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
+@media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
-body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+/* Vendors are for editors only; the Worker refuses guest reads and writes. */
+body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
+body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
+.usec{margin-top:22px}.usec h2{font-size:16px;margin:0 0 4px}.usec .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
+.ucols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.ubar{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) 6.5rem;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);font-size:14px}
+.ubar:first-child{border-top:0}
+.ubar .track{height:8px;border-radius:4px;background:var(--line)}.ubar .fill{height:100%;border-radius:4px;background:var(--blue);min-width:2px}
+.ubar.zero{color:var(--muted)}.ubar.zero .fill{background:none}
+.ubar small{color:var(--muted);text-align:right;white-space:nowrap}
+.utbl .row{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) 4.5rem 4.5rem minmax(0,1fr) minmax(0,1.2fr);cursor:default}
+.ulog .row{grid-template-columns:7.5rem minmax(0,.8fr) minmax(0,1.6fr) minmax(0,1.3fr);cursor:default}
+.utbl .row:hover,.ulog .row:hover{background:none}
+.uhours{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;align-items:end;height:90px;padding:12px 16px 4px}
+.uhours div{background:var(--blue);border-radius:3px 3px 0 0;min-height:2px}
+.arow{display:grid;grid-template-columns:12px minmax(0,1fr) 16px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font-size:14px;color:var(--text)}
+.arow:first-child{border-top:0}.arow:hover{background:var(--card)}
+.adot{width:10px;height:10px;border-radius:50%}.adot.red{background:var(--red)}.adot.amber{background:var(--amber)}.adot.blue{background:var(--blue)}
+.htbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.stbl .row{grid-template-columns:minmax(0,1.4fr) 5rem minmax(0,1fr) minmax(0,1fr) auto;cursor:default}
+.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.2fr);cursor:default}
+.ytbl .row{grid-template-columns:minmax(0,1.6fr) 5rem 6rem minmax(0,1fr);cursor:default}
+.stbl .row:hover,.itbl .row:hover,.ytbl .row:hover{background:none}
+.city.warn{color:var(--amber)}.warnx{color:var(--red)}
+@media (max-width:860px){.stbl .row{grid-template-columns:minmax(0,1fr) auto}.stbl .row>:nth-child(2),.stbl .row>:nth-child(3),.stbl .row>:nth-child(4){display:none}.itbl .row>:nth-child(2){display:none}.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.uhl{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;padding:0 16px 10px}
+@media (max-width:860px){.ucols{grid-template-columns:1fr}.utbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.utbl .row>:nth-child(n+3){display:none}.ulog .row{grid-template-columns:6rem minmax(0,1fr)}.ulog .row>:nth-child(2),.ulog .row>:nth-child(4){display:none}}
+.vtbl .row{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr)}
+.vtbl .row a{color:var(--blue);text-decoration:none;font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtbl .row a:hover{text-decoration:underline}
+.vtbl .co{color:var(--muted);font-size:13px;margin-top:2px}
+@media (max-width:860px){.vtbl .row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.vtbl .row>:nth-child(3),.vtbl .row>:nth-child(4){display:none}}
 </style>
 </head>
 <body>
@@ -335,17 +487,22 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
 <div class="app" id="app" hidden>
   <nav class="side" aria-label="Main">
     <div class="brand"><span class="logo" role="img" aria-label="TideLine longship"></span><div><div class="wm">The Voyage</div><div class="by">by TideLine Strategies</div></div></div>
+    <div class="gsearch"><input id="gSearch" type="search" placeholder="Search everything  /" aria-label="Search everything" autocomplete="off"><div class="gres" id="gRes" role="listbox" hidden></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
+    <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
+    <button class="nav" data-view="calendar">Calendar</button>
     <button class="nav" data-view="notes">Notes</button>
     <button class="nav" data-view="stages">Stages</button>
+    <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
     <button class="nav" data-view="cadence">Pillage</button>
-    <button class="nav" data-view="order">Order</button>
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
-    <div class="me"><label for="meSel" style="margin:0">Signed in as</label><select id="meSel" disabled></select><span class="view-badge" id="viewBadge" hidden>Guest · edit existing</span></div>
+    <div class="sep"></div>
+    <button class="nav nav-profile" data-view="profile" aria-label="Profile and settings"><span class="av OT" id="profAv">?</span><span class="pn"><b id="profName">Profile</b><small>Profile &amp; settings</small><span class="view-badge" id="viewBadge" hidden>Guest</span></span></button>
+    <select id="meSel" disabled hidden aria-hidden="true"></select>
     <div class="tag">One voyage, start to finish.</div>
   </nav>
 
@@ -358,7 +515,7 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
           <h1 id="greet">Good morning, Cody</h1>
           <div class="sub" id="subline"></div>
         </div>
-        <button class="btn primary" id="newBtn">+ New opp</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" id="briefBtn">Daily brief</button><button class="btn primary" id="newBtn">+ New opp</button></div>
       </div>
 
       <h2 class="lb">Pipeline</h2>
@@ -378,7 +535,7 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
     </section>
 
     <section id="view-accounts" hidden>
-      <div class="head"><div><h1>Accounts</h1><div class="sub">Every organization in The Voyage. Click one to open it.</div></div><button class="btn primary" id="acNew">+ New account</button></div>
+      <div class="head"><div><h1>Accounts</h1><div class="sub">Every organization in The Voyage. Click one to open it.</div></div><div style="display:flex;gap:8px"><button class="btn" id="acImport">Import</button><button class="btn primary" id="acNew">+ New account</button></div><input type="file" id="acFile" accept=".csv,text/csv" hidden></div>
       <div class="bhead">
         <input id="acSearch" type="search" placeholder="Find an account or city" aria-label="Find an account or city">
         <select id="acStage" aria-label="Stage"><option value="">All stages</option></select>
@@ -386,10 +543,147 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
         <select id="acEmp" aria-label="Number of employees"><option value="">Any size</option></select>
         <select id="acAct" aria-label="Active students"><option value="">Any active students</option></select>
         <select id="acOwner" aria-label="Owner"><option value="">Everyone's accounts</option></select>
+        <select id="acSrc" aria-label="Lead source"><option value="">Any lead source</option></select>
         <select id="acSort" aria-label="Sort by"><option value="name">Sort by name</option><option value="rank">Sort by rank</option><option value="city">Sort by city</option><option value="stage">Sort by stage</option></select>
       </div>
       <div class="cnt" id="acCount"></div>
       <div class="tbl atbl" id="acList"></div>
+    </section>
+
+    <section id="view-vendors" hidden>
+      <div class="head"><div><h1>Vendors</h1><div class="sub">The people and companies you work with. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="vNew">+ New vendor</button></div>
+      <div class="bhead">
+        <input id="vSearch" type="search" placeholder="Find a name, company, or service" aria-label="Find a vendor">
+        <select id="vType" aria-label="What they do"><option value="">Everything they do</option></select>
+      </div>
+      <div class="cnt" id="vCount"></div>
+      <div class="tbl vtbl" id="vList"></div>
+    </section>
+
+    <section id="view-deals" hidden>
+      <div class="head"><div><h1>Deals</h1><div class="sub">Build deals, get approvals, and submit the close. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="dsNew">+ New deal</button></div>
+      <div class="ntabs" id="dsTabs" role="tablist"><button data-t="pipeline" class="on">Pipeline</button><button data-t="approvals">Approvals<span id="dsApprovalCount" hidden></span></button><button data-t="financials">Financials</button><button data-t="catalog">Products &amp; rules</button></div>
+      <div id="dsBody"></div>
+    </section>
+
+    <section id="view-deal" hidden>
+      <button class="back" id="dlBack">‹ Back to Deals</button>
+      <div class="head"><div><h1 id="dlTitle">New deal</h1><div class="sub" id="dlSub"></div></div><div style="display:flex;gap:8px;align-items:center"><span class="dlunsaved" id="dlUnsaved" hidden>Unsaved changes</span><button class="btn primary" id="dlSaveTop" hidden>Save</button><span class="spill" id="dlStatus"></span></div></div>
+      <div class="dlgrid">
+        <div class="dlmain" id="dlMain">
+          <div class="dlsec"><h2><span>1</span>Basics</h2>
+            <div class="grid2"><label>Deal name<input id="dlName" maxlength="120" autocomplete="off" placeholder="Sample Gym, annual platform"></label><label>Account<select id="dlOpp"></select></label></div>
+            <div class="grid3"><label>Owner<select id="dlOwner"></select></label><label>Expected close<input id="dlClose" type="date"></label><label>Likelihood to close (%)<input id="dlProb" type="number" min="0" max="100" placeholder="From stage"></label></div>
+          </div>
+          <div class="dlsec"><h2><span>2</span>Products and services</h2>
+            <div class="tbl dllines" id="dlLines"></div>
+            <div class="dladd"><select id="dlPick" aria-label="Add from catalog"></select><button class="btn" id="dlAddCustom">+ Custom line</button></div>
+          </div>
+          <div class="dlsec"><h2><span>3</span>Terms</h2>
+            <div class="grid3"><label>Start date<input id="dlStart" type="date"></label><label>Term (months)<input id="dlMonths" type="number" min="1" max="120" value="12"></label><label>Free months<input id="dlFree" type="number" min="0" max="24" value="0"></label></div>
+            <div class="grid3"><label>Payment terms<select id="dlPay"><option>Due on receipt</option><option>Net 15</option><option selected>Net 30</option><option>Net 45</option><option>Net 60</option></select></label><label>Billing<select id="dlBill"><option>Monthly</option><option>Quarterly</option><option>Annually</option><option>Upfront</option></select></label><label class="chk" style="align-self:end"><input type="checkbox" id="dlRenew">Renews automatically</label></div>
+            <label>Special terms<textarea id="dlSpecial" maxlength="2000" placeholder="Anything non-standard: cancellation rights, price locks, custom SLAs. Special terms always need approval."></textarea></label>
+            <label>Internal notes<textarea id="dlNotes" maxlength="3000" placeholder="Context for the reviewer"></textarea></label>
+          </div>
+          <div class="dlsec" id="dlProcSec"><h2><span>4</span>Payment processing</h2>
+            <label class="chk"><input type="checkbox" id="ppOn">This deal includes payment processing</label>
+            <div id="ppBody" hidden>
+              <div class="pphead">Their volume</div>
+              <div class="grid3"><label>Monthly card volume ($)<input id="ppVol" type="number" min="0" step="100" inputmode="decimal"></label><label>Transactions per month<input id="ppTx" type="number" min="0" step="1"></label><label>Amex share of volume (%)<input id="ppAmex" type="number" min="0" max="100" step="1" value="0"></label></div>
+              <div class="pphead">What they pay today</div>
+              <div class="grid3"><label>Current rate (%)<input id="ppCurRate" type="number" min="0" step="0.01"></label><label>Current per transaction ($)<input id="ppCurTx" type="number" min="0" step="0.01"></label><label>Current monthly fees ($)<input id="ppCurMon" type="number" min="0" step="0.01" value="0"></label></div>
+              <div class="pphead">Our offer</div>
+              <div class="grid3"><label>Our rate (%)<input id="ppRate" type="number" min="0" step="0.01"></label><label>Our per transaction ($)<input id="ppPer" type="number" min="0" step="0.01"></label><label>Our monthly fee ($)<input id="ppMon" type="number" min="0" step="0.01" value="0"></label></div>
+              <div class="pphead">Cost assumptions</div>
+              <div class="grid3"><label>Estimated interchange (%)<input id="ppIc" type="number" min="0" step="0.01"></label><label>Settled batches per month<input id="ppBatch" type="number" min="0" step="1" value="26"></label><label class="chk" style="align-self:end"><input type="checkbox" id="ppHosted" checked>Uses hosted payment links</label></div>
+              <div class="ppres" id="ppRes"></div>
+            </div>
+          </div>
+          <div class="dlsec" id="dlCloseSec"><h2><span>5</span>Close package</h2>
+            <p class="city" id="dlCloseHint" style="margin:-4px 0 10px">Fill this in once the deal is approved and signed. It's what the team needs to start the customer.</p>
+            <div class="docbox" id="dcDocs"><div class="pphead" style="margin-top:0">Signed documents <span id="dcReq"></span></div><div id="dcList"></div><div class="docdrop" id="dcDrop"><input type="file" id="dcFile" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.heic,application/pdf,image/*" hidden><select id="dcKind" aria-label="Document type"><option value="signed">Signed agreement</option><option value="other">Other document</option></select><button class="btn" id="dcUpload" type="button">Upload</button><span class="city">or drop files here. PDF, Word, or photo, up to 15 MB each.</span></div></div>
+            <label class="chk"><input type="checkbox" id="dcSigned">Signed agreement received</label>
+            <div class="grid3"><label>Date signed<input id="dcDate" type="date"></label><label>Signed by<input id="dcName" maxlength="120" autocomplete="off" placeholder="Pat Owner"></label><label>Their title<input id="dcTitle" maxlength="120" autocomplete="off" placeholder="Owner"></label></div>
+            <div class="grid3"><label>Signer email<input id="dcEmail" type="email" maxlength="200" autocomplete="off"></label><label>Billing contact email<input id="dcBilling" type="email" maxlength="200" autocomplete="off"></label><label>Contract start date<input id="dcStart" type="date"></label></div>
+            <div class="grid3"><label>Payment method<select id="dcPay"><option value="">Not set</option><option>Card</option><option>ACH</option><option>Check</option><option>Invoice</option></select></label></div>
+            <label>Handoff to onboarding<textarea id="dcHandoff" maxlength="3000" placeholder="Who to work with, what was promised, go-live goals"></textarea></label>
+          </div>
+          <div class="dlsec"><h2>History</h2><div id="dlHistory"></div></div>
+        </div>
+        <aside class="dlside">
+          <div class="dlsum">
+            <div class="k">Total contract value</div><div class="big" id="dsTcv">$0</div>
+            <div class="dlnums"><div><span>Monthly</span><b id="dsMrr">$0</b></div><div><span>Yearly</span><b id="dsArr">$0</b></div><div><span>One-time</span><b id="dsOne">$0</b></div><div><span>Discount</span><b id="dsDisc">0%</b></div></div>
+            <div class="dlproc" id="dsProc" hidden><div><span>Processing residual (est.)</span><b id="dsResid">$0/mo</b></div><div><span>Merchant saves</span><b id="dsSave">–</b></div></div>
+            <div id="dsFlags"></div>
+            <div id="dsProblems"></div>
+            <textarea id="dlNote" rows="2" placeholder="Note for the history (optional)" hidden></textarea>
+            <div class="dlacts" id="dlActs"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="view-calendar" hidden>
+      <div class="head"><div><h1>Calendar</h1><div class="sub" id="cxSub">Appointments, tasks, and next steps from The Voyage in one place.</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" id="cxConnect">Connect your calendar</button><button class="btn primary" id="cxNew">+ Book meeting</button></div></div>
+      <div class="cxbar">
+        <div class="cxnav"><button class="btn" id="cxToday" title="Today (T)">Today</button><button class="btn" id="cxPrev" aria-label="Previous" title="Previous (←)">‹</button><button class="btn" id="cxNext" aria-label="Next" title="Next (→)">›</button><h2 id="cxTitle"></h2></div>
+        <div class="cxseg" id="cxMode" role="tablist"><button data-m="month" title="Month (M)">Month</button><button data-m="week" title="Week (W)">Week</button><button data-m="agenda" title="Agenda (A)">Agenda</button></div>
+      </div>
+      <div class="cxfilters">
+        <select id="cxScope" aria-label="Whose items"><option value="mine">Mine and shared with me</option><option value="all">Everyone's</option></select>
+        <label class="cxk cx-appt"><input type="checkbox" data-k="appt" checked>Appointments</label>
+        <label class="cxk cx-task"><input type="checkbox" data-k="task" checked>Tasks</label>
+        <label class="cxk cx-next"><input type="checkbox" data-k="next" checked>Next steps</label>
+        <label class="cxk cx-ext" id="cxExtToggle" hidden><input type="checkbox" data-k="ext" checked><span id="cxExtName">My calendar</span></label>
+        <span class="city" id="cxNote"></span>
+      </div>
+      <div id="cxBody"></div>
+    </section>
+
+    <section id="view-profile" hidden>
+      <div class="head"><div><h1>Profile</h1><div class="sub">Your account, settings, and signed-in devices.</div></div></div>
+      <div class="pcard"><span class="av OT pbig" id="pAv">?</span><div style="flex:1;min-width:0"><div class="nm" id="pName"></div><div class="city" id="pTitle"></div><div class="city" id="pEmail"></div><div class="city" id="pRole"></div></div><button class="btn primary" id="pEdit">Edit profile</button></div>
+      <div class="pinfo" id="pInfo"></div>
+      <div class="usec"><h2>Team directory</h2><div class="hint">Everyone with access to The Voyage, and how to reach them.</div><div class="pdir" id="pDir"></div></div>
+      <div class="usec"><h2>Your work</h2><div class="hint">What's on your plate right now.</div><div id="pWork"></div></div>
+      <div class="usec"><h2>Settings</h2><div class="hint">Saved on this device.</div>
+        <div class="tbl"><div class="ubar pset"><span class="nm">Appearance</span><select id="pTheme" aria-label="Appearance"><option value="">Match this device</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
+      </div>
+      <div class="usec"><h2>Calendar</h2><div class="hint">Subscribe once in Google Calendar, Outlook, or Apple Calendar and your Voyage appointments show up there automatically. The link is private: anyone who has it can see your appointment times and account names.</div>
+        <div class="tbl"><div class="ubar pset"><span class="nm">Calendar link</span><span class="city" id="calStatus">Checking…</span></div></div>
+        <div id="calNew" hidden style="margin-top:10px"><div class="city" style="margin-bottom:6px">Copy this link now. For your security it won't be shown again.</div><input id="calUrl" readonly style="width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text)"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="calMake">Create calendar link</button><button class="btn" id="calCopy" hidden>Copy link</button><button class="btn danger" id="calOff" hidden>Turn off link</button></div>
+      </div>
+      <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only Quan and Cody see this.</div>
+        <button class="btn primary" id="pAdmin">Open admin dashboard</button>
+      </div>
+      <div class="usec"><h2>Signed-in devices</h2><div class="hint">Each device stays signed in for up to 180 days. Sign out of any you don't recognize.</div>
+        <div id="pDevices"><div class="empty">Loading…</div></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="pOthers">Sign out other devices</button><button class="btn danger" id="pSignOut">Sign out of this device</button></div>
+      </div>
+    </section>
+
+    <section id="view-admin" hidden>
+      <button class="back" id="adBack">‹ Back to Profile</button>
+      <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
+      <div class="ntabs" id="adTabs" role="tablist">
+        <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="audit">Audit log</button><button data-t="system">System</button>
+      </div>
+      <div id="adOverview"></div>
+      <div id="adUsage" hidden>
+        <div class="hint" style="color:var(--muted);font-size:13px;margin-bottom:10px">Who uses The Voyage, what they open and do, when, and from where. It records page names and actions, never what anyone typed.</div>
+        <div class="bhead">
+          <select id="uDays" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="180">Last 180 days</option></select>
+          <select id="uWho" aria-label="Person"><option value="">Everyone</option></select>
+        </div>
+        <div id="uBody"><div class="empty">Loading usage…</div></div>
+      </div>
+      <div id="adSecurity" hidden></div>
+      <div id="adHealth" hidden></div>
+      <div id="adAudit" hidden></div>
+      <div id="adSystem" hidden></div>
     </section>
 
     <section id="view-activity" hidden>
@@ -448,6 +742,7 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
               <div id="aLocDetail"></div>
             </div>
           </div>
+          <div class="sec" id="aDealsSec"><div class="sech"><h2>Deals</h2><button class="btn" id="aNewDeal">+ New deal</button></div><div id="aDeals"></div></div>
           <div class="sec"><div class="sech"><h2>Notes</h2></div><div class="notes" id="aNotes"></div></div>
           <div class="sec"><div class="sech"><h2>Account activity</h2></div><div class="hist" id="aHist"></div></div>
         </div>
@@ -527,11 +822,80 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
       <label>Active students<select id="fAct"></select></label>
       <label>Inactive students<select id="fInact"></select></label>
     </div>
+    <div class="grid2">
+      <label>Lead source<select id="fSrc"></select></label>
+      <label>Source details<input id="fSrcNote" autocomplete="off" maxlength="200" placeholder="Referred by Jordan Lee"></label>
+    </div>
     <label>Bio<textarea id="fBio" placeholder="Who they are, what they offer, and their mission"></textarea></label>
     <label>Notes<textarea id="fNotes"></textarea></label>
     <div class="acts">
       <div><button class="btn danger" id="delBtn">Delete</button></div>
       <div><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save opp</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="xdlg" aria-labelledby="xdlgTitle">
+  <div class="dlg">
+    <h2 id="xdlgTitle">Connect your calendar</h2>
+    <p class="city" id="xStatus" style="margin:-4px 0 12px"></p>
+    <p style="font-size:14px;margin:0 0 10px">Show your own meetings next to your Voyage appointments, so you can spot conflicts before you book. Only you see them, and The Voyage never changes your calendar.</p>
+    <details class="xhelp" open><summary>Google Calendar</summary><ol><li>Open Google Calendar on a computer, then Settings (gear icon).</li><li>Under "Settings for my calendars", pick your calendar, then "Integrate calendar".</li><li>Copy "Secret address in iCal format".</li></ol></details>
+    <details class="xhelp"><summary>Outlook / Microsoft 365</summary><ol><li>In Outlook on the web, open Settings, then Calendar, then Shared calendars.</li><li>Under "Publish a calendar", choose your calendar and "Can view all details", then Publish.</li><li>Copy the ICS link.</li></ol></details>
+    <details class="xhelp"><summary>Apple Calendar (iCloud)</summary><ol><li>At icloud.com/calendar, click the share icon next to your calendar.</li><li>Turn on "Public Calendar" and copy the link (it starts with webcal://).</li></ol></details>
+    <label style="margin-top:10px">Private calendar address<input id="xUrl" type="url" autocomplete="off" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"></label>
+    <p class="city" style="margin:4px 0 0">Treat this address like a password. It's stored on The Voyage's server and never shown again.</p>
+    <div class="acts">
+      <div><button class="btn danger" id="xOff" hidden>Disconnect</button></div>
+      <div><button class="btn" id="xCancel">Cancel</button><button class="btn primary" id="xSave">Connect</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="pdlg" aria-labelledby="pdlgTitle">
+  <div class="dlg">
+    <h2 id="pdlgTitle">Edit profile</h2>
+    <p class="city" style="margin:-4px 0 12px">Your teammates can see this. Your name and sign-in email are managed by Quan.</p>
+    <div class="grid2">
+      <label>Job title<input id="peTitle" maxlength="100" autocomplete="off" placeholder="Business development"></label>
+      <label>Phone<input id="pePhone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="(555) 555-5555"></label>
+    </div>
+    <div class="grid2">
+      <label>Location<input id="peLoc" maxlength="100" autocomplete="off" placeholder="Chicago, IL"></label>
+      <label>Time zone<select id="peTz"></select></label>
+    </div>
+    <div class="grid2">
+      <label>Working hours<input id="peHours" maxlength="100" autocomplete="off" placeholder="Mon–Fri, 9am–5pm"></label>
+      <label>Best way to reach you<select id="peContact"><option value="">No preference</option><option>Team chat</option><option>Phone call</option><option>Text</option><option>Email</option></select></label>
+    </div>
+    <label>LinkedIn<input id="peLi" type="url" inputmode="url" maxlength="300" autocomplete="off" placeholder="linkedin.com/in/..."></label>
+    <label>What you cover<input id="peFocus" maxlength="300" autocomplete="off" placeholder="North suburbs, martial arts and dance studios"></label>
+    <label>About you<textarea id="peBio" maxlength="1500" placeholder="A few lines about your background and what you're working on"></textarea></label>
+    <div class="acts">
+      <div></div>
+      <div><button class="btn" id="peCancel">Cancel</button><button class="btn primary" id="peSave">Save profile</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="vdlg" aria-labelledby="vdlgTitle">
+  <div class="dlg">
+    <h2 id="vdlgTitle">New vendor</h2>
+    <div class="grid2">
+      <label>Name<input id="vName" autocomplete="off" maxlength="200" placeholder="Jordan Lee"></label>
+      <label>Company<input id="vCompany" autocomplete="off" placeholder="Lee Creative"></label>
+    </div>
+    <label>What they do<input id="vKind" autocomplete="off" list="vKinds" placeholder="Photographer"></label>
+    <datalist id="vKinds"></datalist>
+    <div class="grid2">
+      <label>Email<input id="vEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label>
+      <label>Phone<input id="vPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555"></label>
+    </div>
+    <div class="grid2">
+      <label>Website<input id="vWeb" type="url" inputmode="url" autocomplete="off" placeholder="example.com"></label>
+      <label>Related account<select id="vOpp"></select></label>
+    </div>
+    <label>Notes<textarea id="vNotes" placeholder="Rates, what they've done for you, how to reach them"></textarea></label>
+    <div class="acts">
+      <div><button class="btn danger" id="vDel">Delete</button></div>
+      <div><button class="btn" id="vCancel">Cancel</button><button class="btn primary" id="vSave">Save vendor</button></div>
     </div>
   </div>
 </dialog>
@@ -548,7 +912,7 @@ body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddL
     <label>Notes<textarea id="tNotes"></textarea></label>
     <label class="chk"><input type="checkbox" id="tDone"><span id="tDoneLbl">Done</span></label>
     <div class="acts">
-      <div><button class="btn danger" id="tDel">Delete</button><button class="btn" id="tNotesBtn">Meeting notes ›</button></div>
+      <div><button class="btn danger" id="tDel">Delete</button><button class="btn" id="tNotesBtn">Meeting notes ›</button><button class="btn" id="tIcs">Add to calendar</button></div>
       <div><button class="btn" id="tCancel">Cancel</button><button class="btn primary" id="tSave">Save</button></div>
     </div>
   </div>
@@ -632,7 +996,10 @@ function avatar(id){const a=el("span","av "+(["CK","QS"].includes(id)?id:"OT"),i
 function fillMe(){
   const s=$("meSel");s.replaceChildren();team.forEach(m=>s.append(new Option(m.name,m.id)));s.value=me;s.disabled=true;
   const fo=$("fOwner"),fv=fo.value;fo.replaceChildren();editors().forEach(m=>fo.append(new Option(m.name,m.id)));if(fv)fo.value=fv;
+  const av=$("profAv");av.textContent=me;av.className="av "+(["CK","QS"].includes(me)?me:"OT");$("profName").textContent=nameOf(me);
 }
+function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
+try{applyTheme(localStorage.getItem("voyage-theme")||"")}catch(_){}
 function showGuestAccess(){document.body.classList.add("guest");$("viewBadge").hidden=false}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
@@ -705,7 +1072,7 @@ function render(){
   const sb=$("stats");sb.replaceChildren();
   stats.forEach(([n,l,c,fn,tip])=>{const d=el("button","stat stat-btn");d.title=tip;d.setAttribute("aria-label",n+" "+l+". "+tip);const b=el("b",null,n);if(c&&n)b.style.color=c;d.append(b,el("span",null,l),el("i","stat-go","View ›"));d.onclick=fn;sb.append(d)});
   if(!$("drill").hidden&&drillKind)openDrill(drillKind,true);
-  renderBoard();renderAccount();renderAccounts();
+  renderBoard();renderAccount();renderAccounts();renderAccountDeals();if(view==="calendar")renderCalendar();
 }
 
 function drawStagePick(){
@@ -720,9 +1087,12 @@ function openDlg(o,preset){
   $("fRank").value=o?.rank??"";$("fOwner").value=o?.owner||me;
   $("fNext").value=o?.next?.label||"";$("fDate").value=o?.next?.date||"";$("fTime").value=o?.next?.time||"";
   $("fNotes").value=o?.notes||"";$("fBio").value=o?.bio||"";$("fVer").value=o?.verification||"";$("fEmp").value=o?.employees||"";$("fAct").value=o?.activeStudents||"";$("fInact").value=o?.inactiveStudents||"";$("fWeb").value=o?.website||"";$("fAddr").value=o?.address||"";$("fAddr2").value=o?.address2||"";$("fState").value=o?o.state||"":"IL";$("fZip").value=o?.zip||"";$("fLi").value=o?.linkedin||"";
+  fillSources($("fSrc"),"Not set");$("fSrc").value=o?.source||"";$("fSrcNote").value=o?.sourceNote||"";
   $("delBtn").hidden=!o;
   $("dlg").showModal();$("fName").focus();
 }
+const LEAD_SOURCES=["Referral","Cold call","Walk-in","Event","Website or inbound","Social media","Partner","Existing customer","Other"];
+function fillSources(sel,blank){if(sel.options.length)return;sel.append(new Option(blank,""));LEAD_SOURCES.forEach(s=>sel.append(new Option(s)))}
 function normUrl(v){v=(v||"").trim();if(!v)return"";return /^https?:\/\//i.test(v)?v:"https://"+v}
 function readForm(){
   const name=$("fName").value.trim();
@@ -731,7 +1101,7 @@ function readForm(){
   const label=$("fNext").value.trim();
   return {name,city:$("fCity").value.trim(),stage:pickStage,rank,owner:$("fOwner").value,
     next:label?{label,date:$("fDate").value||"",time:$("fTime").value.trim()}:null,
-    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
+    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
 }
 function fmtDate(d){if(!d)return"No date";const t=today();if(d===t)return"Today";const x=new Date(d+"T00:00");return x.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}
 function renderItems(){
@@ -778,7 +1148,7 @@ function openT(kind,i,presetOpp,preset){
   $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
   $("tDoneLbl").textContent=kind==="task"?"Done":"Completed";
-  $("tDel").hidden=!i;$("tNotesBtn").hidden=!(i&&kind==="appt"&&i.oppId);$("tdlg").showModal();
+  $("tDel").hidden=!i;$("tNotesBtn").hidden=!(i&&kind==="appt"&&i.oppId);$("tIcs").hidden=!(i&&kind==="appt"&&i.date);$("tdlg").showModal();
 }
 async function toggleDone(i,done){
   const upd={done,doneTs:done?Date.now():null};
@@ -854,8 +1224,9 @@ function renderActs(){
     const tx=el("div",null,a.text);if(a.by)tx.append(el("span","by",nameOf(a.by)));r.append(tm,tx);w.append(r);
   });
 }
+function track(kind,action){if(live&&window.voyageUsage)window.voyageUsage.track(kind,view,action)}
 async function write(fn,okMsg){
-  try{await fn();toast(okMsg)}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
+  try{await fn();toast(okMsg);track("action",okMsg)}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
 }
 $("saveBtn").onclick=async()=>{
   const data=readForm();if(!data)return;
@@ -939,14 +1310,15 @@ const SIZE_LINE=o=>[o.employees?EMP_LABEL(o.employees):"",o.activeStudents?RLABE
 const VER={owner_confirmed:"Owner confirmed",google_verified:"Google verified",needs_review:"Needs review"};
 function renderAccounts(){
   const es=$("acEmp");if(es.options.length===1)EMP.forEach(([v,l])=>es.append(new Option(l+" employees",v)));
+  const sr=$("acSrc");if(sr.options.length===1){LEAD_SOURCES.forEach(s=>sr.append(new Option(s)));sr.append(new Option("Not set","_none"))}
   const as=$("acAct");if(as.options.length===1)ACT.forEach(([v,l])=>as.append(new Option(l+" active students",v)));
   if(view!=="accounts")return;
   const st=$("acStage");if(st.options.length===1){st.append(new Option("Past Prospecting (all)","past"));STAGES.forEach((x,i)=>st.append(new Option(x,String(i))))}
   if(acctStage!==null){st.value=acctStage;acctStage=null}
   const ow=$("acOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's accounts",""));editors().forEach(m=>ow.append(new Option(m.name+"'s accounts",m.id)));ow.value=v}
-  const ev=$("acEmp").value,av=$("acAct").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
+  const ev=$("acEmp").value,av=$("acAct").value,srcv=$("acSrc").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
   const cmp={name:(a,b)=>a.name.localeCompare(b.name),rank:(a,b)=>(b.rank??-1)-(a.rank??-1)||a.name.localeCompare(b.name),city:(a,b)=>(a.city||"").localeCompare(b.city||"")||a.name.localeCompare(b.name),stage:(a,b)=>b.stage-a.stage||a.name.localeCompare(b.name)}[so];
-  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
+  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!srcv||(srcv==="_none"?!o.source:o.source===srcv))&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
   $("acCount").textContent=list.length===opps.length?`${opps.length} accounts`:`Showing ${list.length} of ${opps.length} accounts`;
   const w=$("acList");w.replaceChildren();
   const hd=el("div","row hd");["Organization","City","Stage","Website","Rank",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
@@ -960,7 +1332,7 @@ function renderAccounts(){
   });
 }
 ["acSearch"].forEach(id=>$(id).oninput=renderAccounts);
-["acStage","acVer","acEmp","acAct","acOwner","acSort"].forEach(id=>$(id).onchange=renderAccounts);
+["acStage","acVer","acEmp","acAct","acOwner","acSrc","acSort"].forEach(id=>$(id).onchange=renderAccounts);
 $("acNew").onclick=()=>openDlg(null);
 function emptyRow(text){const e=el("div","empty",text);e.style.border="0";return e}
 function addrLines(a){
@@ -1155,7 +1527,7 @@ async function sendMsg(){
   const m={ch:tcCh,text:t.slice(0,4000),by:me,ts:Date.now(),reactions:{}};
   $("tcIn").value="";tcAutoGrow();setTyping(false);tcForceScroll=true;
   if(!live){msgs.push({id:"m"+Date.now(),...m});renderTeam();return}
-  try{await db.collection("messages").add(m)}catch(e){$("tcIn").value=t;toast(e&&e.code==="quota_exceeded"?"Chat storage is full. Delete old messages to keep going.":"Message didn't send. Try again.")}
+  try{await db.collection("messages").add(m);track("action","Sent a team chat message")}catch(e){$("tcIn").value=t;toast(e&&e.code==="quota_exceeded"?"Chat storage is full. Delete old messages to keep going.":"Message didn't send. Try again.")}
 }
 async function react(m,e){
   const r={...(m.reactions||{})};const w=new Set(r[e]||[]);w.has(me)?w.delete(me):w.add(me);r[e]=[...w];
@@ -1262,7 +1634,7 @@ async function removeLoc(o,l){
 }
 $("aLocSel").onchange=()=>{locSelId=$("aLocSel").value||null;const o=opps.find(x=>x.id===acctId);if(o)renderLocations(o)};
 $("aAddLoc").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(!o)return;locSelId="new";renderLocations(o);setTimeout(()=>{const i=$("aLocDetail").querySelector("input");if(i)i.focus()},30)};
-function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
+function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat",calendar:"Calendar"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
 function renderAccount(){
   if(view!=="account")return;
   const o=opps.find(x=>x.id===acctId);
@@ -1304,16 +1676,1010 @@ $("aNotesBtn").onclick=()=>openNotes(acctId,APPT_TYPES[Math.max(0,STAGES.indexOf
 $("aEdit").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(o)openDlg(o)};
 $("aAddTask").onclick=()=>openT("task",null,acctId);
 $("aAddAppt").onclick=()=>openT("appt",null,acctId);
+
+let vendors=[], vEdit=null;
+const V_KINDS=["Photographer","Videographer","Designer","Printer","Web developer","Marketing","Consultant","Software","Accountant","Attorney"];
+function renderVendors(){
+  const kinds=[...new Set([...V_KINDS,...vendors.map(v=>v.kind).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+  $("vKinds").replaceChildren(...kinds.map(k=>new Option(k)));
+  const ts=$("vType"),tv=ts.value,used=[...new Set(vendors.map(v=>v.kind).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  ts.replaceChildren(new Option("Everything they do",""),...used.map(k=>new Option(k)));ts.value=used.includes(tv)?tv:"";
+  if(view!=="vendors")return;
+  const q=$("vSearch").value.trim().toLowerCase(),kv=ts.value;
+  const list=vendors.filter(v=>(!kv||v.kind===kv)&&(!q||[v.name,v.company,v.kind,v.email,v.phone,v.notes].join(" ").toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name));
+  $("vCount").textContent=list.length===vendors.length?`${vendors.length} ${vendors.length===1?"vendor":"vendors"}`:`Showing ${list.length} of ${vendors.length} vendors`;
+  const w=$("vList");w.replaceChildren();
+  const hd=el("div","row hd");["Name","What they do","Email","Phone"].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
+  if(!list.length){w.append(emptyRow(vendors.length?"No vendors match that search.":"No vendors yet. Use + New vendor to save someone you work with."));return}
+  const link=(text,href)=>{if(!text)return el("span","city","");const a=el("a",null,text);a.href=href;a.onclick=e=>e.stopPropagation();return a};
+  list.forEach(v=>{
+    const r=el("button","row");
+    const n=el("div");n.append(el("div","nm",v.name));if(v.company)n.append(el("div","co",v.company));
+    r.append(n,el("span","city",v.kind||""),link(v.email,"mailto:"+v.email),link(v.phone,"tel:"+(v.phone||"").replace(/[^\d+]/g,"")));
+    r.onclick=()=>openV(v);w.append(r);
+  });
+}
+function openV(v){
+  vEdit=v||null;
+  $("vdlgTitle").textContent=v?v.name:"New vendor";
+  $("vName").value=v?.name||"";$("vCompany").value=v?.company||"";$("vKind").value=v?.kind||"";
+  $("vEmail").value=v?.email||"";$("vPhone").value=v?.phone||"";$("vWeb").value=v?.website||"";$("vNotes").value=v?.notes||"";
+  const os=$("vOpp");os.replaceChildren(new Option("None",""));[...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>os.append(new Option(o.name,o.id)));os.value=v?.oppId||"";
+  $("vDel").hidden=!v;$("vdlg").showModal();setTimeout(()=>$("vName").focus(),30);
+}
+$("vNew").onclick=()=>openV(null);
+$("vCancel").onclick=()=>$("vdlg").close();
+$("vSearch").oninput=renderVendors;$("vType").onchange=renderVendors;
+$("vSave").onclick=async()=>{
+  const name=$("vName").value.trim();if(!name){toast("Add a name first");$("vName").focus();return}
+  const was=vEdit;
+  const data={name,company:$("vCompany").value.trim(),kind:$("vKind").value.trim(),email:$("vEmail").value.trim(),phone:$("vPhone").value.trim(),website:normUrl($("vWeb").value),oppId:$("vOpp").value,notes:$("vNotes").value.trim(),createdTs:was?.createdTs||Date.now(),by:was?.by||me,updatedTs:Date.now()};
+  $("vdlg").close();
+  if(!live){if(was)Object.assign(was,data);else vendors.push({id:"v"+Date.now(),...data});renderVendors();toast("Saved for this session only");return}
+  await write(()=>was?db.doc("vendors/"+was.id).set(data):db.collection("vendors").add(data),was?"Vendor saved":"Vendor added");
+};
+$("vDel").onclick=async()=>{
+  const v=vEdit;if(!v||!confirm("Delete "+v.name+" from your vendors?"))return;
+  $("vdlg").close();
+  if(!live){vendors=vendors.filter(x=>x!==v);renderVendors();return}
+  await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
+};
+
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
+let usage=null,usageBusy=false;
+async function loadUsage(){
+  if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
+  try{const r=await fetch("/api/usage?days="+$("uDays").value,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Usage could not load.");usage=j;renderUsage()}
+  catch(e){$("uBody").replaceChildren(el("div","empty",e.message||"Usage could not load."))}
+  finally{usageBusy=false}
+}
+const ago=ts=>{const m=Math.round((Date.now()-ts)/60000);return m<1?"Just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" hr ago":Math.round(m/1440)===1?"1 day ago":Math.round(m/1440)+" days ago"};
+const whereOf=e=>[e.city,e.region,e.country].filter(Boolean).join(", ")||"Unknown location";
+const mostOf=list=>{const m=new Map();list.forEach(x=>m.set(x,(m.get(x)||0)+1));return [...m].sort((a,b)=>b[1]-a[1])[0]?.[0]};
+function usageCounts(list,key){const m=new Map();list.forEach(e=>{const k=key(e);const c=m.get(k)||{n:0,who:new Set()};c.n++;c.who.add(e.who);m.set(k,c)});return m}
+function usageBars(rows,unit){
+  const max=Math.max(1,...rows.map(r=>r[1].n)),t=el("div","tbl");
+  rows.forEach(([label,c])=>{const r=el("div","ubar"+(c.n?"":" zero"));const tr=el("div","track");const f=el("div","fill");f.style.width=(c.n?Math.max(2,c.n/max*100):0)+"%";tr.append(f);
+    r.append(el("span",null,label),tr,el("small",null,c.n?`${c.n} ${c.n===1?unit.replace(/s$/,""):unit}, ${c.who.size} ${c.who.size===1?"person":"people"}`:"Never opened"));t.append(r)});
+  return t;
+}
+function usageSection(title,hint){const s=el("div","usec");s.append(el("h2",null,title),el("div","hint",hint));return s}
+function renderUsage(){
+  if(!usage)return;
+  const ws=$("uWho"),wv=ws.value;
+  ws.replaceChildren(new Option("Everyone",""),...usage.members.map(m=>new Option(m.name+(m.role==="guest"?" (guest)":""),m.id)));ws.value=usage.members.some(m=>m.id===wv)?wv:"";
+  const ev=usage.events.filter(e=>!ws.value||e.who===ws.value);
+  const body=$("uBody");body.replaceChildren();
+  if(!ev.length){body.append(el("div","empty","No usage recorded in this period yet. Recording starts once this update is live."));return}
+  const views=ev.filter(e=>e.kind==="view"),acts=ev.filter(e=>e.kind==="action"),opens=ev.filter(e=>e.kind==="open");
+  const people=new Set(ev.map(e=>e.who)).size;
+  const stats=el("div","stats");
+  [[people,people===1?"person active":"people active"],[opens.length,"visits"],[views.length,"page views"],[acts.length,"actions taken"]].forEach(([n,l])=>{const s=el("div","stat");s.append(el("b",null,String(n)),el("span",null,l));stats.append(s)});
+  body.append(stats);
+
+  const pv=usageCounts(views,e=>e.view);
+  const pages=Object.keys(VIEW_NAMES).filter(k=>k!=="usage"&&k!=="admin").map(k=>[VIEW_NAMES[k],pv.get(k)||{n:0,who:new Set()}]).sort((a,b)=>b[1].n-a[1].n);
+  const actions=[...usageCounts(acts,e=>e.action||"Other")].sort((a,b)=>b[1].n-a[1].n).slice(0,15);
+  const cols=el("div","ucols");
+  const s1=usageSection("Pages","What people open most. Pages nobody opens are candidates to improve, move, or drop.");s1.append(usageBars(pages,"views"));
+  const s2=usageSection("Actions","What people actually do once they're in.");s2.append(actions.length?usageBars(actions,"times"):el("div","empty","No actions yet."));
+  cols.append(s1,s2);body.append(cols);
+
+  const ps=usageSection("People","When each person was last in, how often they come back, and what they lean on.");
+  const t=el("div","tbl utbl");const hd=el("div","row hd");["Person","Last active","Days active","Actions","Uses most","Usually from"].forEach(x=>hd.append(el("span",null,x)));t.append(hd);
+  usage.members.filter(m=>!ws.value||m.id===ws.value).map(m=>({m,e:ev.filter(x=>x.who===m.id)})).sort((a,b)=>(b.e[0]?.ts||0)-(a.e[0]?.ts||0)).forEach(({m,e})=>{
+    const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.role==="guest"?"Guest":"Editor"));
+    if(!e.length){r.append(n,el("span","city","Not in this period"),el("span","city","0"),el("span","city","0"),el("span","city","–"),el("span","city","–"));t.append(r);return}
+    const days=new Set(e.map(x=>new Date(x.ts).toDateString())).size;
+    const topPage=mostOf(e.filter(x=>x.kind==="view").map(x=>VIEW_NAMES[x.view]||x.view));
+    const from=mostOf(e.map(x=>whereOf(x)+" · "+(x.device||"Unknown device")));
+    r.append(n,el("span","city",ago(e[0].ts)),el("span","city",String(days)),el("span","city",String(e.filter(x=>x.kind==="action").length)),el("span","city",topPage||"–"),el("span","city",from));t.append(r);
+  });
+  ps.append(t);body.append(ps);
+
+  const hs=usageSection("When","Activity by hour of day, in your time zone.");
+  const hours=Array(24).fill(0);ev.forEach(e=>hours[new Date(e.ts).getHours()]++);const hm=Math.max(1,...hours);
+  const hb=el("div","tbl"),hg=el("div","uhours");hours.forEach((n,h)=>{const b=el("div");b.style.height=Math.max(2,n/hm*100)+"%";b.title=`${(h%12)||12}${h<12?"am":"pm"}: ${n} events`;hg.append(b)});
+  const hl=el("div","uhl");["12am","6am","12pm","6pm","11pm"].forEach(x=>hl.append(el("span",null,x)));hb.append(hg,hl);hs.append(hb);body.append(hs);
+
+  const rs=usageSection("Recent activity","The latest 100 events.");
+  const lg=el("div","tbl ulog");const lh=el("div","row hd");["When","Who","What","From"].forEach(x=>lh.append(el("span",null,x)));lg.append(lh);
+  ev.slice(0,100).forEach(e=>{const r=el("div","row");const d=new Date(e.ts);const page=VIEW_NAMES[e.view]||e.view;
+    const what=e.kind==="open"?"Opened The Voyage":e.kind==="view"?"Viewed "+page:(e.action||"Action")+" on "+page;
+    r.append(el("span","city",d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+", "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})),el("span",null,nameOf(e.who)),el("span",null,what),el("span","city",whereOf(e)+" · "+(e.device||"Unknown device")));lg.append(r)});
+  rs.append(lg);body.append(rs);
+}
+$("uDays").onchange=loadUsage;$("uWho").onchange=renderUsage;$("uRefresh").onclick=loadAdmin;
+
+let admin=null,adTab="overview",adminErr="";
+const AD_PANELS={overview:"adOverview",usage:"adUsage",security:"adSecurity",health:"adHealth",audit:"adAudit",system:"adSystem"};
+$("adTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;adTab=t;renderAdmin();track("action","Opened Admin "+t)};
+async function loadAdmin(){
+  adminErr="";renderAdmin();
+  try{const r=await fetch("/api/admin",{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Admin data could not load.");admin=j}
+  catch(e){adminErr=e.message||"Admin data could not load."}
+  await loadUsage();renderAdmin();
+}
+const fmtDay=ts=>new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric",year:new Date(ts).getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+function adTiles(list){const s=el("div","stats");list.forEach(([n,l])=>{const t=el("div","stat");t.append(el("b",null,String(n)),el("span",null,l));s.append(t)});return s}
+function adTable(cls,head,rows){const t=el("div","tbl "+cls);const hd=el("div","row hd");head.forEach(x=>hd.append(el("span",null,x)));t.append(hd);rows.forEach(r=>t.append(r));return t}
+function cell(text,cls){return el("span",cls||"city",text)}
+
+// Data health is computed from records already loaded in the app.
+function healthChecks(){
+  const t=today(),open=items.filter(i=>!i.done);
+  const norm=s=>(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const byName=new Map();opps.forEach(o=>{const k=norm(o.name);if(k)byName.set(k,[...(byName.get(k)||[]),o])});
+  return [
+    {key:"overdueNext",sev:"red",title:"Next step is overdue",hint:"The planned next step's date has passed.",list:opps.filter(o=>o.next&&o.next.date&&o.next.date<t),fmt:o=>o.next.label+", due "+fmtDate(o.next.date)},
+    {key:"overdueItems",sev:"red",title:"Tasks and appointments past due",hint:"Still open after their date.",list:open.filter(i=>i.date&&i.date<t),fmt:i=>i.type+(i.oppName?" with "+i.oppName:"")+", "+fmtDate(i.date),item:true},
+    {key:"stale",sev:"amber",title:"No contact in 30+ days",hint:"Accounts nobody has touched in a month.",list:opps.filter(o=>daysSince(o.lastTouch)>=30),fmt:o=>`Last touched ${daysSince(o.lastTouch)} days ago`},
+    {key:"noNext",sev:"amber",title:"No next step set",hint:"Accounts past Prospecting with nothing planned.",list:opps.filter(o=>o.stage>=1&&!o.next),fmt:o=>STAGES[o.stage]},
+    {key:"dupes",sev:"amber",title:"Possible duplicate accounts",hint:"Accounts with the same name.",list:[...byName.values()].filter(g=>g.length>1).map(g=>g[0]),fmt:o=>byName.get(norm(o.name)).length+" accounts with this name"},
+    {key:"noOwner",sev:"blue",title:"No owner",hint:"Nobody is responsible for these accounts.",list:opps.filter(o=>!o.owner),fmt:o=>STAGES[o.stage]},
+    {key:"noWeb",sev:"blue",title:"Missing website",hint:"Harder to research or verify.",list:opps.filter(o=>!o.website),fmt:o=>o.city||""},
+    {key:"noCity",sev:"blue",title:"Missing city",hint:"Location helps with routing and reporting.",list:opps.filter(o=>!o.city),fmt:o=>STAGES[o.stage]},
+  ];
+}
+function renderHealth(){
+  const w=$("adHealth");w.replaceChildren();const checks=healthChecks();
+  w.append(adTiles([[opps.length,"accounts"],[items.filter(i=>!i.done).length,"open tasks and appointments"],[checks[0].list.length+checks[1].list.length,"overdue"],[checks[2].list.length,"untouched 30+ days"]]));
+  const src=usageSection("Where accounts come from","Lead source for each account, and how many moved past Prospecting. Set it in each account's Edit form.");
+  const groups=[...LEAD_SOURCES,""].map(s=>{const list=opps.filter(o=>(o.source||"")===s);return [s||"Not set",list.length,list.filter(o=>o.stage>=1).length]}).filter(g=>g[1]).sort((a,b)=>b[1]-a[1]);
+  const smax=Math.max(1,...groups.map(g=>g[1])),st=el("div","tbl");
+  groups.forEach(([label,n,adv])=>{const r=el("div","ubar"+(label==="Not set"?" zero":""));const tr=el("div","track"),f=el("div","fill");f.style.width=Math.max(2,n/smax*100)+"%";tr.append(f);r.append(el("span",null,label),tr,el("small",null,`${n}, ${Math.round(adv/n*100)}% advanced`));st.append(r)});
+  src.append(groups.length?st:el("div","empty","No accounts yet."));w.append(src);
+  checks.forEach(c=>{
+    const s=usageSection(c.title+` (${c.list.length})`,c.hint);
+    if(!c.list.length){s.append(el("div","empty","All clear."));w.append(s);return}
+    const rows=c.list.slice(0,10).map(x=>{const r=el("button","row");r.append(el("span","nm",c.item?(x.oppName||x.type):x.name),cell(c.fmt(x)));r.onclick=()=>c.item?openT(x.kind,x):openAccount(x.id,"accounts");return r});
+    const t=adTable("htbl",["Name","Detail"],rows);if(c.list.length>10)t.append(el("div","empty",`And ${c.list.length-10} more.`));s.append(t);w.append(s);
+  });
+}
+function renderSecurity(){
+  const w=$("adSecurity");w.replaceChildren();
+  if(!admin){w.append(el("div","empty",adminErr||"Loading…"));return}
+  const now=admin.now,active=admin.members.filter(m=>m.active),pending=admin.invites.filter(i=>!i.used_at&&i.expires_at>now);
+  w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"],[pending.length,"unused invitations"]]));
+  const st=usageSection("How sign-in works","Current access settings.");
+  const sl=el("div","tbl");[
+    ["Sign-in method","One-time invitation link per person, sent privately"],
+    ["Invitation links","Work once and expire after "+admin.settings.inviteDays+" days"],
+    ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
+    ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: the invitation link is the only gate"],
+    ["Guests","Can edit existing CRM records. Cannot create, delete, see vendors, or open Admin"],
+  ].forEach(([k,v])=>{const r=el("div","ubar");r.style.gridTemplateColumns="minmax(0,10rem) minmax(0,1fr)";r.append(el("span","nm",k),cell(v));sl.append(r)});
+  st.append(sl);w.append(st);
+  const ms=usageSection("People with access","Sign someone out to end every session on every device. They need a new invitation to get back in.");
+  const rows=admin.members.map(m=>{
+    const ss=admin.sessions.filter(s=>s.member_id===m.id),last=ss[0]?.created_at;
+    const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.email));
+    const b=el("span");
+    if(ss.length){const btn=el("button","btn danger",m.id===me?"Sign out my devices":"Sign out everywhere");btn.onclick=()=>adminSignOut(m,ss.length);b.append(btn)}
+    r.append(n,cell(m.active?(m.role==="guest"?"Guest":"Editor"):"Removed"),cell(ss.length?`${ss.length} device${ss.length===1?"":"s"}${ss.some(s=>s.current)&&m.id===me?" (incl. this one)":""}`:"Not signed in"),cell(last?"Signed in "+fmtDay(last):"–"),b);
+    return r;
+  });
+  ms.append(adTable("stbl",["Person","Role","Signed in on","Latest sign-in",""],rows));w.append(ms);
+  const is=usageSection("Invitation links","Unused links still work until they expire. Ask for a new one if someone lost theirs.");
+  const irows=admin.invites.slice(0,50).map(i=>{const r=el("div","row");const n=admin.members.find(m=>m.id===i.member_id);
+    const status=i.used_at?"Used "+fmtDay(i.used_at):i.expires_at>now?"Unused, expires "+fmtDay(i.expires_at):"Expired unused";
+    r.append(el("span","nm",n?n.name:i.member_id),cell(i.email),cell(status,i.used_at||i.expires_at<=now?"city":"city warn"));return r});
+  is.append(irows.length?adTable("itbl",["Person","Email","Status"],irows):el("div","empty","No invitations on record."));w.append(is);
+}
+async function adminSignOut(m,n){
+  const self=m.id===me;
+  if(!confirm(self?`Sign out all ${n} of your devices, including this one?`:`Sign ${m.name} out of ${n} device${n===1?"":"s"}? They'll need a new invitation to get back in.`))return;
+  try{const r=await fetch("/api/admin/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({member:m.id})});if(!r.ok)throw Error();
+    track("action","Signed out "+(self?"own devices":"a member"));toast(self?"Signed out":"Signed "+m.name+" out");if(self){location.reload();return}loadAdmin()}
+  catch(_){toast("That didn't work. Try again.")}
+}
+const COLLECTION_NAMES={opps:"Accounts",activities:"Tasks and appointments",activity:"Activity log",notes:"Meeting notes",channels:"Team chats (editors)",messages:"Chat messages (editors)",guest_channels:"Team chats (guests)",guest_messages:"Chat messages (guests)",reads:"Read markers",vendors:"Vendors",assistant_threads:"Muninn conversations",settings:"Settings"};
+function renderSystem(){
+  const w=$("adSystem");w.replaceChildren();
+  if(!admin){w.append(el("div","empty",adminErr||"Loading…"));return}
+  const total=admin.storage.reduce((a,s)=>a+(s.bytes||0),0),records=admin.storage.reduce((a,s)=>a+s.records,0);
+  w.append(adTiles([[records.toLocaleString(),"records"],[(total/1024).toFixed(0)+" KB","of CRM data"],[admin.usageEvents==null?"Off":admin.usageEvents.toLocaleString(),"usage events"],[admin.expiredSessions,"expired sign-ins on file"]]));
+  const s=usageSection("What's stored","Everything lives in TideLine's Cloudflare D1 database.");
+  s.append(adTable("ytbl",["Kind","Records","Size","Last changed"],admin.storage.map(x=>{const r=el("div","row");r.append(el("span","nm",COLLECTION_NAMES[x.collection]||x.collection),cell(x.records.toLocaleString()),cell(((x.bytes||0)/1024).toFixed(1)+" KB"),cell(x.updated?fmtDay(x.updated):"–"));return r})));
+  w.append(s);
+  const ex=usageSection("Export","Download spreadsheets (CSV) for backup or analysis. They open in Excel or Google Sheets. Handle them like customer data.");
+  const eb=el("div");eb.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  Object.keys(EXPORTS).forEach(k=>{const b=el("button","btn",k);b.onclick=()=>exportCsv(k);eb.append(b)});
+  ex.append(eb);w.append(ex);
+  if(admin.usageEvents==null){const n=usageSection("Usage tracking is off","Apply migration 0004_usage_events.sql to start recording usage.");w.append(n)}
+}
+
+// CSV export. Cells that start like a formula are prefixed so spreadsheets show them as text.
+function csvCell(v){let s=v==null?"":String(v);if(/^[=+\-@\t\r]/.test(s))s="'"+s;return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+function downloadCsv(name,rows){
+  const text="﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+const EXPORTS={
+  "Accounts":()=>[["Organization","Stage","City","State","ZIP","Address","Website","Owner","Rank","Lead source","Source details","Next step","Next step date","Last touched","Notes"],...opps.map(o=>[o.name,STAGES[o.stage],o.city,o.state,o.zip,[o.address,o.address2].filter(Boolean).join(", "),o.website,nameOf(o.owner||"CK"),o.rank??"",o.source,o.sourceNote,o.next?.label,o.next?.date,o.lastTouch,o.notes])],
+  "Tasks and appointments":()=>[["Kind","Type","Account","Date","Time","Owner","Done","Notes"],...items.map(i=>[i.kind==="appt"?"Appointment":"Task",i.type,i.oppName,i.date,i.time,nameOf(i.owner||"CK"),i.done?"Yes":"No",i.notes])],
+  "Meeting notes":()=>[["Account","Meeting type","Date","Written by","Notes"],...notes.map(n=>[n.oppName,n.type,n.date,nameOf(n.by),n.text])],
+  "Vendors":()=>[["Name","Company","What they do","Email","Phone","Website","Related account","Notes"],...vendors.map(v=>[v.name,v.company,v.kind,v.email,v.phone,v.website,opps.find(o=>o.id===v.oppId)?.name||"",v.notes])],
+  "Deals":()=>[["Deal","Account","Status","Owner","Monthly","Yearly","One-time","Contract value","Discount %","Term (months)","Start","Expected close","Won","Lost reason"],...deals.map(d=>[d.name,oppNameOf(d.oppId),STATUS_LABEL[d.status],nameOf(d.owner),d.totals?.mrr,d.totals?.arr,d.totals?.oneTime,d.totals?.tcv,d.totals?.discountPct,d.terms?.months,d.terms?.startDate,d.expectedClose,d.wonTs?new Date(d.wonTs).toLocaleDateString():"",d.lostReason])],
+  "Processing residuals":()=>[["Merchant","Month","Card volume","Transactions","Residual","Source","Note"],...residuals.map(r=>[oppNameOf(r.oppId),r.month,r.volume,r.txns,r.residual,r.source,r.note])],
+  "Activity log":()=>[["When","Who","What"],...acts.map(a=>[new Date(a.ts).toLocaleString(),nameOf(a.by),a.text])],
+};
+function exportCsv(kind){downloadCsv(`voyage-${kind.toLowerCase().replace(/\s+/g,"-")}-${today()}.csv`,EXPORTS[kind]());track("action","Exported "+kind.toLowerCase())}
+
+// CSV import for accounts: maps common column names, skips blanks and names that already exist.
+function parseCsv(text){
+  const rows=[];let row=[],cur="",q=false;text=text.replace(/^﻿/,"");
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(cur);cur=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cur);rows.push(row);row=[];cur=""}else cur+=c}
+  if(cur||row.length){row.push(cur);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()));
+}
+const IMPORT_COLS={name:["organization","name","account","company","business"],city:["city","town"],state:["state"],zip:["zip","zip code","postal code"],address:["address","street","street address"],website:["website","url","web"],stage:["stage"],owner:["owner","rep"],rank:["rank","score"],source:["lead source","source"],sourceNote:["source details","referred by"],notes:["notes","note","comments"]};
+async function importAccounts(file){
+  const rows=parseCsv(await file.text());
+  if(rows.length<2){toast("That file has no rows to import");return}
+  const head=rows[0].map(h=>h.trim().toLowerCase()),col={};
+  Object.entries(IMPORT_COLS).forEach(([k,names])=>{const i=head.findIndex(h=>names.includes(h));if(i>=0)col[k]=i});
+  if(col.name==null){alert("Couldn't find a name column. The first row needs a header such as \"Organization\" or \"Name\".");return}
+  const norm=s=>(s||"").toLowerCase().replace(/[^a-z0-9]/g,""),seen=new Set(opps.map(o=>norm(o.name)));
+  const get=(r,k)=>col[k]==null?"":(r[col[k]]||"").trim();
+  const add=[];let dupes=0;
+  rows.slice(1,1001).forEach(r=>{const name=get(r,"name");if(!name)return;if(seen.has(norm(name))){dupes++;return}seen.add(norm(name));
+    const st=STAGES.findIndex(s=>s.toLowerCase()===get(r,"stage").toLowerCase());
+    const ow=team.find(m=>m.role==="edit"&&[m.id.toLowerCase(),m.name.toLowerCase()].includes(get(r,"owner").toLowerCase()));
+    const srcRaw=get(r,"source"),src=LEAD_SOURCES.find(s=>s.toLowerCase()===srcRaw.toLowerCase());
+    const rank=Number(get(r,"rank"));
+    add.push({name,city:get(r,"city"),state:get(r,"state").toUpperCase().slice(0,2),zip:get(r,"zip"),address:get(r,"address"),address2:"",website:normUrl(get(r,"website")),stage:st<0?0:st,owner:ow?ow.id:me,rank:get(r,"rank")!==""&&Number.isFinite(rank)?Math.max(0,Math.min(100,rank)):null,
+      source:src||(srcRaw?"Other":""),sourceNote:src?get(r,"sourceNote"):[srcRaw,get(r,"sourceNote")].filter(Boolean).join(": "),notes:get(r,"notes"),next:null,verification:"",employees:"",activeStudents:"",inactiveStudents:"",needs:"",bio:"",linkedin:"",locations:[]})});
+  if(!add.length){toast(dupes?`All ${dupes} accounts already exist`:"No accounts found in that file");return}
+  const mapped=Object.keys(col).map(k=>({name:"name",city:"city",state:"state",zip:"ZIP",address:"address",website:"website",stage:"stage",owner:"owner",rank:"rank",source:"lead source",sourceNote:"source details",notes:"notes"}[k])).join(", ");
+  if(!confirm(`Import ${add.length} new account${add.length===1?"":"s"}?${dupes?`\n${dupes} already in The Voyage will be skipped.`:""}${rows.length>1001?"\nOnly the first 1,000 rows are imported.":""}\n\nColumns used: ${mapped}.`))return;
+  if(!live){add.forEach((o,i)=>opps.push({id:"imp"+Date.now()+i,...o}));render();toast("Imported for this session only");return}
+  let done=0;
+  for(const o of add){try{await db.collection("opps").add(o);done++;if(done%10===0)toast(`Imported ${done} of ${add.length}…`)}catch(_){}}
+  logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
+  toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
+}
+// Deals: builder, approvals, close package, and financials. The server recomputes totals and owns
+// every status change; the math here mirrors src/deals.js for the live preview.
+let deals=[],catalog=[],dsTab="pipeline",dsFilter="open",dsQuery="",dl=null,dlId=null,dlDirty=false;
+const DEAL_RULES_DEFAULT={maxDiscount:15,minTermMonths:12,maxNetDays:30,maxFreeMonths:1};
+const PAY_DAYS={"Due on receipt":0,"Net 15":15,"Net 30":30,"Net 45":45,"Net 60":60};
+const STAGE_PROB=[5,10,20,35,50,70,85];
+const STATUS_LABEL={draft:"Draft",pending:"Waiting for approval",changes:"Changes requested",approved:"Approved",won:"Closed won",lost:"Closed lost"};
+const OPEN=new Set(["draft","pending","changes","approved"]);
+const usd=n=>(n||0).toLocaleString(undefined,{style:"currency",currency:"USD",maximumFractionDigits:Math.round((n||0)*100)%100?2:0});
+const usdK=n=>Math.abs(n)>=1e6?"$"+(n/1e6).toFixed(1)+"M":Math.abs(n)>=1e4?"$"+Math.round(n/1e3)+"K":usd(n);
+const dealRules=()=>({...DEAL_RULES_DEFAULT,...(catalog.find(c=>c.id==="rules")||{})});
+const products=()=>catalog.filter(c=>c.id!=="rules"&&c.kind==="product");
+function dealTotals(d){
+  const months=d.terms?.months||12,billable=Math.max(0,months-(d.terms?.freeMonths||0));let one=0,mrr=0,lone=0,lmrr=0;
+  (d.lines||[]).forEach(l=>{const list=l.qty*(l.listPrice??l.price),net=l.qty*l.price*(1-(l.discount||0)/100);if(l.billing==="once"){one+=net;lone+=list}else{const f=l.billing==="annual"?1/12:1;mrr+=net*f;lmrr+=list*f}});
+  const tcv=one+mrr*billable,ltcv=lone+lmrr*months,r=x=>Math.round(x*100)/100;
+  return {oneTime:r(one),mrr:r(mrr),arr:r(mrr*12),tcv:r(tcv),listTcv:r(ltcv),discountPct:ltcv>0?Math.round((1-tcv/ltcv)*1000)/10:0,processing:calcProcessing(d.processing)};
+}
+// Processing estimate; mirrors calculateProcessing in src/deals.js. Partner rates come from the database.
+const PROC_DEFAULTS={sharePct:0,defaultInterchangePct:null,cardPct:0,cardAuth:0,amexPct:0,amexAuth:0,batchFee:0,midMonthly:0,gatewayMonthly:0,hostedPerTxn:0,gatewayBilledToMerchant:false};
+const procSettings=()=>({...PROC_DEFAULTS,...(catalog.find(c=>c.id==="processing")||{})});
+function calcProcessing(p){
+  if(!p?.enabled)return null;const s=procSettings(),missing=[],r=x=>Math.round(x*100)/100;
+  if(!(p.volume>0))missing.push("monthly card volume");if(!(p.txns>0))missing.push("monthly transactions");
+  if(p.rate==null)missing.push("our rate (%)");if(p.perTxn==null)missing.push("our per-transaction fee");
+  const ic=p.interchangePct??s.defaultInterchangePct;if(ic==null)missing.push("estimated interchange (%)");if(!s.sharePct)missing.push("revenue share (set it under Products & rules)");
+  const V=p.volume||0,N=p.txns||0,a=(p.amexShare||0)/100,merchant=V*(p.rate||0)/100+N*(p.perTxn||0)+(p.monthlyFee||0),gateway=s.gatewayMonthly+(p.hosted?N*s.hostedPerTxn:0);
+  const cost=V*(ic||0)/100+V*(1-a)*s.cardPct/100+N*(1-a)*s.cardAuth+V*a*s.amexPct/100+N*a*s.amexAuth+(p.batches||0)*s.batchFee+s.midMonthly+(s.gatewayBilledToMerchant?0:gateway);
+  const mTotal=merchant+(s.gatewayBilledToMerchant?gateway:0),cur=p.currentRate==null?null:V*p.currentRate/100+N*(p.currentPerTxn||0)+(p.currentMonthly||0),net=merchant-cost,res=Math.max(0,net)*s.sharePct/100;
+  return {merchantMonthly:r(mTotal),currentMonthly:cur==null?null:r(cur),savingsMonthly:cur==null?null:r(cur-mTotal),effectiveRate:V?Math.round(mTotal/V*10000)/100:null,costMonthly:r(cost),netMonthly:r(net),residualMonthly:r(res),residualAnnual:r(res*12),belowCost:!missing.length&&net<0,missing};
+}
+function dealFlags(d,t){
+  const r=dealRules(),f=[];
+  if(t.discountPct>r.maxDiscount)f.push(`Total discount ${t.discountPct}% is above the ${r.maxDiscount}% limit`);
+  d.lines.forEach(l=>{if(l.discount>r.maxDiscount)f.push(`${l.name} is discounted ${l.discount}%`)});
+  if(d.terms.months<r.minTermMonths)f.push(`${d.terms.months}-month term is shorter than ${r.minTermMonths} months`);
+  if(PAY_DAYS[d.terms.paymentTerms]>r.maxNetDays)f.push(`${d.terms.paymentTerms} payment terms are longer than Net ${r.maxNetDays}`);
+  if(d.terms.freeMonths>r.maxFreeMonths)f.push(`${d.terms.freeMonths} free months is more than ${r.maxFreeMonths}`);
+  if(d.terms.special)f.push("Has special terms");
+  if(t.processing?.belowCost)f.push("Payment processing is priced below cost");
+  return f;
+}
+const dealProb=d=>d.status==="won"?100:d.status==="lost"?0:d.probability!=null?d.probability:(STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10);
+const oppNameOf=id=>opps.find(o=>o.id===id)?.name||"No account";
+const canReview=d=>d.status==="pending"&&(d.submittedBy!==me||!editors().some(m=>m.id!==me));
+function statusPill(s){return el("span","spill "+s,STATUS_LABEL[s]||s)}
+async function dealApi(method,path,body){
+  const r=await fetch("/api/deals"+path,{method,credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.error||"That didn't work");e.problems=j.problems;throw e}return j;
+}
+function updateDealBadge(){const n=deals.filter(canReview).length;$("dealBadge").hidden=!n;$("dealBadge").textContent=n;$("dsApprovalCount").hidden=!n;$("dsApprovalCount").textContent=n}
+
+function renderDeals(){
+  [...$("dsTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===dsTab));
+  const w=$("dsBody");w.replaceChildren();
+  if(dsTab==="pipeline")renderDealPipeline(w);else if(dsTab==="approvals")renderDealApprovals(w);else if(dsTab==="financials")renderFinancials(w);else renderCatalog(w);
+}
+function dealRow(d){
+  const r=el("button","row"),n=el("div");n.append(el("div","nm",d.name||"Untitled deal"),el("div","co",oppNameOf(d.oppId)+(d.flags?.length&&OPEN.has(d.status)?" · ⚠ needs approval":"")));
+  r.append(n,statusPill(d.status),el("span","city money",usd(d.totals?.mrr)+"/mo"),el("span","money",usd(d.totals?.tcv)),el("span","city",d.status==="won"?"Won "+fmtDay(d.wonTs):d.expectedClose?fmtDate(d.expectedClose):"No close date"),avatar(d.owner||"CK"));
+  r.onclick=()=>openDeal(d.id);return r;
+}
+function renderDealPipeline(w){
+  const open=deals.filter(d=>OPEN.has(d.status)),q=new Date(),qStart=new Date(q.getFullYear(),Math.floor(q.getMonth()/3)*3,1).getTime();
+  w.append(adTiles([[usdK(open.reduce((a,d)=>a+(d.totals?.tcv||0),0)),"open pipeline"],[usdK(open.reduce((a,d)=>a+(d.totals?.tcv||0)*dealProb(d)/100,0)),"weighted by likelihood"],[deals.filter(d=>d.status==="pending").length,"waiting for approval"],[usdK(deals.filter(d=>d.status==="won"&&d.wonTs>=qStart).reduce((a,d)=>a+(d.totals?.tcv||0),0)),"won this quarter"]]));
+  const bar=el("div","bhead");bar.style.marginTop="16px";
+  const s=document.createElement("select");[["open","Open deals"],["all","All deals"],["pending","Waiting for approval"],["approved","Approved, ready to close"],["won","Closed won"],["lost","Closed lost"]].forEach(([v,l])=>s.append(new Option(l,v)));s.value=dsFilter;s.onchange=()=>{dsFilter=s.value;renderDeals()};
+  const i=document.createElement("input");i.type="search";i.placeholder="Find a deal or account";i.value=dsQuery;i.oninput=()=>{dsQuery=i.value;const pos=i.selectionStart;renderDeals();const ni=$("dsBody").querySelector("input[type=search]");ni.focus();ni.setSelectionRange(pos,pos)};
+  bar.append(i,s);w.append(bar);
+  const ql=dsQuery.trim().toLowerCase();
+  const list=deals.filter(d=>(dsFilter==="all"||(dsFilter==="open"?OPEN.has(d.status):d.status===dsFilter))&&(!ql||(d.name+" "+oppNameOf(d.oppId)).toLowerCase().includes(ql)))
+    .sort((a,b)=>(a.expectedClose||"9").localeCompare(b.expectedClose||"9")||(b.updatedTs||0)-(a.updatedTs||0));
+  w.append(adTable("dtbl",["Deal","Status","Monthly","Contract value","Close",""],list.map(dealRow)));
+  if(!list.length)w.lastChild.append(emptyRow(deals.length?"No deals match.":"No deals yet. Use + New deal, or open an account and add one there."));
+}
+function renderDealApprovals(w){
+  const pend=deals.filter(d=>d.status==="pending").sort((a,b)=>(a.submittedTs||0)-(b.submittedTs||0));
+  w.append(el("div","hint","Deals outside the guardrails wait here until another editor approves them or asks for changes."));w.lastChild.style.cssText="color:var(--muted);font-size:13px;margin-bottom:12px";
+  if(!pend.length){w.append(el("div","empty","Nothing is waiting for approval."));return}
+  pend.forEach(d=>{
+    const c=el("div","dlsec"),h=el("div","sech");h.append(el("h2",null,d.name),statusPill(d.status));c.append(h);
+    c.append(el("div","city",`${oppNameOf(d.oppId)} · ${usd(d.totals.tcv)} total · ${usd(d.totals.mrr)}/mo · ${d.terms.months} months · submitted by ${nameOf(d.submittedBy)} ${fmtDay(d.submittedTs)}`));
+    const f=el("div","dlflag warn");const ul=el("ul");d.flags.forEach(x=>ul.append(el("li",null,x)));f.append(el("b",null,"Why it needs approval"),ul);f.style.marginTop="10px";c.append(f);
+    if(d.terms.special){const sp=el("div","city");sp.style.whiteSpace="pre-wrap";sp.textContent="Special terms: "+d.terms.special;c.append(sp)}
+    const a=el("div");a.style.cssText="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap";
+    const open=el("button","btn","Open deal");open.onclick=()=>openDeal(d.id);a.append(open);
+    if(canReview(d)){
+      const ok=el("button","btn primary","Approve");ok.onclick=()=>quickReview(d,"approve");
+      const no=el("button","btn","Request changes");no.onclick=()=>quickReview(d,"changes");a.append(ok,no);
+    }else a.append(el("span","city","Waiting for "+(editors().filter(m=>m.id!==d.submittedBy).map(m=>m.name).join(" or ")||"another editor")+" to review"));
+    c.append(a);w.append(c);
+  });
+}
+async function quickReview(d,action){
+  const note=action==="changes"?prompt("What needs to change?"):prompt("Optional note for the history:","");
+  if(note===null||(action==="changes"&&!note.trim()))return;
+  try{await dealApi("POST",`/${d.id}/${action}`,{note});toast(action==="approve"?"Approved":"Sent back for changes");track("action",action==="approve"?"Approved a deal":"Requested deal changes")}catch(e){toast(e.message)}
+}
+function renderFinancials(w){
+  const now=new Date(),y0=new Date(now.getFullYear(),0,1).getTime(),q0=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1).getTime(),yearAgo=Date.now()-365*864e5;
+  const won=deals.filter(d=>d.status==="won"),lost=deals.filter(d=>d.status==="lost"),open=deals.filter(d=>OPEN.has(d.status));
+  const sum=(list,f)=>list.reduce((a,d)=>a+f(d),0),tcv=d=>d.totals?.tcv||0;
+  const recentWon=won.filter(d=>d.wonTs>yearAgo),recentLost=lost.filter(d=>d.lostTs>yearAgo);
+  const winRate=recentWon.length+recentLost.length?Math.round(recentWon.length/(recentWon.length+recentLost.length)*100)+"%":"–";
+  w.append(adTiles([[usdK(sum(won.filter(d=>d.wonTs>=q0),tcv)),"booked this quarter"],[usdK(sum(won.filter(d=>d.wonTs>=y0),d=>d.totals?.arr||0)),"new yearly recurring revenue this year"],[winRate,"win rate, last 12 months"],[won.length?usdK(sum(won,tcv)/won.length):"–","average won deal"]]));
+  const t2=adTiles([[usdK(sum(open,tcv)),"open pipeline"],[usdK(sum(open,d=>tcv(d)*dealProb(d)/100)),"weighted pipeline"],[won.length?(sum(won,d=>d.totals?.discountPct||0)/won.length).toFixed(1)+"%":"–","average discount on won deals"],[usdK(sum(won,d=>d.totals?.mrr||0)),"monthly recurring revenue won"]]);t2.style.marginTop="10px";w.append(t2);
+  const ms=usageSection("Booked by month","Contract value of deals closed won, last 6 months.");
+  const months=[...Array(6)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
+  const vals=months.map((m,i)=>{const end=new Date(m.getFullYear(),m.getMonth()+1,1).getTime();return sum(won.filter(d=>d.wonTs>=m.getTime()&&d.wonTs<end),tcv)});
+  const mx=Math.max(1,...vals),fb=el("div","fbars");months.forEach((m,i)=>{const c=el("div");c.append(el("b",null,vals[i]?usdK(vals[i]):""));const bar=document.createElement("i");bar.style.height=(vals[i]/mx*100)+"%";c.append(bar,el("span",null,m.toLocaleDateString(undefined,{month:"short"})));fb.append(c)});
+  const box=el("div","tbl");box.append(fb);box.style.paddingBottom="10px";ms.append(box);w.append(ms);
+  const fc=usageSection("Forecast","Open deals by expected close month, weighted by how likely each is to close.");
+  const fm=[...Array(3)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()+i,1));
+  fc.append(adTable("ftbl",["Month","Deals","Weighted","If all close"],fm.map(m=>{const k=iso(m).slice(0,7),list=open.filter(d=>(d.expectedClose||"").startsWith(k));const r=el("div","row");r.append(el("span","nm",m.toLocaleDateString(undefined,{month:"long",year:"numeric"})),cell(String(list.length)),el("span","money",usd(sum(list,d=>tcv(d)*dealProb(d)/100))),el("span","money city",usd(sum(list,tcv))));return r})));
+  const late=open.filter(d=>d.expectedClose&&d.expectedClose<today());if(late.length)fc.append(el("div","dlflag warn",`${late.length} open deal${late.length===1?" has":"s have"} an expected close date in the past.`));
+  w.append(fc);
+  const rs=usageSection("By rep","");rs.lastChild.remove();
+  rs.append(adTable("ftbl",["Rep","Won","Won value","Open pipeline","Weighted"],editors().map(m=>{const mw=won.filter(d=>d.owner===m.id),mo=open.filter(d=>d.owner===m.id);const r=el("div","row");r.append(el("span","nm",m.name),cell(String(mw.length)),el("span","money",usd(sum(mw,tcv))),el("span","money",usd(sum(mo,tcv))),el("span","money city",usd(sum(mo,d=>tcv(d)*dealProb(d)/100))));return r})));w.append(rs);
+  const ss=usageSection("By lead source","Which sources turn into revenue.");
+  const src=[...new Set(won.concat(open).map(d=>opps.find(o=>o.id===d.oppId)?.source||"Not set"))];
+  ss.append(adTable("ftbl",["Lead source","Won","Won value","Open pipeline"],src.map(s=>{const f=d=>(opps.find(o=>o.id===d.oppId)?.source||"Not set")===s,sw=won.filter(f);const r=el("div","row");r.append(el("span","nm",s),cell(String(sw.length)),el("span","money",usd(sum(sw,tcv))),el("span","money",usd(sum(open.filter(f),tcv))));return r})));
+  if(!src.length)ss.append(el("div","empty","No deals yet."));w.append(ss);
+  renderProcessingFinancials(w,won,open);
+  if(recentLost.length){const ls=usageSection("Why deals were lost","Last 12 months.");ls.append(adTable("htbl",["Deal","Reason"],recentLost.map(d=>{const r=el("button","row");r.append(el("span","nm",d.name),cell(d.lostReason||""));r.onclick=()=>openDeal(d.id);return r})));w.append(ls)}
+}
+// Payment processing: estimates from deals, plus actual monthly results entered by hand for now.
+// Each month is one "residuals" record per merchant, the same shape a partner-portal import will use.
+let residuals=[];
+function renderProcessingFinancials(w,won,open){
+  const s=procSettings(),est=d=>d.totals?.processing&&!d.totals.processing.missing?.length?d.totals.processing:null,sum=(l,f)=>l.reduce((a,x)=>a+(f(x)||0),0);
+  const wonP=won.filter(est),openP=open.filter(est),now=new Date(),thisMonth=iso(now).slice(0,7);
+  const sec=usageSection("Payment processing","Estimated residuals from deals, and the actual results you record each month.");
+  const t=adTiles([[usd(sum(wonP,d=>est(d).residualMonthly))+"/mo","estimated residual from won deals"],[usdK(sum(wonP,d=>d.processing.volume)),"monthly card volume, won merchants"],[usd(sum(openP,d=>est(d).residualMonthly*dealProb(d)/100))+"/mo","weighted residual in the pipeline"],[usdK(sum(wonP,d=>(est(d).savingsMonthly||0)*12)),"yearly savings for won merchants"]]);
+  sec.append(t);
+  if(!s.sharePct)sec.append(el("div","dlflag warn","Set your revenue share and the processor's cost basis under Deals › Products & rules to turn on residual estimates."));
+  const months=[...Array(6)].map((_,i)=>iso(new Date(now.getFullYear(),now.getMonth()-5+i,1)).slice(0,7));
+  const byMonth=months.map(m=>sum(residuals.filter(r=>r.month===m),r=>r.residual)),mx=Math.max(1,...byMonth),fb=el("div","fbars");
+  months.forEach((m,i)=>{const c=el("div");c.append(el("b",null,byMonth[i]?usd(byMonth[i]):""));const bar=document.createElement("i");bar.style.height=(byMonth[i]/mx*100)+"%";bar.style.background="var(--blue)";c.append(bar,el("span",null,new Date(m+"-01T00:00").toLocaleDateString(undefined,{month:"short"})));fb.append(c)});
+  const box=el("div","tbl");box.append(el("div","pphead","Actual residuals paid, last 6 months"),fb);box.firstChild.style.padding="12px 16px 0";box.style.paddingBottom="10px";sec.append(box);
+  const merchants=[...new Set([...wonP.map(d=>d.oppId),...residuals.map(r=>r.oppId)])];
+  const rows=merchants.map(id=>{const d=wonP.find(x=>x.oppId===id),rs=residuals.filter(r=>r.oppId===id).sort((a,b)=>b.month.localeCompare(a.month)),last=rs[0];
+    const r=el("div","row");r.append(el("span","nm",oppNameOf(id)),el("span","money",d?usd(est(d).residualMonthly):"–"),el("span","money",last?usd(last.residual):"–"),el("span","city",last?new Date(last.month+"-01T00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"})+(last.volume?" · "+usdK(last.volume)+" volume":""):"Nothing recorded"),el("span","money",usd(sum(rs.filter(x=>x.month.startsWith(String(now.getFullYear()))),x=>x.residual))));return r});
+  const mt=adTable("ftbl",["Merchant","Estimate / mo","Last actual","Month","This year"],rows);if(!rows.length)mt.append(emptyRow("No processing merchants yet. Turn on payment processing in a deal, or record a month below."));sec.append(mt);
+  // Manual entry form.
+  const f=el("div","dlsec");f.style.marginTop="12px";f.append(el("div","pphead","Record a month"));f.firstChild.style.marginTop="0";
+  const g=el("div","grid3"),mk=(label,el2)=>{const l=el("label",null,label);l.append(el2);g.append(l);return el2};
+  const ms=document.createElement("select");[...new Set([...merchants,...won.map(d=>d.oppId)])].map(id=>[id,oppNameOf(id)]).concat(opps.filter(o=>!merchants.includes(o.id)&&!won.some(d=>d.oppId===o.id)).map(o=>[o.id,o.name])).forEach(([v,l])=>ms.append(new Option(l,v)));mk("Merchant",ms);
+  const mo=document.createElement("input");mo.type="month";mo.value=iso(new Date(now.getFullYear(),now.getMonth()-1,1)).slice(0,7);mo.max=thisMonth;mk("Month",mo);
+  const vol=document.createElement("input");vol.type="number";vol.min=0;vol.step="0.01";mk("Card volume ($)",vol);
+  const tx=document.createElement("input");tx.type="number";tx.min=0;mk("Transactions",tx);
+  const res=document.createElement("input");res.type="number";res.min=0;res.step="0.01";mk("Residual paid to TideLine ($)",res);
+  const note=document.createElement("input");note.type="text";note.maxLength=500;note.placeholder="Optional";mk("Note",note);
+  const fill=()=>{const r=residuals.find(x=>x.oppId===ms.value&&x.month===mo.value);vol.value=r?.volume??"";tx.value=r?.txns??"";res.value=r?.residual??"";note.value=r?.note??""};ms.onchange=fill;mo.onchange=fill;fill();
+  const sv=el("button","btn primary","Save month");sv.onclick=()=>{if(!ms.value||!mo.value||res.value===""){toast("Pick the merchant and month, and enter the residual");return}
+    write(()=>db.doc(`residuals/${ms.value}_${mo.value}`).set({month:mo.value,oppId:ms.value,volume:Number(vol.value)||0,txns:Number(tx.value)||0,residual:Number(res.value)||0,note:note.value.trim(),source:"manual"}),"Month saved").then(()=>track("action","Recorded a processing month"))};
+  f.append(g,sv,el("div","city","Copy these from the processor's monthly residual report. Saving the same merchant and month again replaces it. When the processor's portal is connected, it will fill these in automatically."));
+  sec.append(f);w.append(sec);
+}
+function renderCatalog(w){
+  const ps=usageSection("Products and services","What you sell, with list prices. Reps pick from this list in the deal builder; prices below list count as a discount.");
+  const rows=products().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    const r=el("div","row"),inp=(v,type)=>{const i=document.createElement("input");i.type=type||"text";i.value=v??"";return i};
+    const n=inp(p.name),bill=document.createElement("select");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,l])=>bill.append(new Option(l,v)));bill.value=p.billing;
+    const pr=inp(p.price,"number");pr.min=0;pr.step="0.01";const ds=inp(p.description);
+    const act=el("label","chk");const cb=document.createElement("input");cb.type="checkbox";cb.checked=p.active!==false;act.append(cb,"Active");act.style.margin="0";
+    const del=el("button","btn danger","Remove");
+    const saveP=()=>write(()=>db.doc("catalog/"+p.id).set({kind:"product",name:n.value.trim()||"Product",billing:bill.value,price:Math.max(0,Number(pr.value)||0),description:ds.value.trim(),active:cb.checked}),"Product saved");
+    [n,pr,ds].forEach(x=>x.onchange=saveP);bill.onchange=saveP;cb.onchange=saveP;
+    del.onclick=()=>{if(confirm("Remove "+p.name+" from the catalog? Existing deals keep their lines."))write(()=>db.doc("catalog/"+p.id).delete(),"Product removed")};
+    r.append(n,bill,pr,ds,act,del);return r;
+  });
+  ps.append(adTable("ctbl",["Name","Billing","List price","Description","",""],rows));
+  const add=el("button","btn","+ Add product");add.style.marginTop="10px";add.onclick=()=>write(()=>db.collection("catalog").add({kind:"product",name:"New product",billing:"monthly",price:0,description:"",active:true}),"Product added");ps.append(add);w.append(ps);
+  const r=dealRules(),rs=usageSection("Approval guardrails","Deals outside these limits need another editor to approve before they can close.");
+  const g=el("div","dlsec"),grid=el("div","grid2");
+  const fld=(label,key,min,max)=>{const l=el("label",null,label);const i=document.createElement("input");i.type="number";i.min=min;i.max=max;i.value=r[key];i.dataset.k=key;l.append(i);grid.append(l);return i};
+  const ins=[fld("Highest discount without approval (%)","maxDiscount",0,100),fld("Shortest term without approval (months)","minTermMonths",1,120),fld("Longest payment terms without approval (days)","maxNetDays",0,60),fld("Most free months without approval","maxFreeMonths",0,24)];
+  const sv=el("button","btn primary","Save guardrails");sv.onclick=()=>{const data={kind:"rules"};ins.forEach(i=>data[i.dataset.k]=Math.max(Number(i.min),Math.min(Number(i.max),Number(i.value)||0)));write(()=>db.doc("catalog/rules").set(data),"Guardrails saved")};
+  g.append(grid,sv);rs.append(g,el("div","city","Special terms always need approval."));w.append(rs);
+  // Processing partner terms: entered here, stored in the database, never in code.
+  const s=procSettings(),pp=usageSection("Payment processing terms","From your referral agreement: your revenue share and the processor's cost basis. Used to estimate residuals on each deal. Only Quan and Cody can see these.");
+  const box=el("div","dlsec"),fields=[];
+  const field=(grid,label,key,step,type)=>{const l=el("label",null,label);const i=document.createElement("input");i.type=type||"number";if(!type){i.min=0;i.step=step||"0.01"}i.value=s[key]??"";i.dataset.k=key;l.append(i);grid.append(l);fields.push(i)};
+  const head=t=>{const h=el("div","pphead",t);box.append(h)};
+  const g1=el("div","grid3");field(g1,"Your share of the processor's net revenue (%)","sharePct","0.1");field(g1,"Default interchange estimate (%)","defaultInterchangePct");box.append(g1);
+  head("Visa, Mastercard, Discover cost");const g2=el("div","grid3");field(g2,"Volume (%)","cardPct","0.001");field(g2,"Per authorization ($)","cardAuth");box.append(g2);
+  head("Amex cost");const g3=el("div","grid3");field(g3,"Volume (%)","amexPct","0.001");field(g3,"Per authorization ($)","amexAuth");box.append(g3);
+  head("Account and gateway cost");const g4=el("div","grid3");field(g4,"Per settled batch ($)","batchFee");field(g4,"Monthly per merchant account ($)","midMonthly");field(g4,"Gateway license, monthly ($)","gatewayMonthly");field(g4,"Hosted payments, per transaction ($)","hostedPerTxn");
+  const gl=el("label","chk");const gb=document.createElement("input");gb.type="checkbox";gb.checked=!!s.gatewayBilledToMerchant;gl.append(gb,"Gateway fees are billed to the merchant");gl.style.alignSelf="end";g4.append(gl);box.append(g4);
+  const save=el("button","btn primary","Save processing terms");save.style.marginTop="8px";
+  save.onclick=()=>{const data={gatewayBilledToMerchant:gb.checked};fields.forEach(i=>{data[i.dataset.k]=i.type==="text"?i.value.trim():i.value===""?null:Number(i.value)});write(()=>db.doc("catalog/processing").set(data),"Processing terms saved")};
+  box.append(save);pp.append(box);w.append(pp);
+}
+
+// The builder.
+function blankDeal(oppId){const o=opps.find(x=>x.id===oppId);return {name:o?o.name+" deal":"",oppId:oppId||"",owner:o?.owner||me,expectedClose:o?.next?.date||"",probability:null,lines:[],terms:{startDate:"",months:12,freeMonths:0,paymentTerms:"Net 30",billingFrequency:"Monthly",autoRenew:true,special:""},close:{agreementSigned:false,signedDate:"",signerName:"",signerTitle:"",signerEmail:"",billingEmail:"",paymentMethod:"",handoff:""},processing:{enabled:false,volume:null,txns:null,amexShare:0,rate:null,perTxn:null,monthlyFee:0,currentRate:null,currentPerTxn:null,currentMonthly:0,interchangePct:null,batches:26,hosted:true},notes:"",status:"draft",history:[]}}
+function openDeal(id,oppId){
+  if(view==="deal"&&dlDirty&&!confirm("Leave this deal without saving your changes?"))return;
+  const d=id&&deals.find(x=>x.id===id);dlId=d?d.id:null;dlFiles=[];dl=JSON.parse(JSON.stringify(d||blankDeal(oppId)));dlDirty=false;
+  go("deal");window.scrollTo(0,0);fillBuilder();
+}
+function fillBuilder(){
+  const d=dl,editable=d.status==="draft"||d.status==="changes",closeOk=editable||d.status==="approved";
+  $("dlTitle").textContent=d.name||"New deal";$("dlStatus").replaceWith(Object.assign(statusPill(d.status),{id:"dlStatus"}));
+  $("dlSub").textContent=dlId?`${oppNameOf(d.oppId)} · last saved ${fmtDay(d.updatedTs||Date.now())}`:"Fill in the steps, then submit. Deals inside the guardrails are approved automatically.";
+  const os=$("dlOpp");os.replaceChildren(new Option("Pick an account",""));[...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>os.append(new Option(o.name,o.id)));os.value=d.oppId;
+  const ow=$("dlOwner");ow.replaceChildren();editors().forEach(m=>ow.append(new Option(m.name,m.id)));ow.value=d.owner||me;
+  $("dlName").value=d.name;$("dlClose").value=d.expectedClose||"";$("dlProb").value=d.probability??"";$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10}%)`;
+  const t=d.terms;$("dlStart").value=t.startDate||"";$("dlMonths").value=t.months;$("dlFree").value=t.freeMonths;$("dlPay").value=t.paymentTerms;$("dlBill").value=t.billingFrequency;$("dlRenew").checked=!!t.autoRenew;$("dlSpecial").value=t.special||"";$("dlNotes").value=d.notes||"";
+  $("dcStart").value=t.startDate||"";const c=d.close;$("dcSigned").checked=!!c.agreementSigned;$("dcDate").value=c.signedDate||"";$("dcName").value=c.signerName||"";$("dcTitle").value=c.signerTitle||"";$("dcEmail").value=c.signerEmail||"";$("dcBilling").value=c.billingEmail||"";$("dcPay").value=c.paymentMethod||"";$("dcHandoff").value=c.handoff||"";
+  [...$("dlMain").querySelectorAll(".dlsec")].slice(0,4).forEach(s=>s.classList.toggle("locked",!editable));
+  const pp=d.processing||blankDeal().processing,ps=procSettings(),pv=v=>v??"";$("ppOn").checked=!!pp.enabled;$("ppBody").hidden=!pp.enabled;
+  $("ppVol").value=pv(pp.volume);$("ppTx").value=pv(pp.txns);$("ppAmex").value=pp.amexShare??0;$("ppRate").value=pv(pp.rate);$("ppPer").value=pv(pp.perTxn);$("ppMon").value=pp.monthlyFee??0;$("ppCurRate").value=pv(pp.currentRate);$("ppCurTx").value=pv(pp.currentPerTxn);$("ppCurMon").value=pp.currentMonthly??0;$("ppIc").value=pv(pp.interchangePct);$("ppIc").placeholder=ps.defaultInterchangePct!=null?"Default "+ps.defaultInterchangePct+"%":"From their statement";$("ppBatch").value=pp.batches||26;$("ppHosted").checked=pp.hosted!==false;
+  $("dlCloseSec").classList.toggle("locked",!closeOk);
+  $("dlCloseHint").textContent=d.status==="won"?`Closed won ${fmtDay(d.wonTs)} by ${nameOf(d.closedBy)}.`:closeOk?"Fill this in once the deal is approved and signed. It's what the team needs to start the customer.":"Unlocks once the deal is approved.";
+  const pk=$("dlPick");pk.replaceChildren(new Option("+ Add a product or service…",""));products().filter(p=>p.active!==false).forEach(p=>pk.append(new Option(`${p.name} · ${usd(p.price)}${p.billing==="monthly"?"/mo":p.billing==="annual"?"/yr":" one-time"}`,p.id)));
+  if(!products().some(p=>p.active!==false&&isImpl(p)))pk.append(new Option("Implementation · one-time (enter price)","__impl"));
+  pk.disabled=!editable;$("dlAddCustom").disabled=!editable;
+  renderLines();renderHistory();refreshSummary();renderDealFiles();loadDealFiles();
+}
+function renderLines(){
+  const editable=dl.status==="draft"||dl.status==="changes",w=$("dlLines");w.replaceChildren();
+  const hd=el("div","row hd");["Product or service","Billing","Qty","Price","Disc. %","Amount",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
+  if(!dl.lines.length){w.append(emptyRow(products().length?"Add a product or service below.":"Add a custom line below, or set up products under Deals › Products & rules."));return}
+  dl.lines.forEach((l,ix)=>{
+    const r=el("div","row"),mk=(v,type,on)=>{const i=document.createElement("input");i.type=type;i.value=v;i.disabled=!editable;i.oninput=()=>{on(i.value);dlDirty=true;updateLineAmount(r,l);refreshSummary()};return i};
+    const nm=el("div");nm.append(mk(l.name,"text",v=>l.name=v));if(l.listPrice&&l.price<l.listPrice)nm.append(el("div","list","List "+usd(l.listPrice)));
+    const b=document.createElement("select");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,t])=>b.append(new Option(t,v)));b.value=l.billing;b.disabled=!editable;b.onchange=()=>{l.billing=b.value;dlDirty=true;updateLineAmount(r,l);refreshSummary()};
+    const q=mk(l.qty,"number",v=>l.qty=Math.max(0,Number(v)||0));q.min=0;
+    const p=mk(l.price,"number",v=>l.price=Math.max(0,Number(v)||0));p.min=0;p.step="0.01";
+    const ds=mk(l.discount||0,"number",v=>l.discount=Math.min(100,Math.max(0,Number(v)||0)));ds.min=0;ds.max=100;
+    const x=el("button","lx","×");x.title="Remove line";x.disabled=!editable;x.onclick=()=>{dl.lines.splice(ix,1);dlDirty=true;renderLines();refreshSummary()};
+    r.append(nm,b,q,p,ds,el("span","amt",""),x);updateLineAmount(r,l);w.append(r);
+  });
+}
+function updateLineAmount(r,l){const a=l.qty*l.price*(1-(l.discount||0)/100);r.querySelector(".amt").textContent=usd(a)+(l.billing==="monthly"?"/mo":l.billing==="annual"?"/yr":"")}
+function readBuilder(){
+  const d=dl;d.name=$("dlName").value.trim();d.oppId=$("dlOpp").value;d.owner=$("dlOwner").value;d.expectedClose=$("dlClose").value;d.probability=$("dlProb").value===""?null:Math.min(100,Math.max(0,Number($("dlProb").value)));
+  d.terms={startDate:$("dlStart").value,months:Math.min(120,Math.max(1,Number($("dlMonths").value)||12)),freeMonths:Math.min(24,Math.max(0,Number($("dlFree").value)||0)),paymentTerms:$("dlPay").value,billingFrequency:$("dlBill").value,autoRenew:$("dlRenew").checked,special:$("dlSpecial").value.trim()};
+  d.notes=$("dlNotes").value.trim();
+  const nv=id=>$(id).value===""?null:Math.max(0,Number($(id).value)||0);
+  d.processing={enabled:$("ppOn").checked,volume:nv("ppVol"),txns:nv("ppTx"),amexShare:Math.min(100,nv("ppAmex")||0),rate:nv("ppRate"),perTxn:nv("ppPer"),monthlyFee:nv("ppMon")||0,currentRate:nv("ppCurRate"),currentPerTxn:nv("ppCurTx"),currentMonthly:nv("ppCurMon")||0,interchangePct:nv("ppIc"),batches:nv("ppBatch")||0,hosted:$("ppHosted").checked};
+  d.close={agreementSigned:$("dcSigned").checked,signedDate:$("dcDate").value,signerName:$("dcName").value.trim(),signerTitle:$("dcTitle").value.trim(),signerEmail:$("dcEmail").value.trim(),billingEmail:$("dcBilling").value.trim(),paymentMethod:$("dcPay").value,handoff:$("dcHandoff").value.trim()};
+}
+function refreshSummary(){
+  readBuilder();const d=dl,t=dealTotals(d),flags=dealFlags(d,t);
+  $("dsTcv").textContent=usd(t.tcv);$("dsMrr").textContent=usd(t.mrr);$("dsArr").textContent=usd(t.arr);$("dsOne").textContent=usd(t.oneTime);$("dsDisc").textContent=t.discountPct+"%";
+  const pr=t.processing;$("ppBody").hidden=!pr;$("dsProc").hidden=!pr;
+  if(pr){
+    $("dsResid").textContent=pr.missing.length?"Needs inputs":usd(pr.residualMonthly)+"/mo";
+    $("dsSave").textContent=pr.savingsMonthly==null||pr.missing.length?"–":usd(pr.savingsMonthly*12)+"/yr";
+    const box=$("ppRes");box.replaceChildren();
+    const tile=(label,value,cls)=>{const x=el("div",cls||null);x.append(el("span",null,label),el("b",null,value));box.append(x)};
+    if(pr.missing.length&&!(dl.processing.volume>0)){tile("They pay today",dl.processing.currentRate!=null?`${dl.processing.currentRate}% + ${usd(dl.processing.currentPerTxn||0)}`:"–");tile("Our offer",dl.processing.rate!=null?`${dl.processing.rate}% + ${usd(dl.processing.perTxn||0)}`:"Not set");tile("Savings and residual","Needs volume");box.append(el("div","wide dlflag warn","Still needed for an estimate: "+pr.missing.join(", ")+"."))}else{
+    tile("They pay today",pr.currentMonthly==null?"–":usd(pr.currentMonthly)+"/mo");
+    tile("They'd pay with us",usd(pr.merchantMonthly)+"/mo"+(pr.effectiveRate!=null?` (${pr.effectiveRate}%)`:""));
+    tile("They save",pr.savingsMonthly==null?"–":`${usd(pr.savingsMonthly)}/mo · ${usd(pr.savingsMonthly*12)}/yr`,pr.savingsMonthly>0?"good":pr.savingsMonthly<0?"bad":"");
+    tile("Processor net revenue",usd(pr.netMonthly)+"/mo",pr.netMonthly<0?"bad":"");
+    tile(`TideLine share (${procSettings().sharePct||0}%)`,`${usd(pr.residualMonthly)}/mo · ${usd(pr.residualAnnual)}/yr`,"good");
+    tile("Processing cost (est.)",usd(pr.costMonthly)+"/mo");
+    if(pr.missing.length){const m=el("div","wide dlflag warn","Still needed for an accurate estimate: "+pr.missing.join(", ")+".");box.append(m)}
+    else if(pr.belowCost)box.append(el("div","wide dlflag bad","This pricing costs more than it brings in. Raise the rate or per-transaction fee."));
+    else box.append(el("div","wide city","Estimate only: interchange varies with their card mix. Replace with actual results each month under Deals › Financials."));}
+  }
+  const fw=$("dsFlags");fw.replaceChildren();
+  if(d.status==="won")fw.append(el("div","dlflag ok","Closed won. The close package is on file."));
+  else if(d.status==="lost")fw.append(el("div","dlflag bad","Closed lost: "+(d.lostReason||"")));
+  else if(flags.length){const f=el("div","dlflag warn"),ul=el("ul");flags.forEach(x=>ul.append(el("li",null,x)));f.append(el("b",null,d.status==="approved"?"Approved with exceptions":"Needs approval"),ul);fw.append(f)}
+  else if(d.lines.length)fw.append(el("div","dlflag ok","Within guardrails. Submitting approves it automatically."));
+  renderActions(t,flags);
+}
+function renderActions(t,flags){
+  const d=dl,a=$("dlActs"),note=$("dlNote");a.replaceChildren();$("dsProblems").replaceChildren();note.hidden=true;
+  const btn=(label,cls,fn)=>{const b=el("button","btn "+cls,label);b.onclick=fn;a.append(b);return b};
+  const editable=d.status==="draft"||d.status==="changes";
+  if(editable){
+    btn(flags.length?"Submit for approval":"Submit","primary",()=>dealStep("submit"));
+    btn(dlId?"Save draft":"Save as draft","",()=>saveDeal(true));
+    if(dlId){note.hidden=false;btn("Mark as lost","",()=>dealStep("lost"));btn("Delete draft","danger",deleteDeal)}
+  }else if(d.status==="pending"){
+    note.hidden=false;
+    if(canReview(d)){btn("Approve","primary",()=>dealStep("approve"));btn("Request changes","",()=>dealStep("changes"))}
+    else a.append(el("div","city","Waiting for "+(editors().filter(m=>m.id!==d.submittedBy).map(m=>m.name).join(" or ")||"another editor")+" to review."));
+    btn("Pull back to edit","",()=>dealStep("reopen"));btn("Mark as lost","",()=>dealStep("lost"));
+  }else if(d.status==="approved"){
+    note.hidden=false;btn("Submit close (won)","primary",()=>dealStep("won"));btn("Save close package","",()=>dealStep("package"));btn("Reopen to edit","",()=>dealStep("reopen"));btn("Mark as lost","",()=>dealStep("lost"));
+  }else{
+    note.hidden=false;btn("Reopen","",()=>dealStep("reopen"));if(d.status==="lost")btn("Delete","danger",deleteDeal);
+  }
+  if(d.status==="changes"){const last=[...(d.history||[])].reverse().find(h=>h.action==="Changes requested");if(last)$("dsProblems").append(el("div","dlflag bad",`${nameOf(last.by)} asked for changes: ${last.note||""}`))}
+}
+function showProblems(e){const w=$("dsProblems");w.replaceChildren();const f=el("div","dlflag bad");f.append(el("b",null,e.message));if(e.problems?.length){const ul=el("ul");e.problems.forEach(p=>ul.append(el("li",null,p)));f.append(ul)}w.append(f);w.scrollIntoView({block:"nearest"})}
+async function saveDeal(announce){
+  readBuilder();
+  try{const res=dlId?await dealApi("PUT","/"+dlId,dl):await dealApi("POST","",dl);dlId=res.id;dl=res;dlDirty=false;if(announce){toast("Saved");track("action","Saved a deal")}fillBuilder();return true}
+  catch(e){showProblems(e);return false}
+}
+async function dealStep(action){
+  const note=$("dlNote").value.trim();
+  if(action==="lost"&&!note){toast("Add the reason it was lost in the note box first");$("dlNote").hidden=false;$("dlNote").focus();return}
+  if(action==="changes"&&!note){toast("Say what needs to change in the note box");$("dlNote").focus();return}
+  if((dl.status==="draft"||dl.status==="changes")&&!(await saveDeal(false)))return;
+  if(dl.status==="approved")readBuilder();
+  try{const res=await dealApi("POST",`/${dlId}/${action}`,{note,close:dl.close,terms:{startDate:dl.terms.startDate}});dl=res;dlDirty=false;$("dlNote").value="";fillBuilder();
+    toast({submit:res.status==="approved"?"Submitted and approved":"Submitted for approval",approve:"Approved",changes:"Sent back for changes",won:"Closed won! 🎉",lost:"Marked as lost",reopen:"Reopened",package:"Close package saved"}[action]);
+    if(action==="won")logAct(`Closed won ${dl.name} (${usd(dl.totals.tcv)})`,dl.oppId);
+    track("action",{submit:"Submitted a deal",approve:"Approved a deal",changes:"Requested deal changes",won:"Closed a deal won",lost:"Closed a deal lost",reopen:"Reopened a deal",package:"Saved a close package"}[action])}
+  catch(e){showProblems(e)}
+}
+async function deleteDeal(){if(!confirm("Delete this deal? This can't be undone."))return;try{await dealApi("DELETE","/"+dlId);dlDirty=false;toast("Deal deleted");go("deals")}catch(e){showProblems(e)}}
+function renderHistory(){const w=$("dlHistory");w.replaceChildren();const h=[...(dl.history||[])].reverse();if(!h.length){w.append(el("div","city","Nothing yet."));return}h.forEach(x=>{const r=el("div","dhist");r.append(el("small",null,`${new Date(x.ts).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} · ${nameOf(x.by)}`),el("div",null,x.action+(x.note?": "+x.note:"")));w.append(r)})}
+function renderAccountDeals(){
+  if(guest||view!=="account")return;const w=$("aDeals");if(!w)return;w.replaceChildren();
+  const list=deals.filter(d=>d.oppId===acctId);
+  if(!list.length){w.append(el("div","empty","No deals yet. Build one when you're ready to price it."));return}
+  w.append(adTable("dtbl",["Deal","Status","Monthly","Contract value","Close",""],list.map(dealRow)));
+}
+$("dsTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;dsTab=t;renderDeals();track("action","Opened Deals "+t)};
+$("dsNew").onclick=()=>openDeal(null);
+$("aNewDeal").onclick=()=>openDeal(null,acctId);
+$("dlBack").onclick=()=>{if(dlDirty&&!confirm("Leave without saving your changes?"))return;dlDirty=false;go("deals")};
+$("dlOpp").onchange=()=>{if(!$("dlName").value.trim()){const o=opps.find(x=>x.id===$("dlOpp").value);if(o)$("dlName").value=o.name+" deal"}dlDirty=true;refreshSummary();$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===$("dlOpp").value)?.stage]??10}%)`};
+$("dlPick").onchange=()=>{if($("dlPick").value==="__impl"){$("dlPick").value="";dl.lines.push({productId:"",name:"Implementation (setup, data migration, training)",billing:"once",qty:1,price:0,listPrice:0,discount:0});dlDirty=true;renderLines();refreshSummary();const rows=$("dlLines").querySelectorAll(".row:not(.hd)");const price=rows[rows.length-1]?.querySelectorAll("input")[2];price?.focus();price?.select();toast("Enter the implementation price");return}const p=products().find(x=>x.id===$("dlPick").value);$("dlPick").value="";if(!p)return;dl.lines.push({productId:p.id,name:p.name,billing:p.billing,qty:1,price:p.price,listPrice:p.price,discount:0});dlDirty=true;renderLines();refreshSummary()};
+$("dlAddCustom").onclick=()=>{dl.lines.push({productId:"",name:"",billing:"monthly",qty:1,price:0,listPrice:0,discount:0});dlDirty=true;renderLines();refreshSummary();const ins=$("dlLines").querySelectorAll(".row:not(.hd) input");ins[ins.length-4]?.focus()};
+$("dcStart").addEventListener("input",()=>{$("dlStart").value=$("dcStart").value});$("dlStart").addEventListener("input",()=>{$("dcStart").value=$("dlStart").value});
+["ppVol","ppTx","ppAmex","ppRate","ppPer","ppMon","ppCurRate","ppCurTx","ppCurMon","ppIc","ppBatch","dlName","dlClose","dlProb","dlStart","dcStart","dlMonths","dlFree","dlSpecial","dlNotes","dcDate","dcName","dcTitle","dcEmail","dcBilling","dcHandoff"].forEach(id=>$(id).addEventListener("input",()=>{dlDirty=true;refreshSummary();if(id==="dlName")$("dlTitle").textContent=$("dlName").value||"New deal"}));
+["ppOn","ppHosted","dlOwner","dlPay","dlBill","dlRenew","dcSigned","dcPay"].forEach(id=>$(id).addEventListener("change",()=>{dlDirty=true;refreshSummary()}));
+window.addEventListener("beforeunload",e=>{if(view==="deal"&&dlDirty){e.preventDefault();e.returnValue=""}});
+// Implementation is always in the product dropdown: a catalog item if one exists, otherwise a one-time line to price.
+function isImpl(p){return /implementation/i.test(p.name)}
+// Signed documents: uploaded to the deal; closing won requires at least one signed agreement.
+let dlFiles=[];
+async function loadDealFiles(){
+  const id=dlId;if(!id){dlFiles=[];renderDealFiles();return}
+  try{const r=await fetch(`/api/deals/${id}/files`,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);if(id===dlId){dlFiles=j.files;renderDealFiles()}}
+  catch(e){$("dcList").replaceChildren(el("div","city",e.message||"Documents couldn't load."))}
+}
+function renderDealFiles(){
+  const w=$("dcList"),locked=!dl||dl.status==="won"||dl.status==="lost",signed=dlFiles.filter(f=>f.kind==="signed").length;w.replaceChildren();
+  $("dcReq").textContent=signed?`✓ ${signed} signed`:"Required to close";$("dcReq").className=signed?"ok":"no";
+  if(!dlFiles.length)w.append(el("div","city","No documents yet."));
+  dlFiles.forEach(f=>{const r=el("div","docrow"),a=el("a",null,f.name);a.href=`/api/deals/${dlId}/files/${f.id}`;a.title="Download";
+    r.append(a,el("span","spill "+(f.kind==="signed"?"won":""),f.kind==="signed"?"Signed":"Other"),el("span","city",`${f.size<1048576?Math.max(1,Math.round(f.size/1024))+" KB":(f.size/1048576).toFixed(1)+" MB"} · ${nameOf(f.uploaded_by)} · ${fmtDay(f.uploaded_ts)}`));
+    if(!locked){const x=el("button","lx","×");x.title="Remove";x.onclick=async()=>{if(!confirm(`Remove ${f.name}?`))return;try{const r2=await fetch(`/api/deals/${dlId}/files/${f.id}`,{method:"DELETE",credentials:"same-origin"});const j=await r2.json();if(!r2.ok)throw Error(j.error);dlFiles=j.files;renderDealFiles();toast("Removed")}catch(e){toast(e.message)}};r.append(x)}
+    w.append(r)});
+  $("dcDrop").hidden=locked;
+}
+async function uploadDealFiles(files){
+  if(!files.length)return;
+  if(!dlId&&!(await saveDeal(false)))return;
+  for(const f of files){
+    if(f.size>15*1024*1024){toast(f.name+" is over 15 MB");continue}
+    toast("Uploading "+f.name+"…");
+    try{const r=await fetch(`/api/deals/${dlId}/files?name=${encodeURIComponent(f.name)}&kind=${$("dcKind").value}`,{method:"POST",credentials:"same-origin",headers:{"content-type":f.type||"application/octet-stream"},body:f});const j=await r.json();if(!r.ok)throw Error(j.error);dlFiles=j.files;renderDealFiles();toast("Uploaded "+f.name);track("action","Uploaded a deal document")}
+    catch(e){toast(f.name+": "+e.message)}
+  }
+}
+$("dcUpload").onclick=()=>{$("dcFile").value="";$("dcFile").click()};
+$("dcFile").onchange=()=>uploadDealFiles([...$("dcFile").files]);
+$("dcDocs").ondragover=e=>{if(!$("dcDrop").hidden){e.preventDefault();$("dcDocs").classList.add("over")}};
+$("dcDocs").ondragleave=()=>$("dcDocs").classList.remove("over");
+$("dcDocs").ondrop=e=>{e.preventDefault();$("dcDocs").classList.remove("over");if(!$("dcDrop").hidden)uploadDealFiles([...e.dataTransfer.files])};
+// Make unsaved work obvious, with a Save button up top and Ctrl+S.
+function markDirty(){const editable=dl&&(dl.status==="draft"||dl.status==="changes"||dl.status==="approved");$("dlUnsaved").hidden=!dlDirty;$("dlSaveTop").hidden=!(dlDirty&&editable)}
+$("dlSaveTop").onclick=()=>dl.status==="approved"?dealStep("package"):saveDeal(true);
+document.addEventListener("keydown",e=>{if(view==="deal"&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();if(dlDirty)$("dlSaveTop").click()}});
+setInterval(()=>{if(view==="deal"&&dl)markDirty()},400);
+
+// Calendar: CRM appointments, tasks, and next steps, plus the member's own outside calendar if connected.
+let cxMode=null,cxAnchor=new Date(),cxScope="mine",cxShow={appt:true,task:true,next:true,ext:true},cxExt={connected:false,events:[],from:0,to:0,loading:false},cxDrag=null;
+try{const s=JSON.parse(localStorage.getItem("voyage-cal")||"{}");if(s.mode)cxMode=s.mode;if(s.scope)cxScope=s.scope;if(s.show)Object.assign(cxShow,s.show)}catch(_){}
+const cxSave=()=>{try{localStorage.setItem("voyage-cal",JSON.stringify({mode:cxMode,scope:cxScope,show:cxShow}))}catch(_){}};
+const dayKey=d=>iso(d),addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},startOfWeek=d=>addDays(new Date(d.getFullYear(),d.getMonth(),d.getDate()),-d.getDay());
+const fmtClock=min=>{const h=Math.floor(min/60),m=min%60;return `${(h%12)||12}${m?":"+String(m).padStart(2,"0"):""}${h<12?"am":"pm"}`};
+const mine=(owner,shared)=>cxScope==="all"||(owner||"CK")===me||(shared||[]).includes(me);
+function cxEvents(from,to){
+  const a=dayKey(from),b=dayKey(to),t=today(),out=[];
+  if(cxShow.appt||cxShow.task)items.forEach(i=>{
+    if(!i.date||i.date<a||i.date>b||!cxShow[i.kind]||!mine(i.owner,i.shared))return;
+    const tm=i.kind==="appt"?apptTime(i.time):null;
+    out.push({k:i.kind,id:"i"+i.id,date:i.date,min:tm?tm[0]*60+tm[1]:null,dur:60,title:i.type+(i.oppName?" · "+i.oppName:""),sub:[nameOf(i.owner||"CK"),i.notes].filter(Boolean).join(" · "),done:!!i.done,late:!i.done&&i.date<t,ref:i,open:()=>openT(i.kind,i),move:d=>write(()=>db.doc("activities/"+i.id).update({date:d}),"Moved to "+fmtDate(d))});
+  });
+  if(cxShow.next)opps.forEach(o=>{
+    if(!o.next||!o.next.date||o.next.date<a||o.next.date>b||!mine(o.owner))return;
+    const tm=apptTime(o.next.time);
+    out.push({k:"next",id:"n"+o.id,date:o.next.date,min:tm?tm[0]*60+tm[1]:null,dur:30,title:o.next.label+" · "+o.name,sub:"Next step · "+nameOf(o.owner||"CK"),late:o.next.date<t,ref:o,open:()=>openAccount(o.id,"calendar"),move:d=>write(()=>db.doc("opps/"+o.id).update({next:{...o.next,date:d}}),"Next step moved to "+fmtDate(d))});
+  });
+  if(cxShow.ext&&cxExt.connected)cxExt.events.forEach(e=>{
+    if(e.allDay){for(let d=new Date(e.date+"T00:00");dayKey(d)<=e.endDate;d=addDays(d,1)){const k=dayKey(d);if(k>=a&&k<=b)out.push({k:"ext",id:"x"+e.id+k,date:k,min:null,title:e.title,sub:cxExt.provider,busy:e.busy,ext:e})}return}
+    const s=new Date(e.start),k=dayKey(s);if(k<a||k>b)return;
+    out.push({k:"ext",id:"x"+e.id,date:k,min:s.getHours()*60+s.getMinutes(),dur:Math.max(15,Math.round((e.end-e.start)/60000)),title:e.title,sub:cxExt.provider,busy:e.busy,ext:e});
+  });
+  // Flag my timed meetings that overlap another busy item.
+  const timed=out.filter(e=>e.min!=null&&e.k!=="task"&&!e.done&&e.busy!==false);
+  timed.forEach(x=>{if(x.k==="ext")return;const clash=timed.find(y=>y!==x&&y.date===x.date&&y.min<x.min+x.dur&&x.min<y.min+(y.dur||60));if(clash)x.clash=clash.title});
+  return out.sort((x,y)=>x.date.localeCompare(y.date)||(x.min??-1)-(y.min??-1));
+}
+function cxChip(e,withTime){
+  const b=el("button","ev cx-"+e.k+(e.done?" done":"")+(e.late?" late":"")+(e.clash?" clash":""));b.type="button";
+  if(withTime&&e.min!=null)b.append(el("b",null,fmtClock(e.min)+" "));b.append(document.createTextNode(e.title));
+  b.title=[e.min!=null?fmtClock(e.min):"All day",e.title,e.sub,e.clash&&"Overlaps: "+e.clash,e.late&&"Overdue"].filter(Boolean).join("\n");
+  b.onclick=ev=>{ev.stopPropagation();if(e.open)e.open();else toast(e.title+(e.min!=null?" at "+fmtClock(e.min):"")+" · "+e.sub)};
+  if(e.move){b.draggable=true;b.ondragstart=ev=>{cxDrag=e;ev.dataTransfer.effectAllowed="move";try{ev.dataTransfer.setData("text/plain",e.id)}catch(_){}}}
+  return b;
+}
+function cxDrop(cell,date){
+  cell.ondragover=ev=>{if(cxDrag){ev.preventDefault();cell.classList.add("over")}};
+  cell.ondragleave=()=>cell.classList.remove("over");
+  cell.ondrop=ev=>{ev.preventDefault();cell.classList.remove("over");const e=cxDrag;cxDrag=null;if(e&&e.date!==date){logAct(`Rescheduled ${e.title} to ${fmtDate(date)}`,e.ref?.oppId||(e.k==="next"?e.ref.id:""));e.move(date);track("action","Rescheduled on calendar")}};
+}
+function cxRange(){
+  if(cxMode==="month"){const first=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth(),1),s=startOfWeek(first);return [s,addDays(s,41)]}
+  if(cxMode==="week"){const s=startOfWeek(cxAnchor);return [s,addDays(s,6)]}
+  const s=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth(),cxAnchor.getDate());return [s,addDays(s,29)];
+}
+async function cxLoadExternal(force){
+  const [s,e]=cxRange(),from=addDays(s,-7).getTime(),to=addDays(e,7).getTime();
+  if(!force&&(cxExt.loading||(cxExt.checked&&(!cxExt.connected||(from>=cxExt.from&&to<=cxExt.to)))))return;
+  cxExt.loading=true;
+  try{const r=await fetch(`/api/me/external-calendar?from=${from-30*864e5}&to=${to+60*864e5}`,{credentials:"same-origin",cache:"no-store"});const j=await r.json();
+    if(!r.ok)throw Error(j.error);Object.assign(cxExt,{connected:j.connected,provider:j.provider,events:j.events||[],error:j.error||"",from:from-30*864e5,to:to+60*864e5,checked:true,unavailable:false})}
+  catch(err){Object.assign(cxExt,{connected:false,events:[],checked:true,unavailable:true,error:err.message||""})}
+  finally{cxExt.loading=false}
+  if(view==="calendar")renderCalendar();
+}
+function openCalendar(){if(!cxMode)cxMode=innerWidth<700?"agenda":"month";renderCalendar();cxLoadExternal()}
+function renderCalendar(){
+  if(!cxMode)cxMode="month";
+  const [s,e]=cxRange(),t=today(),body=$("cxBody"),evs=cxEvents(s,e);
+  [...$("cxMode").children].forEach(b=>b.classList.toggle("on",b.dataset.m===cxMode));
+  $("cxScope").value=cxScope;document.querySelectorAll(".cxfilters input[data-k]").forEach(c=>c.checked=cxShow[c.dataset.k]);
+  $("cxExtToggle").hidden=!cxExt.connected;$("cxExtName").textContent=cxExt.provider||"My calendar";
+  $("cxConnect").textContent=cxExt.connected?"Calendar connected":"Connect your calendar";
+  $("cxNote").textContent=cxExt.error||"";
+  $("cxTitle").textContent=cxMode==="month"?cxAnchor.toLocaleDateString(undefined,{month:"long",year:"numeric"}):cxMode==="week"?`${s.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${e.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}`:"Next 30 days from "+s.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  const clashes=evs.filter(x=>x.clash&&x.date>=t).length;
+  $("cxSub").textContent=clashes?`${clashes} upcoming meeting${clashes===1?" overlaps":"s overlap"} something else on your calendar (marked ⚠).`:"Appointments, tasks, and next steps from The Voyage in one place. Drag an item to another day to reschedule it.";
+  body.replaceChildren();
+  const byDay=new Map();evs.forEach(x=>byDay.set(x.date,[...(byDay.get(x.date)||[]),x]));
+  const newOn=d=>{if(!guest)openT("appt",null,null,{date:d})};
+  if(cxMode==="month"){
+    const g=el("div","cxmonth");["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>g.append(el("div","cxdow",d)));
+    for(let i=0;i<42;i++){
+      const d=addDays(s,i),k=dayKey(d),list=byDay.get(k)||[],c=el("div","cxday"+(d.getMonth()!==cxAnchor.getMonth()?" out":"")+(k===t?" today":""));
+      const n=el("button","cxnum",String(d.getDate()));n.type="button";n.title="Open this day";n.onclick=ev=>{ev.stopPropagation();cxAnchor=d;cxMode="agenda";cxDayOnly=k;renderCalendar()};c.append(n);
+      list.slice(0,3).forEach(x=>c.append(cxChip(x,true)));
+      if(list.length>3){const m=el("button","cxmore",`+${list.length-3} more`);m.type="button";m.onclick=ev=>{ev.stopPropagation();cxAnchor=d;cxMode="agenda";cxDayOnly=k;renderCalendar()};c.append(m)}
+      c.onclick=()=>newOn(k);c.title=guest?"":"Click to book a meeting on "+fmtDate(k);cxDrop(c,k);g.append(c);
+    }
+    body.append(g);
+  }else if(cxMode==="week"){
+    const w=el("div","cxweek"),hd=el("div","cxwh"),ad=el("div","cxwa"),gr=el("div","cxwg");
+    hd.append(el("div",null,""));ad.append(el("div",null,"All day"));
+    const days=[...Array(7)].map((_,i)=>addDays(s,i)),timed=evs.filter(x=>x.min!=null);
+    const startH=Math.min(7,...timed.map(x=>Math.floor(x.min/60))),endH=Math.max(20,...timed.map(x=>Math.ceil((x.min+(x.dur||60))/60)));
+    const hrs=el("div","cxhrs");for(let h=startH;h<endH;h++)hrs.append(el("div",null,fmtClock(h*60)));gr.append(hrs);
+    days.forEach(d=>{
+      const k=dayKey(d),list=byDay.get(k)||[];
+      hd.append(el("div",k===t?"today":null,d.toLocaleDateString(undefined,{weekday:"short",day:"numeric"})));
+      const a=el("div");list.filter(x=>x.min==null).forEach(x=>a.append(cxChip(x)));cxDrop(a,k);ad.append(a);
+      const col=el("div","cxcol");col.style.height=(endH-startH)*48+"px";
+      const tl=list.filter(x=>x.min!=null),lanes=[];
+      tl.forEach(x=>{let l=lanes.findIndex(end=>end<=x.min);if(l<0){l=lanes.length;lanes.push(0)}lanes[l]=x.min+(x.dur||60);x.lane=l});
+      tl.forEach(x=>{const b=cxChip(x,true);b.style.top=((x.min-startH*60)*48/60)+"px";b.style.height=Math.max(20,(x.dur||60)*48/60-2)+"px";const n=Math.max(1,lanes.length);b.style.left=`calc(${x.lane*100/n}% + 2px)`;b.style.width=`calc(${100/n}% - 4px)`;col.append(b)});
+      if(k===t){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(m>=startH*60&&m<=endH*60){const line=el("div","cxnow");line.style.top=((m-startH*60)*48/60)+"px";col.append(line)}}
+      col.onclick=ev=>{if(guest)return;const r=col.getBoundingClientRect(),m=Math.round(((ev.clientY-r.top)/48*60+startH*60)/30)*30;openT("appt",null,null,{date:k,time:fmtClock(m)})};
+      cxDrop(col,k);gr.append(col);
+    });
+    w.append(hd,ad,gr);body.append(w);
+    const nowEl=gr.querySelector(".cxnow");gr.scrollTop=nowEl?Math.max(0,parseFloat(nowEl.style.top)-120):(8-startH)*48;
+  }else{
+    const ag=el("div","cxag");let any=false;
+    for(let i=0;i<30;i++){
+      const d=addDays(s,i),k=dayKey(d);if(cxDayOnly&&k!==cxDayOnly)continue;
+      const list=byDay.get(k)||[];if(!list.length&&!cxDayOnly&&k!==t)continue;any=true;
+      const h=el("div","cxagd"+(k===t?" today":""),(k===t?"Today · ":"")+d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}));
+      if(!guest){const add=el("button","cxmore","+ Book");add.type="button";add.onclick=()=>newOn(k);h.append(" ",add)}
+      ag.append(h);
+      if(!list.length)ag.append(el("div","empty","Nothing scheduled."));
+      list.forEach(x=>{const b=cxChip(x);b.replaceChildren(el("span","city",x.min!=null?fmtClock(x.min):"All day"),(()=>{const t=el("span",null,x.title);t.append(el("small",null,[x.sub,x.clash&&"⚠ Overlaps "+x.clash,x.late&&"Overdue"].filter(Boolean).join(" · ")));return t})());ag.append(b)});
+    }
+    if(cxDayOnly){const back=el("button","cxmore","‹ Back to month");back.type="button";back.onclick=()=>{cxDayOnly=null;cxMode="month";renderCalendar()};ag.prepend(back)}
+    if(!any)ag.append(el("div","empty","Nothing scheduled in the next 30 days."));
+    body.append(ag);
+  }
+  cxLoadExternal();
+}
+let cxDayOnly=null;
+function cxShift(n){cxDayOnly=null;if(cxMode==="month")cxAnchor=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth()+n,1);else cxAnchor=addDays(cxAnchor,n*(cxMode==="week"?7:30));renderCalendar()}
+$("cxPrev").onclick=()=>cxShift(-1);$("cxNext").onclick=()=>cxShift(1);
+$("cxToday").onclick=()=>{cxAnchor=new Date();cxDayOnly=null;renderCalendar()};
+$("cxMode").onclick=e=>{const m=e.target.dataset.m;if(!m)return;cxMode=m;cxDayOnly=null;cxSave();renderCalendar();track("action","Switched calendar to "+m)};
+$("cxScope").onchange=()=>{cxScope=$("cxScope").value;cxSave();renderCalendar()};
+document.querySelectorAll(".cxfilters input[data-k]").forEach(c=>c.onchange=()=>{cxShow[c.dataset.k]=c.checked;cxSave();renderCalendar()});
+$("cxNew").onclick=()=>openT("appt",null,null,{date:cxDayOnly||(dayKey(cxAnchor)<today()?today():dayKey(cxAnchor))});
+document.addEventListener("keydown",e=>{
+  if(view!=="calendar"||e.ctrlKey||e.metaKey||e.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||"")||document.querySelector("dialog[open]"))return;
+  const k=e.key.toLowerCase();
+  if(k==="arrowleft")cxShift(-1);else if(k==="arrowright")cxShift(1);else if(k==="t")$("cxToday").click();
+  else if(["m","w","a"].includes(k)){cxMode={m:"month",w:"week",a:"agenda"}[k];cxDayOnly=null;cxSave();renderCalendar()}
+});
+$("cxConnect").onclick=()=>{
+  $("xStatus").textContent=cxExt.unavailable?(cxExt.error||"Calendar connections aren't available yet."):cxExt.connected?`Connected to ${cxExt.provider}. Paste a new address to replace it.`:"Not connected.";
+  $("xUrl").value="";$("xOff").hidden=!cxExt.connected;$("xdlg").showModal();setTimeout(()=>$("xUrl").focus(),30);
+};
+$("xCancel").onclick=()=>$("xdlg").close();
+$("xSave").onclick=async()=>{
+  const url=$("xUrl").value.trim();if(!url){$("xUrl").focus();return}
+  try{const r=await fetch("/api/me/external-calendar",{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({url})});const j=await r.json();if(!r.ok)throw Error(j.error);
+    $("xdlg").close();toast("Connected to "+j.provider);track("action","Connected outside calendar");cxShow.ext=true;await cxLoadExternal(true)}
+  catch(e){$("xStatus").textContent=e.message||"That didn't work. Try again."}
+};
+$("xOff").onclick=async()=>{
+  if(!confirm("Disconnect your calendar from The Voyage? Your calendar itself isn't changed."))return;
+  try{const r=await fetch("/api/me/external-calendar",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error();$("xdlg").close();Object.assign(cxExt,{connected:false,events:[],provider:""});toast("Calendar disconnected");renderCalendar()}
+  catch(_){toast("That didn't work. Try again.")}
+};
+
+// Audit log: written by the server on every change, sign-in, and sign-out.
+let auditRows=null,auditDays="30",auditWho="",auditWhat="";
+const AUDIT_KINDS={opps:"Account",activities:"Task or appointment",activity:"Activity log",notes:"Meeting note",channels:"Chat",messages:"Chat message",vendors:"Vendor",profiles:"Profile",members:"Member"};
+async function loadAudit(){
+  const w=$("adAudit");w.replaceChildren(el("div","empty","Loading…"));
+  try{const r=await fetch("/api/admin/audit?days="+auditDays,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);auditRows=j.entries;renderAudit()}
+  catch(e){w.replaceChildren(el("div","empty",e.message||"The audit log could not load."))}
+}
+function renderAudit(){
+  const w=$("adAudit");w.replaceChildren();
+  w.append(el("div","hint",null));w.lastChild.style.cssText="color:var(--muted);font-size:13px;margin-bottom:10px";w.lastChild.textContent="Every change to CRM records, plus sign-ins and sign-outs, recorded by the server. Kept for a year. Chat text is never recorded.";
+  const bar=el("div","bhead");
+  const mk=(opts,val,on)=>{const s=document.createElement("select");opts.forEach(([v,l])=>s.append(new Option(l,v)));s.value=val;s.onchange=()=>on(s.value);bar.append(s);return s};
+  mk([["7","Last 7 days"],["30","Last 30 days"],["90","Last 90 days"],["365","Last year"]],auditDays,v=>{auditDays=v;loadAudit()});
+  mk([["","Everyone"],...team.map(m=>[m.id,m.name])],auditWho,v=>{auditWho=v;renderAudit()});
+  mk([["","All changes"],["Deleted","Deletions only"],["Signed","Sign-ins and sign-outs"]],auditWhat,v=>{auditWhat=v;renderAudit()});
+  w.append(bar);
+  const rows=(auditRows||[]).filter(e=>(!auditWho||e.who===auditWho)&&(!auditWhat||e.action.startsWith(auditWhat)));
+  if(!rows.length){w.append(el("div","empty","No entries for these filters."));return}
+  w.append(adTable("ulog",["When","Who","What","Record"],rows.slice(0,500).map(e=>{const r=el("div","row");const d=new Date(e.ts);
+    r.append(cell(d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+", "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})),el("span",null,nameOf(e.who)),el("span",e.action==="Deleted"?"warnx":null,[e.action,AUDIT_KINDS[e.collection]?.toLowerCase()].filter(Boolean).join(" ")),cell(e.label||"–"));return r})));
+  if(rows.length>500)w.append(el("div","empty",`Showing the latest 500 of ${rows.length}.`));
+}
+
+// Calendar: one appointment as a downloadable .ics file, and a private subscription link per member.
+function apptTime(text){
+  const m=String(text||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?m?\.?$/i);if(!m)return null;
+  let h=Number(m[1]);const mi=Number(m[2]||0),ap=(m[3]||"").toLowerCase();if(h>23||mi>59)return null;
+  if(ap==="p"&&h<12)h+=12;if(ap==="a"&&h===12)h=0;if(!ap&&h>=1&&h<8)h+=12;return [h,mi];
+}
+function downloadIcs(i){
+  const pad=n=>String(n).padStart(2,"0"),d=i.date.replace(/-/g,""),t=apptTime(i.time),esc=s=>String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+  const next=x=>{const y=new Date(i.date+"T00:00");y.setDate(y.getDate()+x);return iso(y).replace(/-/g,"")};
+  const when=t?[`DTSTART:${d}T${pad(t[0])}${pad(t[1])}00`,`DTEND:${t[0]===23?next(1):d}T${pad((t[0]+1)%24)}${pad(t[1])}00`]:[`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${next(1)}`];
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//TideLine Strategies//The Voyage//EN","BEGIN:VEVENT",`UID:${i.id}@the-voyage`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z")}`,...when,`SUMMARY:${esc(i.type+(i.oppName?" with "+i.oppName:""))}`,`DESCRIPTION:${esc(i.notes||"From The Voyage")}`,"END:VEVENT","END:VCALENDAR",""].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download=(i.oppName||"appointment").replace(/[^\w -]/g,"")+".ics";document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  track("action","Added an appointment to a calendar");
+}
+$("tIcs").onclick=()=>{if(tEdit)downloadIcs(tEdit)};
+async function loadCalendar(){
+  try{const r=await fetch("/api/me/calendar",{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);showCalendar(j.enabled,j.created_at)}
+  catch(e){$("calStatus").textContent=e.message||"Unavailable";$("calMake").hidden=true}
+}
+function showCalendar(on,since){
+  $("calStatus").textContent=on?"On, created "+fmtDay(since):"Off";$("calMake").hidden=false;
+  $("calMake").textContent=on?"Make a new link":"Create calendar link";$("calOff").hidden=!on;
+}
+$("calMake").onclick=async()=>{
+  if($("calOff").hidden===false&&!confirm("Make a new link? Your old link stops working, so update any calendar that uses it."))return;
+  try{const r=await fetch("/api/me/calendar",{method:"POST",credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.error);
+    $("calUrl").value=j.url;$("calNew").hidden=false;$("calCopy").hidden=false;showCalendar(true,Date.now());$("calUrl").select();track("action","Created a calendar link")}
+  catch(e){toast(e.message||"That didn't work. Try again.")}
+};
+$("calCopy").onclick=async()=>{try{await navigator.clipboard.writeText($("calUrl").value);toast("Link copied. Paste it into your calendar's “subscribe from URL” option.")}catch(_){$("calUrl").select();toast("Select the link and copy it")}};
+$("calOff").onclick=async()=>{
+  if(!confirm("Turn off your calendar link? Calendars using it will stop updating."))return;
+  try{const r=await fetch("/api/me/calendar",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error();$("calNew").hidden=true;$("calCopy").hidden=true;showCalendar(false);toast("Calendar link turned off")}
+  catch(_){toast("That didn't work. Try again.")}
+};
+
+$("acImport").onclick=()=>{$("acFile").value="";$("acFile").click()};
+$("acFile").onchange=()=>{const f=$("acFile").files[0];if(f)importAccounts(f)};
+function renderOverview(){
+  const w=$("adOverview");w.replaceChildren();
+  const checks=healthChecks(),attention=[];
+  if(admin){
+    const now=admin.now;
+    admin.invites.filter(i=>!i.used_at&&i.expires_at>now).forEach(i=>attention.push(["amber",`Unused invitation for ${i.email}, expires ${fmtDay(i.expires_at)}. Anyone with that link can sign in as them.`,"security"]));
+    admin.members.filter(m=>m.active&&!admin.sessions.some(s=>s.member_id===m.id)).forEach(m=>attention.push(["blue",`${m.name} isn't signed in on any device.`,"security"]));
+    const old=admin.sessions.filter(s=>now-s.created_at>90*864e5).length;if(old)attention.push(["blue",`${old} sign-in${old===1?" is":"s are"} over 90 days old. Consider signing out devices that aren't in use.`,"security"]);
+    if(!admin.settings.cloudflareAccess)attention.push(["blue","Cloudflare Access is off, so the invitation link is the only sign-in check.","security"]);
+    if(admin.usageEvents==null)attention.push(["amber","Usage tracking isn't set up on this database yet (migration 0004).","system"]);
+  }else if(adminErr)attention.push(["red",adminErr,"overview"]);
+  if(usage){
+    const since=Date.now()-14*864e5;
+    usage.members.filter(m=>!usage.events.some(e=>e.who===m.id&&e.ts>since)).forEach(m=>attention.push(["blue",`${m.name} hasn't used The Voyage in 14+ days.`,"usage"]));
+    const seen=new Set(usage.events.filter(e=>e.kind==="view").map(e=>e.view));
+    const unused=["accounts","vendors","activity","notes","stages","team"].filter(v=>!seen.has(v)).map(v=>VIEW_NAMES[v]);
+    if(unused.length&&usage.events.length)attention.push(["blue",`Nobody opened ${unused.join(", ")} in the last ${usage.days} days.`,"usage"]);
+  }
+  checks.filter(c=>c.list.length&&c.sev!=="blue").forEach(c=>attention.push([c.sev,`${c.title}: ${c.list.length} ${c.item?(c.list.length===1?"item":"items"):(c.list.length===1?"account":"accounts")}.`,"health"]));
+  const ev=usage?.events||[];
+  w.append(adTiles([[admin?admin.members.filter(m=>m.active).length:"–","people with access"],[new Set(ev.filter(e=>e.ts>Date.now()-7*864e5).map(e=>e.who)).size,"active this week"],[opps.length,"accounts"],[checks[0].list.length+checks[1].list.length,"overdue items"]]));
+  const s=usageSection("Needs attention",attention.length?"Most important first. Click one to see the details.":"Nothing needs attention right now.");
+  const order={red:0,amber:1,blue:2};
+  const list=el("div","tbl");attention.sort((a,b)=>order[a[0]]-order[b[0]]).forEach(([sev,text,tab])=>{const r=el("button","arow");const d=el("span","adot "+sev);r.append(d,el("span",null,text),el("span","city","›"));r.onclick=()=>{adTab=tab;renderAdmin()};list.append(r)});
+  if(attention.length)s.append(list);w.append(s);
+}
+let profile=null,profiles=[];
+const TZS=[["America/New_York","Eastern"],["America/Chicago","Central"],["America/Denver","Mountain"],["America/Phoenix","Arizona"],["America/Los_Angeles","Pacific"],["America/Anchorage","Alaska"],["Pacific/Honolulu","Hawaii"]];
+const tzName=tz=>(TZS.find(t=>t[0]===tz)||[tz,tz])[1];
+const localTime=tz=>{try{return new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit",timeZone:tz})}catch(_){return ""}};
+const profOf=id=>profiles.find(p=>p.id===id)||{};
+function infoLink(text,href){const a=el("a",null,text);a.href=href;if(/^https?:/.test(href)){a.target="_blank";a.rel="noopener noreferrer"}return a}
+function renderMyInfo(){
+  const p=profOf(me),w=$("pInfo");w.replaceChildren();
+  $("pTitle").textContent=p.title||"";
+  const add=(k,v,full)=>{if(!v)return;const d=el("div",full?"full":null);d.append(el("div","k",k));d.append(typeof v==="string"?el("div",null,v):v);w.append(d)};
+  add("Phone",p.phone&&infoLink(p.phone,"tel:"+p.phone.replace(/[^\d+]/g,"")));
+  add("Location",[p.location,p.timezone&&tzName(p.timezone)+" time"].filter(Boolean).join(" · "));
+  add("Working hours",p.hours);add("Best way to reach you",p.contact);
+  add("LinkedIn",p.linkedin&&infoLink(p.linkedin.replace(/^https?:\/\/(www\.)?/i,""),p.linkedin));
+  add("What you cover",p.focus,true);add("About",p.bio,true);
+}
+function renderDirectory(){
+  const w=$("pDir");w.replaceChildren();
+  [...team].sort((a,b)=>(a.id===me?-1:b.id===me?1:a.name.localeCompare(b.name))).forEach(m=>{
+    const p=profOf(m.id),c=el("div","pdc"),top=el("div","top"),n=el("div");
+    n.append(el("div","nm",m.name+(m.id===me?" (you)":"")),el("div","city",[p.title,m.role==="guest"?"Guest":"Editor"].filter(Boolean).join(" · ")));
+    top.append(avatar(m.id),n);c.append(top);
+    if(p.phone)c.append(infoLink(p.phone,"tel:"+p.phone.replace(/[^\d+]/g,"")));
+    if(p.location||p.timezone)c.append(el("span","city",[p.location,p.timezone&&`${localTime(p.timezone)} their time`].filter(Boolean).join(" · ")));
+    if(p.hours)c.append(el("span","city",p.hours));
+    if(p.contact)c.append(el("span","city","Prefers "+p.contact.toLowerCase()));
+    if(p.focus)c.append(el("span",null,p.focus));
+    if(!Object.keys(p).some(k=>PROFILE_KEYS.includes(k)&&p[k]))c.append(el("span","city",m.id===me?"Add your details with Edit profile.":"Hasn't filled in a profile yet."));
+    w.append(c);
+  });
+}
+const PROFILE_KEYS=["title","phone","location","timezone","hours","contact","linkedin","focus","bio"];
+function openProfileEdit(){
+  const p=profOf(me),tz=$("peTz");
+  if(!tz.options.length){tz.append(new Option("Not set",""));TZS.forEach(([v,l])=>tz.append(new Option(l+" time",v)))}
+  let guessTz="";try{guessTz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(_){}
+  $("peTitle").value=p.title||"";$("pePhone").value=p.phone||"";$("peLoc").value=p.location||"";
+  tz.value=p.timezone||(TZS.some(t=>t[0]===guessTz)?guessTz:"");
+  $("peHours").value=p.hours||"";$("peContact").value=p.contact||"";$("peLi").value=p.linkedin||"";$("peFocus").value=p.focus||"";$("peBio").value=p.bio||"";
+  $("pdlg").showModal();setTimeout(()=>$("peTitle").focus(),30);
+}
+$("pEdit").onclick=openProfileEdit;
+
+// Search everything already loaded in the app. Results only include what this member can see.
+function searchAll(q){
+  q=q.trim().toLowerCase();if(q.length<2)return[];
+  const words=q.split(/\s+/),hit=(...f)=>{const s=f.filter(Boolean).join(" ").toLowerCase();return words.every(w=>s.includes(w))};
+  const snip=text=>{text=String(text||"");const i=text.toLowerCase().indexOf(words[0]);return i<0?text.slice(0,80):(i>30?"…":"")+text.slice(Math.max(0,i-30),i+60)};
+  const groups=[
+    ["Accounts",opps.filter(o=>hit(o.name,o.city,o.notes,o.bio,o.sourceNote,(o.locations||[]).map(l=>[l.label,l.city,l.contact,l.notes].join(" ")).join(" "))).map(o=>({t:o.name,s:[o.city,STAGES[o.stage]].filter(Boolean).join(" · "),go:()=>openAccount(o.id,"accounts")}))],
+    ["Tasks and appointments",items.filter(i=>hit(i.type,i.oppName,i.notes)).map(i=>({t:i.type+(i.oppName?" with "+i.oppName:""),s:fmtDate(i.date)+(i.done?" · done":""),go:()=>openT(i.kind,i)}))],
+    ["Meeting notes",notes.filter(n=>hit(n.oppName,n.type,n.text)).map(n=>({t:n.type+" notes: "+(n.oppName||""),s:snip(n.text),go:()=>openNotes(n.oppId,n.type)}))],
+    ...(guest?[]:[["Vendors",vendors.filter(v=>hit(v.name,v.company,v.kind,v.email,v.phone,v.notes)).map(v=>({t:v.name+(v.company?" · "+v.company:""),s:v.kind||"",go:()=>{go("vendors");openV(v)}}))]]),
+    ["Team chat",msgs.filter(m=>hit(m.text)).map(m=>({t:nameOf(m.by)+" in "+chName(m.ch),s:snip(m.text),go:()=>{tcCh=m.ch;go("team")}}))],
+    ["People",team.filter(m=>{const p=profOf(m.id);return hit(m.name,p.title,p.location,p.focus,p.bio)}).map(m=>({t:m.name,s:profOf(m.id).title||(m.role==="guest"?"Guest":"Editor"),go:()=>go("profile")}))],
+  ];
+  return groups.filter(g=>g[1].length).map(([h,list])=>[h,list.slice(0,6),list.length]);
+}
+let gSel=0,gFlat=[];
+function renderSearch(){
+  const box=$("gRes"),q=$("gSearch").value;box.replaceChildren();gFlat=[];
+  if(q.trim().length<2){box.hidden=true;return}
+  const res=searchAll(q);box.hidden=false;
+  if(!res.length){box.append(el("div","none","Nothing matches “"+q.trim()+"”."));return}
+  res.forEach(([h,list,total])=>{box.append(el("div","gh",h+(total>list.length?` (${list.length} of ${total})`:"")));list.forEach(r=>{const b=el("button",null,r.t);b.type="button";b.setAttribute("role","option");if(r.s)b.append(el("small",null,r.s));b.onmousedown=e=>e.preventDefault();b.onclick=()=>pickSearch(r);gFlat.push([b,r]);box.append(b)})});
+  gSel=0;markSearch();
+}
+function markSearch(){gFlat.forEach(([b],i)=>b.classList.toggle("sel",i===gSel));gFlat[gSel]?.[0].scrollIntoView({block:"nearest"})}
+function pickSearch(r){$("gSearch").value="";$("gRes").hidden=true;$("gSearch").blur();r.go();track("action","Used search")}
+$("gSearch").oninput=renderSearch;
+$("gSearch").onfocus=renderSearch;
+$("gSearch").onblur=()=>setTimeout(()=>{$("gRes").hidden=true},150);
+$("gSearch").onkeydown=e=>{
+  if(e.key==="ArrowDown"&&gFlat.length){e.preventDefault();gSel=(gSel+1)%gFlat.length;markSearch()}
+  else if(e.key==="ArrowUp"&&gFlat.length){e.preventDefault();gSel=(gSel-1+gFlat.length)%gFlat.length;markSearch()}
+  else if(e.key==="Enter"&&gFlat[gSel]){e.preventDefault();pickSearch(gFlat[gSel][1])}
+  else if(e.key==="Escape"){$("gSearch").value="";$("gRes").hidden=true;$("gSearch").blur()}
+};
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||"")&&!document.querySelector("dialog[open]")){e.preventDefault();$("gSearch").focus()}});
+$("briefBtn").onclick=()=>{openChat("Give me my daily brief for today: what is due or overdue for me, which of my accounts need a touch and why, and the three most important things I should do today, in order.");track("action","Asked for a daily brief")};
+$("peCancel").onclick=()=>$("pdlg").close();
+$("peSave").onclick=async()=>{
+  const data={title:$("peTitle").value.trim(),phone:$("pePhone").value.trim(),location:$("peLoc").value.trim(),timezone:$("peTz").value,hours:$("peHours").value.trim(),contact:$("peContact").value,linkedin:normUrl($("peLi").value),focus:$("peFocus").value.trim(),bio:$("peBio").value.trim()};
+  $("pdlg").close();
+  if(!live){profiles=[...profiles.filter(p=>p.id!==me),{id:me,...data}];renderProfile();toast("Saved for this session only");return}
+  await write(()=>db.doc("profiles/"+me).set(data),"Profile saved");
+};
+async function loadProfile(){
+  renderProfile();loadCalendar();
+  try{const r=await fetch("/api/me/profile",{credentials:"same-origin",cache:"no-store"});if(!r.ok)throw Error();profile=await r.json()}catch(_){profile=null}
+  renderProfile();
+}
+function renderProfile(){
+  const m=team.find(x=>x.id===me)||{name:nameOf(me)};
+  $("pAv").textContent=me;$("pAv").className="av pbig "+(["CK","QS"].includes(me)?me:"OT");
+  $("pName").textContent=m.name;$("pEmail").textContent=profile?.email||"";
+  $("pRole").textContent=guest?"Guest: can edit existing accounts, tasks, and notes. Cannot add or delete them.":"Editor: full access to The Voyage.";
+  $("pAdminSec").hidden=guest;
+  let theme="";try{theme=localStorage.getItem("voyage-theme")||""}catch(_){}
+  $("pTheme").value=theme;
+  const t=today(),mine=opps.filter(o=>(o.owner||"CK")===me),myItems=items.filter(i=>!i.done&&((i.owner||"CK")===me||(i.shared||[]).includes(me)));
+  const work=adTiles([[mine.length,"accounts you own"],[myItems.length,"open tasks and appointments"],[myItems.filter(i=>i.date&&i.date<t).length+mine.filter(o=>o.next&&o.next.date&&o.next.date<t).length,"overdue"],[mine.filter(o=>daysSince(o.lastTouch)>=30).length,"untouched 30+ days"]]);
+  $("pWork").replaceChildren(work);renderMyInfo();renderDirectory();
+  const d=$("pDevices");
+  if(!profile){d.replaceChildren(el("div","empty","Loading…"));return}
+  d.replaceChildren(adTable("dtbl",["Device","Signed in","Stays signed in until"],profile.devices.map(x=>{const r=el("div","row");r.append(el("span","nm",x.current?"This device":"Another device"),cell(fmtDay(x.created_at)),cell(fmtDay(x.expires_at)));return r})));
+  $("pOthers").disabled=profile.devices.filter(x=>!x.current).length===0;
+}
+$("pTheme").onchange=()=>{const v=$("pTheme").value;try{v?localStorage.setItem("voyage-theme",v):localStorage.removeItem("voyage-theme")}catch(_){}applyTheme(v);track("action","Changed appearance")};
+$("pAdmin").onclick=()=>go("admin");
+$("adBack").onclick=()=>go("profile");
+async function profileSignOut(others){
+  if(!confirm(others?"Sign out every other device? This one stays signed in.":"Sign out of this device? You will need a new invitation link to get back in on it."))return;
+  try{const r=await fetch("/api/me/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({scope:others?"others":"this"})});if(!r.ok)throw Error();
+    if(others){toast("Signed out other devices");track("action","Signed out other devices");loadProfile()}else location.replace("/")}
+  catch(_){toast("That didn't work. Try again.")}
+}
+$("pOthers").onclick=()=>profileSignOut(true);
+$("pSignOut").onclick=()=>profileSignOut(false);
+function renderAdmin(){
+  [...$("adTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===adTab));
+  Object.entries(AD_PANELS).forEach(([t,id])=>$(id).hidden=t!==adTab);
+  if(adTab==="overview")renderOverview();else if(adTab==="security")renderSecurity();else if(adTab==="health")renderHealth();else if(adTab==="system")renderSystem();else if(adTab==="audit")loadAudit();
+}
 const SOON={
   cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
-  order:["Order","Where opps land once they're won: orders placed, what was sold, and what's been delivered."],
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
-  if(v==="oden"){openChat();return}
-  view=v;const navV=v==="account"?acctFrom:v;
+  if(v==="oden"){openChat();track("action","Opened Muninn");return}
+  view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account"){renderAccount();renderAccountDeals()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -1369,7 +2735,7 @@ async function loadChatTurns(){
 }
 function stripMd(t){return t.replace(/\*\*(.+?)\*\*/g,"$1").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[*]\s+/gm,"• ").replace(/^\s*-\s+/gm,"• ")}
 async function sendChat(q){
-  q=(q||"").trim();if(!q||chatBusy)return;
+  q=(q||"").trim();if(!q||chatBusy)return;track("action","Asked Muninn a question");
   const body=$("chatBody");body.querySelectorAll(".chips").forEach(c=>c.remove());
   const questionBubble=el("div","msg u",q);body.append(questionBubble);$("chatIn").value="";autoGrow();
   const bubble=el("div","msg a wait","Thinking…");body.append(bubble);body.scrollTop=body.scrollHeight;
@@ -1410,7 +2776,7 @@ loadChatTurns();
 render();renderActs();renderItems();
 (async()=>{
   db=window.voyageDb;
-  try{const actor=await db.init();me=actor.id;guest=actor.role==="guest";if(guest)showGuestAccess();live=true;fillMe();render();renderItems();renderActs()}
+  try{const actor=await db.init();me=actor.id;guest=actor.role==="guest";if(guest)showGuestAccess();live=true;track("open");fillMe();render();renderItems();renderActs()}
   catch(_){$("boot").textContent="The Voyage could not connect. Reload to try again.";return}
   roomNs=window.voyageRoom;
   roomNs.presence({who:me,view}).catch(()=>{});
@@ -1434,6 +2800,11 @@ render();renderActs();renderItems();
     if(!firstMsgs){const fresh=msgs.filter(m=>!prevIds.has(m.id)&&m.by!==me);const n=fresh.sort((a,b)=>b.ts-a.ts)[0];if(n&&!(view==="team"&&tcCh===n.ch))toast(nameOf(n.by)+" in "+chName(n.ch)+": "+n.text.slice(0,60))}
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
+  db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
+  if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("residuals").onSnapshot(snap=>{residuals=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="financials"&&!document.activeElement?.closest?.(".dlsec"))renderDeals()},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
+  if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
+    vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
+  },failed)}
   db.collection("notes").onSnapshot(snap=>{
     notes=snap.docs.map(d=>({id:d.id,...d.data()}));renderNotes();loaded("notes");
   },failed);

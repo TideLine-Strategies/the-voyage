@@ -1,5 +1,11 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads"]);
+import { calendarAddress, eventsFromIcs } from "./ical.js";
+import { DEFAULT_RULES, EDITABLE, MAX_FILE_BYTES, approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals"]);
+// Profile fields each member can fill in about themselves, with maximum lengths.
+const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
+// Editors only: guests can neither see nor change these.
+const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -73,6 +79,7 @@ async function handleInvite(request, env, token) {
   const result = await env.DB.prepare("UPDATE invites SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
     .bind(now, hash, now).run();
   if (!result.meta.changes) return invitePage("", false);
+  await audit(env, member.id, "Signed in", null, null, "Opened invitation link");
   const session = randomToken();
   await env.DB.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
     .bind(await tokenHash(session), member.id, now + SESSION_MAX_AGE * 1000, now).run();
@@ -88,8 +95,8 @@ async function handleInvite(request, env, token) {
 // Guests can change existing CRM records and use their private chat space.
 export function canWrite(actor, path, method) {
   if (actor.role === "edit") return true;
-  if (path[1] === "presence" || path[1] === "muninn") return true;
-  if (path[1] === "document" && path[2] === "reads") return path[3] === actor.id;
+  if (path[1] === "presence" || path[1] === "muninn" || path[1] === "usage" || path[1] === "me") return true;
+  if (path[1] === "document" && (path[2] === "reads" || path[2] === "profiles")) return path[3] === actor.id;
   if (path[1] === "document" && CRM_COLLECTIONS.has(path[2])) return method === "PATCH";
   if (CHAT_COLLECTIONS.has(path[2])) {
     if (path[1] === "collection") return method === "POST";
@@ -139,6 +146,14 @@ export function validateDocument(collection, id, data, actor, method) {
   if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected an object");
   if (collection === "settings") throw new Error("Team settings cannot be changed here");
   if (collection === "reads" && id !== actor.id) throw new Error("Wrong member");
+  if (collection === "profiles") {
+    if (id !== actor.id) throw new Error("Wrong member");
+    for (const [key, value] of Object.entries(data)) {
+      if (key === "updatedTs") continue;
+      if (!Object.hasOwn(PROFILE_FIELDS, key) || typeof value !== "string" || value.length > PROFILE_FIELDS[key]) throw new Error(`Invalid profile field: ${key}`);
+    }
+    data.updatedTs = Date.now();
+  }
   if (collection === "messages") {
     if (method === "PATCH") {
       if (Object.keys(data).some(key => key !== "reactions")) throw new Error("Only reactions can be updated");
@@ -156,6 +171,19 @@ export function validateDocument(collection, id, data, actor, method) {
   }
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
+  if (collection === "catalog" && id === "processing") return sanitizeProcessingSettings(data);
+  // One month of actual processing results for one merchant, entered by hand until the partner portal feeds it.
+  if (collection === "residuals") {
+    const n = (v, max) => { const x = Number(v); if (!Number.isFinite(x) || x < 0 || x > max) throw new Error("Invalid residual amount"); return Math.round(x * 100) / 100; };
+    if (method === "PATCH") throw new Error("Invalid residual: replace the whole month");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(data.month || "")) throw new Error("Invalid residual month");
+    if (typeof data.oppId !== "string" || !ID_PATTERN.test(data.oppId)) throw new Error("Invalid residual account");
+    return { month: data.month, oppId: data.oppId, volume: n(data.volume ?? 0, 1e9), txns: Math.round(n(data.txns ?? 0, 1e7)), residual: n(data.residual ?? 0, 1e7),
+      source: data.source === "portal" ? "portal" : "manual", note: typeof data.note === "string" ? data.note.slice(0, 500) : "", by: actor.id, enteredTs: Date.now() };
+  }
+  if (collection === "vendors" && (method !== "PATCH" || Object.hasOwn(data, "name"))) {
+    if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 200) throw new Error("Invalid vendor name");
+  }
   return data;
 }
 
@@ -194,6 +222,7 @@ async function muninnContext(db, actor) {
     ["opps", "ACCOUNTS", 250, 40000], ["activities", "TASKS AND APPOINTMENTS", 250, 12000],
     ["notes", "MEETING NOTES", 80, 5000], ["messages", "TEAM CHAT", 80, 4000],
     ["activity", "RECENT ACTIVITY", 100, 5000],
+    ...(actor.role === "edit" ? [["vendors", "VENDORS AND PARTNERS", 200, 8000]] : []),
   ]) {
     const { results } = await db.prepare("SELECT data_json FROM documents WHERE collection = ? ORDER BY updated_at DESC LIMIT ?")
       .bind(storageCollection(actor, collection), limit).all();
@@ -232,13 +261,430 @@ async function handleMuninn(request, env, actor) {
   return reply({ answer, turns: saved.turns });
 }
 
+const USAGE_KINDS = new Set(["open", "view", "action"]);
+const USAGE_KEEP_MS = 180 * 86400000;
+
+export function deviceFrom(userAgent) {
+  const ua = String(userAgent || "");
+  const kind = /iPad|Tablet/i.test(ua) ? "Tablet" : /Mobi|iPhone|Android/i.test(ua) ? "Phone" : "Computer";
+  const browser = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Other browser";
+  return `${kind}, ${browser}`;
+}
+
+// Every member reports their own page views and action labels; only editors can read them.
+// Usage must never break the app, so a missing table (before migration 0004) is ignored on write.
+async function handleUsage(request, env, actor) {
+  if (request.method === "POST") {
+    const body = await readJson(request);
+    const events = (Array.isArray(body.events) ? body.events : []).slice(0, 50)
+      .filter(event => event && USAGE_KINDS.has(event.kind) && typeof event.view === "string" && event.view);
+    const cf = request.cf || {};
+    const device = deviceFrom(request.headers.get("user-agent"));
+    const now = Date.now();
+    try {
+      for (const event of events) {
+        const ts = Number.isFinite(event.ts) && event.ts <= now && event.ts > now - 86400000 ? event.ts : now;
+        await env.DB.prepare("INSERT INTO usage_events (member_id, ts, kind, view, action, device, city, region, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+          .bind(actor.id, ts, event.kind, event.view.slice(0, 40), typeof event.action === "string" ? event.action.slice(0, 80) : null,
+            device, cf.city || null, cf.region || null, cf.country || null).run();
+      }
+    } catch { return reply({ ok: false }, 202); }
+    return reply({ ok: true, saved: events.length });
+  }
+  if (request.method !== "GET") return error("Method not allowed", 405);
+  if (actor.role !== "edit") return error("Not available to guests", 403);
+  const days = Math.min(180, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));
+  try {
+    await env.DB.prepare("DELETE FROM usage_events WHERE ts < ?").bind(Date.now() - USAGE_KEEP_MS).run();
+    const { results } = await env.DB.prepare("SELECT member_id AS who, ts, kind, view, action, device, city, region, country FROM usage_events WHERE ts > ? ORDER BY ts DESC LIMIT 20000")
+      .bind(Date.now() - days * 86400000).all();
+    return reply({ days, events: results, members: await teamMembers(env.DB) });
+  } catch {
+    return error("Usage tracking is not set up yet. Apply migration 0004.", 503);
+  }
+}
+
+// Audit entries are written by the Worker. A missing table (before migration 0005) never blocks a change.
+export async function audit(env, memberId, action, collection, docId, label) {
+  try {
+    await env.DB.prepare("INSERT INTO audit_log (ts, member_id, action, collection, doc_id, label) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(Date.now(), memberId, action, collection, docId, label ? String(label).slice(0, 120) : null).run();
+  } catch { /* audit table not created yet */ }
+}
+
+// A short, human label for the record being changed. Chat text is never recorded.
+async function auditLabel(request, env, actor, path) {
+  const pick = data => data && (data.name || data.oppName || data.title || data.type || null);
+  if (path[2] === "messages") return "Chat message";
+  if (path[2] === "profiles") return "Own profile";
+  if (request.method === "DELETE" || request.method === "PATCH") {
+    const current = path[3] && await getDocument(env.DB, storageCollection(actor, path[2]), path[3]).catch(() => null);
+    if (request.method === "DELETE") return pick(current);
+    const body = await request.clone().json().catch(() => null);
+    return pick(current) || pick(body);
+  }
+  return pick(await request.clone().json().catch(() => null));
+}
+
+const icsText = value => String(value || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+// "10:30", "2pm", "2:15 PM" -> [hour, minute]; bare hours before 8 are read as afternoon.
+export function parseTime(text) {
+  const match = String(text || "").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?m?\.?$/i);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0), meridiem = (match[3] || "").toLowerCase();
+  if (hour > 23 || minute > 59) return null;
+  if (meridiem === "p" && hour < 12) hour += 12;
+  if (meridiem === "a" && hour === 12) hour = 0;
+  if (!meridiem && hour >= 1 && hour < 8) hour += 12;
+  return [hour, minute];
+}
+
+// Private subscription feed of a member's appointments, for Google Calendar, Outlook, or Apple Calendar.
+async function calendarFeed(env, file) {
+  const token = file.replace(/\.ics$/, "");
+  if (!/^[a-f0-9]{64}$/.test(token)) return new Response("Not found", { status: 404 });
+  let feed;
+  try { feed = await env.DB.prepare("SELECT member_id FROM calendar_feeds WHERE token_hash = ?").bind(await tokenHash(token)).first(); } catch { feed = null; }
+  const member = feed && await memberForId(feed.member_id, env.DB);
+  if (!member) return new Response("Not found", { status: 404 });
+  const { results } = await env.DB.prepare("SELECT id, data_json FROM documents WHERE collection = 'activities'").all();
+  const pad = n => String(n).padStart(2, "0");
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const events = results.map(row => ({ id: row.id, ...JSON.parse(row.data_json) }))
+    .filter(item => item.kind === "appt" && /^\d{4}-\d{2}-\d{2}$/.test(item.date || "") && ((item.owner || "CK") === member.id || (item.shared || []).includes(member.id)))
+    .map(item => {
+      const day = item.date.replace(/-/g, "");
+      const time = parseTime(item.time);
+      let when;
+      if (time) {
+        const end = new Date(Date.UTC(2000, 0, 1, time[0] + 1, time[1]));
+        const endDay = time[0] === 23 ? new Date(Date.parse(item.date) + 86400000).toISOString().slice(0, 10).replace(/-/g, "") : day;
+        when = [`DTSTART:${day}T${pad(time[0])}${pad(time[1])}00`, `DTEND:${endDay}T${pad(end.getUTCHours())}${pad(end.getUTCMinutes())}00`];
+      } else {
+        const next = new Date(Date.parse(item.date) + 86400000).toISOString().slice(0, 10).replace(/-/g, "");
+        when = [`DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${next}`];
+      }
+      return ["BEGIN:VEVENT", `UID:${item.id}@the-voyage`, `DTSTAMP:${stamp}`, ...when,
+        `SUMMARY:${icsText(`${item.type || "Meeting"}${item.oppName ? ` with ${item.oppName}` : ""}`)}`,
+        `DESCRIPTION:${icsText(`${item.done ? "Completed. " : ""}Open The Voyage for details.`)}`, "END:VEVENT"].join("\r\n");
+    });
+  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//TideLine Strategies//The Voyage//EN", "CALSCALE:GREGORIAN",
+    `X-WR-CALNAME:${icsText(`The Voyage: ${member.name}`)}`, ...events, "END:VCALENDAR", ""].join("\r\n");
+  return new Response(body, { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+}
+
+// Deal builder: drafts, approvals, and the close package. Status changes only happen here, never
+// through the generic document API, and totals are always recomputed on the server.
+async function handleDeals(request, env, actor, path) {
+  const now = Date.now(), method = request.method, id = path[2], action = path[3];
+  const save = deal => env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES ('deals', ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
+    .bind(deal.id, JSON.stringify(deal), now).run();
+  const rules = { ...DEFAULT_RULES, ...(await getDocument(env.DB, "catalog", "rules").catch(() => null) || {}) };
+  const processing = await getDocument(env.DB, "catalog", "processing").catch(() => null) || {};
+  const refresh = deal => { deal.totals = { ...calculateTotals(deal), processing: calculateProcessing(deal.processing, processing) }; deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
+  const event = (deal, what, note) => { deal.history = [...(deal.history || []), { ts: now, by: actor.id, action: what, ...(note ? { note: String(note).slice(0, 1000) } : {}) }].slice(-100); };
+  if (id && action === "files") return handleDealFiles(request, env, actor, id, path[4]);
+  const body = method === "GET" || method === "DELETE" || !request.body ? {} : await readJson(request);
+  if (!id && method === "POST") {
+    const deal = refresh({ ...sanitizeDeal(body), id: crypto.randomUUID(), status: "draft", createdTs: now, createdBy: actor.id });
+    deal.owner ||= actor.id;
+    event(deal, "Created");
+    await save(deal);
+    await audit(env, actor.id, "Created", "deals", deal.id, deal.name || "Untitled deal");
+    return reply(deal, 201);
+  }
+  if (!id || !ID_PATTERN.test(id)) return error("Not found", 404);
+  const current = await getDocument(env.DB, "deals", id);
+  if (!current) return error("Deal not found", 404);
+  const deal = { ...current };
+  const wrongStatus = allowed => !allowed.includes(deal.status) && error(`This deal is ${deal.status === "pending" ? "waiting for approval" : deal.status === "changes" ? "waiting for changes" : deal.status}. Reopen it first.`, 409);
+  if (!action && method === "PUT") {
+    if (!EDITABLE.has(deal.status)) return error("Only drafts can be edited. Reopen the deal first.", 409);
+    Object.assign(deal, sanitizeDeal(body));
+    deal.owner ||= actor.id;
+    refresh(deal);
+    await save(deal);
+    await audit(env, actor.id, "Saved", "deals", id, deal.name);
+    return reply(deal);
+  }
+  if (!action && method === "DELETE") {
+    if (!EDITABLE.has(deal.status) && deal.status !== "lost") return error("Only drafts and lost deals can be deleted", 409);
+    await env.DB.prepare("DELETE FROM documents WHERE collection = 'deals' AND id = ?").bind(id).run();
+    await deleteDealFiles(env, id);
+    await audit(env, actor.id, "Deleted", "deals", id, deal.name);
+    return reply({ ok: true });
+  }
+  if (method !== "POST" || !action) return error("Method not allowed", 405);
+  const editors = (await teamMembers(env.DB)).filter(member => member.role === "edit");
+  const note = typeof body.note === "string" ? body.note.trim() : "";
+  if (action === "submit") {
+    const blocked = wrongStatus(["draft", "changes"]); if (blocked) return blocked;
+    refresh(deal);
+    const problems = submitProblems(deal, deal.totals);
+    if (problems.length) return reply({ error: "Finish the deal before submitting", problems }, 400);
+    deal.submittedBy = actor.id; deal.submittedTs = now;
+    deal.status = deal.flags.length ? "pending" : "approved";
+    event(deal, deal.flags.length ? "Submitted for approval" : "Submitted (within guardrails, auto-approved)", note);
+  } else if (action === "approve" || action === "changes") {
+    const blocked = wrongStatus(["pending"]); if (blocked) return blocked;
+    if (deal.submittedBy === actor.id && editors.some(member => member.id !== actor.id)) return error("Another editor needs to review a deal you submitted", 403);
+    if (action === "changes" && !note) return error("Say what needs to change", 400);
+    deal.status = action === "approve" ? "approved" : "changes";
+    deal.reviewedBy = actor.id; deal.reviewedTs = now;
+    event(deal, action === "approve" ? "Approved" : "Changes requested", note);
+  } else if (action === "package") {
+    const blocked = wrongStatus(["approved"]); if (blocked) return blocked;
+    deal.close = sanitizeDeal({ ...deal, close: body.close }).close;
+    if (body.terms?.startDate !== undefined) deal.terms = { ...deal.terms, startDate: sanitizeDeal({ terms: { ...deal.terms, startDate: body.terms.startDate } }).terms.startDate };
+    event(deal, "Updated close package");
+  } else if (action === "won") {
+    const blocked = wrongStatus(["approved"]); if (blocked) return blocked;
+    if (body.close) deal.close = sanitizeDeal({ ...deal, close: body.close }).close;
+    if (body.terms?.startDate !== undefined) deal.terms = { ...deal.terms, startDate: sanitizeDeal({ terms: { ...deal.terms, startDate: body.terms.startDate } }).terms.startDate };
+    const problems = closeProblems(deal, { signedDocs: await signedDocCount(env, id) });
+    if (problems.length) return reply({ error: "Complete the close package", problems }, 400);
+    deal.status = "won"; deal.wonTs = now; deal.closedBy = actor.id;
+    event(deal, "Closed won", note);
+    const opp = deal.oppId && await getDocument(env.DB, "opps", deal.oppId);
+    if (opp) await env.DB.prepare("UPDATE documents SET data_json = ?, revision = revision + 1, updated_at = ? WHERE collection = 'opps' AND id = ?")
+      .bind(JSON.stringify({ ...opp, closed: "won", wonDealId: id, wonTs: now, lastTouch: new Date(now).toISOString().slice(0, 10) }), now, deal.oppId).run();
+  } else if (action === "lost") {
+    const blocked = wrongStatus(["draft", "changes", "pending", "approved"]); if (blocked) return blocked;
+    if (!note) return error("Add the reason it was lost", 400);
+    deal.status = "lost"; deal.lostTs = now; deal.lostReason = note.slice(0, 500);
+    event(deal, "Closed lost", note);
+  } else if (action === "reopen") {
+    const blocked = wrongStatus(["pending", "approved", "won", "lost"]); if (blocked) return blocked;
+    if (deal.status === "won") {
+      const opp = deal.oppId && await getDocument(env.DB, "opps", deal.oppId);
+      if (opp && opp.wonDealId === id) {
+        const { closed, wonDealId, wonTs, ...rest } = opp;
+        await env.DB.prepare("UPDATE documents SET data_json = ?, revision = revision + 1, updated_at = ? WHERE collection = 'opps' AND id = ?").bind(JSON.stringify(rest), now, deal.oppId).run();
+      }
+    }
+    deal.status = "draft";
+    for (const key of ["wonTs", "lostTs", "lostReason", "reviewedBy", "reviewedTs"]) delete deal[key];
+    event(deal, "Reopened", note);
+  } else return error("Unknown action", 404);
+  deal.updatedTs = now;
+  await save(deal);
+  await audit(env, actor.id, { submit: "Submitted", approve: "Approved", changes: "Requested changes", package: "Updated close package", won: "Closed won", lost: "Closed lost", reopen: "Reopened" }[action], "deals", id, deal.name);
+  return reply(deal);
+}
+
+// Documents attached to a deal (signed agreements and supporting files), stored in D1 in 512 KB chunks.
+const CHUNK = 512 * 1024;
+async function signedDocCount(env, dealId) {
+  try { return (await env.DB.prepare("SELECT COUNT(*) AS n FROM deal_files WHERE deal_id = ? AND kind = 'signed'").bind(dealId).first()).n; }
+  catch { return 0; }
+}
+async function deleteDealFiles(env, dealId) {
+  try {
+    await env.DB.prepare("DELETE FROM deal_file_chunks WHERE file_id IN (SELECT id FROM deal_files WHERE deal_id = ?)").bind(dealId).run();
+    await env.DB.prepare("DELETE FROM deal_files WHERE deal_id = ?").bind(dealId).run();
+  } catch { /* files table not created yet */ }
+}
+async function handleDealFiles(request, env, actor, dealId, fileId) {
+  const method = request.method;
+  const deal = await getDocument(env.DB, "deals", dealId);
+  if (!deal) return error("Deal not found", 404);
+  const list = async () => (await env.DB.prepare("SELECT id, name, content_type, size, kind, uploaded_by, uploaded_ts FROM deal_files WHERE deal_id = ? ORDER BY uploaded_ts").bind(dealId).all()).results;
+  try {
+    if (!fileId && method === "GET") return reply({ files: await list() });
+    if (!fileId && method === "POST") {
+      if (["won", "lost"].includes(deal.status)) return error("Reopen the deal to change its documents", 409);
+      const params = new URL(request.url).searchParams;
+      const name = (params.get("name") || "document").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 150);
+      const kind = params.get("kind") === "other" ? "other" : "signed";
+      const declared = Number(request.headers.get("content-length") || 0);
+      if (declared > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (!bytes.length) return error("The file is empty", 400);
+      if (bytes.length > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
+      const type = detectFileType(bytes, name);
+      if (!type) return error("Upload a PDF, Word document (.docx), or photo (JPG, PNG, HEIC)", 415);
+      const id = crypto.randomUUID(), chunks = Math.ceil(bytes.length / CHUNK);
+      const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(x => x.toString(16).padStart(2, "0")).join("");
+      for (let i = 0; i < chunks; i++) {
+        await env.DB.prepare("INSERT INTO deal_file_chunks (file_id, idx, data) VALUES (?, ?, ?)").bind(id, i, bytes.slice(i * CHUNK, (i + 1) * CHUNK)).run();
+      }
+      await env.DB.prepare("INSERT INTO deal_files (id, deal_id, name, content_type, size, sha256, kind, chunks, uploaded_by, uploaded_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(id, dealId, name, type, bytes.length, sha256, kind, chunks, actor.id, Date.now()).run();
+      await audit(env, actor.id, kind === "signed" ? "Attached signed document" : "Attached document", "deals", dealId, `${deal.name}: ${name}`);
+      return reply({ files: await list() }, 201);
+    }
+    if (!fileId || !ID_PATTERN.test(fileId)) return error("Not found", 404);
+    const file = await env.DB.prepare("SELECT * FROM deal_files WHERE id = ? AND deal_id = ?").bind(fileId, dealId).first();
+    if (!file) return error("File not found", 404);
+    if (method === "GET") {
+      const parts = [];
+      for (let i = 0; i < file.chunks; i++) {
+        const row = await env.DB.prepare("SELECT data FROM deal_file_chunks WHERE file_id = ? AND idx = ?").bind(fileId, i).first();
+        if (!row) return error("This file is incomplete", 500);
+        parts.push(new Uint8Array(row.data));
+      }
+      const safeName = file.name.replace(/[^\w .()-]/g, "_");
+      return new Response(new Blob(parts, { type: file.content_type }), { headers: {
+        "content-type": file.content_type, "content-disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+        "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'; sandbox",
+      } });
+    }
+    if (method === "DELETE") {
+      if (["won", "lost"].includes(deal.status)) return error("Reopen the deal to change its documents", 409);
+      await env.DB.prepare("DELETE FROM deal_file_chunks WHERE file_id = ?").bind(fileId).run();
+      await env.DB.prepare("DELETE FROM deal_files WHERE id = ?").bind(fileId).run();
+      await audit(env, actor.id, "Removed document", "deals", dealId, `${deal.name}: ${file.name}`);
+      return reply({ files: await list() });
+    }
+    return error("Method not allowed", 405);
+  } catch { return error("Document storage is not set up yet. Apply migration 0006.", 503); }
+}
+
+// A member's own outside calendar (Google, Outlook, Apple), shown only to them on the Calendar page.
+// The private address stays on the server; the browser only ever gets the provider name and events.
+async function handleExternalCalendar(request, env, actor) {
+  const provider = url => { const h = new URL(url).hostname; return h.includes("google") ? "Google Calendar" : h.includes("icloud") ? "Apple Calendar" : "Outlook"; };
+  try {
+    if (request.method === "PUT") {
+      const { url } = await readJson(request);
+      const address = calendarAddress(url);
+      if (!address) return error("Use the private iCal address from Google Calendar, Outlook, or Apple Calendar (it starts with https:// or webcal://).", 400);
+      await env.DB.prepare("INSERT INTO external_calendars (member_id, url, updated_at) VALUES (?, ?, ?) ON CONFLICT(member_id) DO UPDATE SET url = excluded.url, updated_at = excluded.updated_at")
+        .bind(actor.id, address, Date.now()).run();
+      await audit(env, actor.id, "Connected outside calendar", null, null, provider(address));
+      return reply({ connected: true, provider: provider(address) });
+    }
+    if (request.method === "DELETE") {
+      await env.DB.prepare("DELETE FROM external_calendars WHERE member_id = ?").bind(actor.id).run();
+      await audit(env, actor.id, "Disconnected outside calendar", null, null, null);
+      return reply({ connected: false });
+    }
+    if (request.method !== "GET") return error("Method not allowed", 405);
+    const row = await env.DB.prepare("SELECT url, updated_at FROM external_calendars WHERE member_id = ?").bind(actor.id).first();
+    if (!row) return reply({ connected: false, events: [] });
+    const params = new URL(request.url).searchParams;
+    const from = Number(params.get("from")) || Date.now() - 45 * 86400000;
+    const to = Math.min(Number(params.get("to")) || Date.now() + 120 * 86400000, from + 400 * 86400000);
+    const profile = await getDocument(env.DB, "profiles", actor.id).catch(() => null);
+    let text;
+    try {
+      const response = await fetch(row.url, { headers: { accept: "text/calendar" }, redirect: "follow", signal: AbortSignal.timeout(10000), cf: { cacheTtl: 300 } });
+      if (!response.ok) throw new Error(String(response.status));
+      text = await response.text();
+      if (text.length > 5_000_000 || !text.includes("BEGIN:VCALENDAR")) throw new Error("not a calendar");
+    } catch {
+      return reply({ connected: true, provider: provider(row.url), error: "Couldn't read your calendar right now. Check that the private address is still valid.", events: [] });
+    }
+    return reply({ connected: true, provider: provider(row.url), events: eventsFromIcs(text, { from, to, fallbackZone: profile?.timezone || "America/Chicago" }) });
+  } catch { return error("Calendar connections are not set up yet. Apply migration 0005.", 503); }
+}
+
+function currentSessionHash(request) {
+  const token = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
+  return token ? tokenHash(token) : Promise.resolve("");
+}
+
+// Every member's own account: details, signed-in devices, and signing out.
+async function handleProfile(request, env, actor, path) {
+  const current = await currentSessionHash(request);
+  if (path[2] === "profile" && request.method === "GET") {
+    const member = await env.DB.prepare("SELECT id, name, email, role FROM members WHERE id = ?").bind(actor.id).first();
+    const { results } = await env.DB.prepare("SELECT created_at, expires_at, token_hash = ? AS current FROM sessions WHERE member_id = ? AND expires_at > ? ORDER BY created_at DESC")
+      .bind(current, actor.id, Date.now()).all();
+    return reply({ ...member, devices: results });
+  }
+  if (path[2] === "signout" && request.method === "POST") {
+    const { scope } = await readJson(request);
+    const sql = {
+      others: "DELETE FROM sessions WHERE member_id = ? AND token_hash != ?",
+      this: "DELETE FROM sessions WHERE member_id = ? AND token_hash = ?",
+      all: "DELETE FROM sessions WHERE member_id = ? AND ? IS NOT NULL",
+    }[scope];
+    if (!sql) return error("Expected scope: this, others, or all", 400);
+    const result = await env.DB.prepare(sql).bind(actor.id, current).run();
+    await audit(env, actor.id, "Signed out", null, null, { this: "This device", others: "Other devices", all: "All devices" }[scope]);
+    return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  if (path[2] === "external-calendar") return handleExternalCalendar(request, env, actor);
+  if (path[2] === "calendar") {
+    try {
+      if (request.method === "GET") {
+        const feed = await env.DB.prepare("SELECT created_at FROM calendar_feeds WHERE member_id = ?").bind(actor.id).first();
+        return reply({ enabled: Boolean(feed), created_at: feed?.created_at || null });
+      }
+      if (request.method === "DELETE") {
+        await env.DB.prepare("DELETE FROM calendar_feeds WHERE member_id = ?").bind(actor.id).run();
+        await audit(env, actor.id, "Turned off calendar link", null, null, null);
+        return reply({ enabled: false });
+      }
+      if (request.method === "POST") {
+        const token = randomToken();
+        await env.DB.prepare("INSERT INTO calendar_feeds (member_id, token_hash, created_at) VALUES (?, ?, ?) ON CONFLICT(member_id) DO UPDATE SET token_hash = excluded.token_hash, created_at = excluded.created_at")
+          .bind(actor.id, await tokenHash(token), Date.now()).run();
+        await audit(env, actor.id, "Created calendar link", null, null, null);
+        return reply({ enabled: true, url: `${new URL(request.url).origin}/cal/${token}.ics` });
+      }
+    } catch { return error("Calendar links are not set up yet. Apply migration 0005.", 503); }
+  }
+  return error("Not found", 404);
+}
+
+// Editor-only admin view: access, sign-ins, invitations, and storage. Never returns token hashes.
+async function handleAdmin(request, env, actor, path) {
+  if (actor.role !== "edit") return error("Not available to guests", 403);
+  const now = Date.now();
+  if (path.length === 3 && path[2] === "signout" && request.method === "POST") {
+    const { member } = await readJson(request);
+    if (typeof member !== "string" || !ID_PATTERN.test(member)) return error("Expected a member", 400);
+    const result = await env.DB.prepare("DELETE FROM sessions WHERE member_id = ?").bind(member).run();
+    await audit(env, actor.id, "Signed someone out", "members", member, `${result.meta.changes} device(s)`);
+    return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  if (path.length === 3 && path[2] === "audit" && request.method === "GET") {
+    const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));
+    try {
+      await env.DB.prepare("DELETE FROM audit_log WHERE ts < ?").bind(now - 365 * 86400000).run();
+      const { results } = await env.DB.prepare("SELECT ts, member_id AS who, action, collection, doc_id, label FROM audit_log WHERE ts > ? ORDER BY ts DESC, id DESC LIMIT 2000")
+        .bind(now - days * 86400000).all();
+      return reply({ days, entries: results });
+    } catch { return error("The audit log is not set up yet. Apply migration 0005.", 503); }
+  }
+  if (path.length !== 2 || request.method !== "GET") return error("Not found", 404);
+  const cookie = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
+  const currentHash = cookie ? await tokenHash(cookie) : "";
+  const all = async (sql, ...args) => (await env.DB.prepare(sql).bind(...args).all()).results;
+  let usageEvents = null;
+  try { usageEvents = (await env.DB.prepare("SELECT COUNT(*) AS n FROM usage_events").first()).n; } catch { /* migration 0004 not applied yet */ }
+  return reply({
+    now,
+    members: await all("SELECT id, name, email, role, active FROM members ORDER BY active DESC, role, name"),
+    sessions: await all("SELECT member_id, created_at, expires_at, token_hash = ? AS current FROM sessions WHERE expires_at > ? ORDER BY created_at DESC LIMIT 200", currentHash, now),
+    expiredSessions: (await env.DB.prepare("SELECT COUNT(*) AS n FROM sessions WHERE expires_at <= ?").bind(now).first()).n,
+    invites: await all("SELECT member_id, email, expires_at, used_at FROM invites ORDER BY expires_at DESC LIMIT 200"),
+    storage: await all("SELECT collection, COUNT(*) AS records, SUM(LENGTH(data_json)) AS bytes, MAX(updated_at) AS updated FROM documents GROUP BY collection ORDER BY collection"),
+    usageEvents,
+    settings: {
+      sessionDays: SESSION_MAX_AGE / 86400, inviteDays: 30,
+      cloudflareAccess: Boolean(env.POLICY_AUD && !env.POLICY_AUD.startsWith("CONFIGURE_") && env.TEAM_DOMAIN),
+    },
+  });
+}
+
 async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
+  if (EDITOR_COLLECTIONS.has(path[2]) && (path[1] === "collection" || path[1] === "document") && actor.role !== "edit") return error("Not available to guests", 403);
+  if (path[2] === "profiles" && method !== "GET" && (path[1] !== "document" || path[3] !== actor.id)) return error("You can only edit your own profile", 403);
+  if (path[2] === "deals" && method !== "GET" && (path[1] === "document" || path[1] === "collection")) return error("Use the deal builder to change deals", 403);
+  if (path[1] === "deals") return actor.role === "edit" ? handleDeals(request, env, actor, path) : error("Not available to guests", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
+  if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
+  if (path[1] === "admin") return handleAdmin(request, env, actor, path);
+  if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
     return reply({ context: await muninnContext(env.DB, actor) });
   }
@@ -327,6 +773,7 @@ export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
     if (pathName.startsWith("/invite/")) return handleInvite(request, env, pathName.slice(8));
+    if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
     if (!actor) return request.method === "GET" && pathName === "/" ? signInPage() : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
@@ -337,9 +784,18 @@ export default {
       headers.set("x-content-type-options", "nosniff");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    try { return await handleApi(request, env, actor, path); }
+    try {
+      const change = request.method !== "GET" && (path[1] === "collection" || path[1] === "document") && path[2] !== "reads" && path[2] !== "activity";
+      const label = change ? await auditLabel(request, env, actor, path) : null;
+      const response = await handleApi(request, env, actor, path);
+      if (change && response.ok) {
+        const id = path[3] || (await response.clone().json().catch(() => ({}))).id || null;
+        await audit(env, actor.id, { POST: "Created", PUT: "Saved", PATCH: "Updated", DELETE: "Deleted" }[request.method], path[2], id, label);
+      }
+      return response;
+    }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

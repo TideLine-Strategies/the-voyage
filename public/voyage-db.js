@@ -128,4 +128,21 @@
       return () => { clearInterval(peerTimer); peerTimer = null; peerCallback = null; };
     },
   };
+
+  // Usage events are queued and sent in small batches. Failures are dropped: usage must never get in the way.
+  const usageQueue = [];
+  function flushUsage(leaving) {
+    if (!member || !usageQueue.length) return;
+    const body = JSON.stringify({ events: usageQueue.splice(0, 50) });
+    fetch("/api/usage", { method: "POST", credentials: "same-origin", keepalive: !!leaving, headers: { "content-type": "application/json" }, body }).catch(() => {});
+  }
+  setInterval(() => flushUsage(false), 15000);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) flushUsage(true); });
+  window.addEventListener("pagehide", () => flushUsage(true));
+  window.voyageUsage = {
+    track(kind, view, action) {
+      usageQueue.push({ kind, view, ...(action ? { action } : {}), ts: Date.now() });
+      if (usageQueue.length >= 20) flushUsage(false);
+    },
+  };
 })();
