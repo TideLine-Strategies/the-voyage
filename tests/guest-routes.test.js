@@ -60,7 +60,8 @@ test("guest sees the full CRM and Muninn context but only the guest chat", async
 test("guest changes existing CRM records but cannot create, delete, or change location membership", async () => {
   const { call, seed, sqlite } = fixture();
   seed("opps", "account", { name: "Gym", stage: 1, locations: [{ id: "loc1", city: "Austin" }] });
-  seed("activities", "task", { kind: "task", done: false });
+  seed("contacts", "c1", { oppId: "account", name: "Pat Owner", role: "Owner" });
+  seed("activities", "task", { kind: "task", done: false, contactId: "c1" });
   assert.equal((await call("b", "PATCH", "/api/document/opps/account", { stage: 2 })).status, 200);
   assert.equal((await call("b", "PATCH", "/api/document/activities/task", { done: true })).status, 200);
   assert.equal((await call("b", "PATCH", "/api/document/opps/account", { locations: [{ id: "loc1", city: "Dallas" }] })).status, 200);
@@ -388,4 +389,74 @@ test("deal documents: editors upload, list, download, and remove; types are chec
   assert.equal((await call("b", "GET", `/api/deals/${dealId}/files/${file.id}`)).status, 403);
   assert.equal((await (await call("a", "DELETE", `/api/deals/${dealId}/files/${file.id}`)).json()).files.length, 0);
   assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM deal_file_chunks").get().n, 0);
+});
+
+test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting, and pause on delete", async () => {
+  const { call, seed, sqlite } = fixture();
+  seed("opps", "gym", { name: "Sample Gym", city: "Elgin", stage: 0, owner: "QS" });
+  seed("opps", "dojo", { name: "Dojo", stage: 0, owner: "QS" });
+  seed("contacts", "gym-owner", { oppId: "gym", name: "Gina Owner", role: "Owner" });
+  seed("contacts", "dojo-owner", { oppId: "dojo", name: "Dan Owner", role: "Owner", primary: true });
+  await call("a", "PUT", "/api/document/profiles/QS", { title: "Founder", phone: "555-0100" });
+  assert.equal((await call("a", "PUT", "/api/document/sequences/seq", { name: "Outreach", steps: [
+    { id: "call", day: 0, type: "Cold call", title: "Call {{account}}", script: "Hi, this is {{my_name}}, {{my_title}}" },
+    { id: "mail", day: 2, type: "Email", title: "Email {{account}} in {{city}}" },
+    { id: "last", day: 5, type: "Phone call", title: "Last try" }] })).status, 200);
+  assert.equal((await call("b", "POST", "/api/sequences/seq/enroll", { oppIds: ["gym"] })).status, 403, "guests can't enroll");
+  assert.equal((await call("a", "PATCH", "/api/document/enrollments/x", { status: "completed" })).status, 403, "no shortcuts");
+  const res = await (await call("a", "POST", "/api/sequences/seq/enroll", { oppIds: ["gym", "dojo", "missing"], startDate: "2026-10-06" })).json();
+  assert.deepEqual(res, { enrolled: 2, skipped: 1 });
+  assert.equal((await (await call("a", "POST", "/api/sequences/seq/enroll", { oppIds: ["gym"] })).json()).skipped, 1, "not enrolled twice");
+  const all = (await (await call("a", "GET", "/api/collection/enrollments")).json()).docs.map(d => ({ id: d.id, ...d.data }));
+  const gym = all.find(e => e.oppId === "gym"), dojo = all.find(e => e.oppId === "dojo");
+  const task1 = (await (await call("a", "GET", `/api/document/activities/${gym.taskId}`)).json()).data;
+  assert.equal(task1.date, "2026-10-06");
+  assert.equal(task1.type, "Cold call");
+  assert.match(task1.notes, /Call Sample Gym/);
+  assert.match(task1.notes, /Hi, this is Quan, Founder/);
+  assert.deepEqual([task1.seq.step, task1.seq.of], [1, 3]);
+  assert.equal((await call("b", "PATCH", `/api/document/activities/${gym.taskId}`, { done: true, doneTs: Date.now(), outcome: "voicemail" })).status, 200, "a guest completing the task still advances it");
+  const afterDone = (await (await call("a", "GET", `/api/document/enrollments/${gym.id}`)).json()).data;
+  assert.equal(afterDone.stepIndex, 1);
+  assert.deepEqual(afterDone.completed.map(c => c.outcome), ["voicemail"]);
+  const task2 = (await (await call("a", "GET", `/api/document/activities/${afterDone.taskId}`)).json()).data;
+  const expected = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  assert.equal(task2.date, expected, "next step keeps the 2-day gap from when it was done");
+  assert.match(task2.notes, /Email Sample Gym in Elgin/);
+  await call("a", "POST", "/api/collection/activities", { kind: "appt", type: "Discovery", oppId: "gym", date: "2026-10-20", contactId: "gym-owner" });
+  const stopped = (await (await call("a", "GET", `/api/document/enrollments/${gym.id}`)).json()).data;
+  assert.deepEqual([stopped.status, stopped.stopReason, stopped.success], ["stopped", "Meeting booked", true]);
+  assert.equal((await (await call("a", "GET", `/api/document/activities/${afterDone.taskId}`)).json()).exists, false, "its open task is cleared");
+  await call("a", "DELETE", `/api/document/activities/${dojo.taskId}`);
+  assert.equal((await (await call("a", "GET", `/api/document/enrollments/${dojo.id}`)).json()).data.status, "paused");
+  const resumed = await (await call("a", "POST", `/api/enrollments/${dojo.id}/resume`)).json();
+  assert.equal(resumed.status, "active");
+  assert.ok(resumed.taskId);
+  const skipped = await (await call("a", "POST", `/api/enrollments/${dojo.id}/skip`)).json();
+  assert.equal(skipped.stepIndex, 1);
+  await call("a", "PATCH", "/api/document/opps/dojo", { stage: 1 });
+  assert.equal((await (await call("a", "GET", `/api/document/enrollments/${dojo.id}`)).json()).data.stopReason, "Moved to Discovery");
+  const starters = await (await call("a", "POST", "/api/sequences/starters")).json();
+  assert.equal(starters.created.length, 2);
+});
+
+test("contacts: every task and meeting names who it was with, from the same account", async () => {
+  const { call, seed } = fixture();
+  seed("opps", "gym", { name: "Gym", stage: 0 });
+  seed("opps", "other", { name: "Other", stage: 0 });
+  seed("activities", "old", { kind: "task", type: "Email", oppId: "gym", done: false });
+  assert.equal((await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: " " })).status, 400, "name required");
+  assert.equal((await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: "Pat", email: "nope" })).status, 400, "email checked");
+  const pat = (await (await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: "Pat Owner", title: "Owner", role: "Owner", email: "pat@gym.example" })).json()).id;
+  const otherC = (await (await call("a", "POST", "/api/collection/contacts", { oppId: "other", name: "Olive" })).json()).id;
+  assert.equal((await call("b", "POST", "/api/collection/contacts", { oppId: "gym", name: "Guest add" })).status, 403, "guests can't create contacts");
+  assert.equal((await call("b", "PATCH", `/api/document/contacts/${pat}`, { phone: "555-0100" })).status, 200, "guests can update existing contacts");
+  const task = { kind: "task", type: "Cold call", oppId: "gym", date: "2026-10-07" };
+  assert.match(await (await call("a", "POST", "/api/collection/activities", task)).text(), /Pick who this was with/);
+  assert.match(await (await call("a", "POST", "/api/collection/activities", { ...task, contactId: otherC })).text(), /different account/);
+  assert.match(await (await call("a", "POST", "/api/collection/activities", { ...task, contactId: "ghost" })).text(), /no longer exists/);
+  assert.equal((await call("a", "POST", "/api/collection/activities", { ...task, contactId: pat })).status, 201);
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { notes: "Edited" })).status, 200, "older tasks can still be edited");
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });
