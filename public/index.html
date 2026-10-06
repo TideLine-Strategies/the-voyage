@@ -326,9 +326,10 @@ textarea{min-height:70px;resize:vertical}
 .cxseg button{background:var(--panel);border:0;padding:7px 14px;font-size:14px;color:var(--muted)}.cxseg button.on{background:var(--red-bg);color:var(--text);font-weight:600}
 .cxfilters{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:12px;font-size:13px}
 .cxfilters select{background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:6px 8px;font-size:13px;color:var(--text)}
-.cxk{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--text)}
+.cxk{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--text);white-space:nowrap;cursor:pointer}
+.cxk input{display:inline-block;width:auto;margin:0;padding:0;accent-color:var(--c)}
 .cxk::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
-.cxk.appt,.ev.appt{--c:var(--green)}.cxk.task,.ev.task{--c:var(--violet)}.cxk.next,.ev.next{--c:var(--blue)}.cxk.ext,.ev.ext{--c:var(--muted)}
+.cx-appt{--c:var(--green)}.cx-task{--c:var(--violet)}.cx-next{--c:var(--blue)}.cx-ext{--c:var(--muted)}
 .cxmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .cxdow{font-size:12px;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);text-align:center}
 .cxday{min-height:112px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:0;cursor:pointer}
@@ -336,7 +337,7 @@ textarea{min-height:70px;resize:vertical}
 .cxnum{font-size:12px;color:var(--muted);align-self:flex-start;border:0;background:none;padding:2px 6px;border-radius:999px}
 .cxday.today .cxnum{background:var(--red);color:#fff;font-weight:600}
 .ev{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--text);border-radius:5px;padding:2px 6px;font-size:12px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
-.ev.ext{border-left-style:dashed;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted)}
+.ev.cx-ext{border-left-style:dashed;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted)}
 .ev.done{opacity:.55;text-decoration:line-through}.ev.late{box-shadow:inset 0 0 0 1px var(--red)}.ev.clash::after{content:" ⚠"}
 .ev[draggable=true]{cursor:grab}.ev b{font-weight:600}
 .cxmore{font-size:12px;color:var(--muted);background:none;border:0;text-align:left;padding:0 6px}
@@ -354,7 +355,7 @@ textarea{min-height:70px;resize:vertical}
 .cxag .ev{white-space:normal;font-size:14px;padding:8px 10px;margin-bottom:4px;display:grid;grid-template-columns:5.5rem minmax(0,1fr);gap:10px}
 .cxag .ev small{display:block;color:var(--muted);font-size:12px}
 .xhelp{font-size:13px;border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:6px}.xhelp summary{cursor:pointer;font-weight:600}.xhelp ol{margin:6px 0 2px;padding-left:20px}
-@media (max-width:860px){.cxday{min-height:64px}.cxday .ev{font-size:0;padding:0;height:6px;border-left-width:0;background:var(--c)}.cxday .ev.ext{background:var(--muted)}.cxmore{font-size:10px}.cxwh,.cxwa,.cxwg{grid-template-columns:36px repeat(7,minmax(0,1fr))}.cxcol .ev{font-size:10px}}
+@media (max-width:860px){.cxday{min-height:64px}.cxday .ev{font-size:0;padding:0;height:6px;border-left-width:0;background:var(--c)}.cxday .ev.cx-ext{background:var(--muted)}.cxmore{font-size:10px}.cxwh,.cxwa,.cxwg{grid-template-columns:36px repeat(7,minmax(0,1fr))}.cxcol .ev{font-size:10px}}
 .gsearch{position:relative;padding:2px 4px 8px}
 .gsearch input{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text)}
 .gres{position:absolute;left:4px;top:calc(100% - 4px);z-index:30;width:min(440px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
@@ -514,10 +515,10 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div class="cxfilters">
         <select id="cxScope" aria-label="Whose items"><option value="mine">Mine and shared with me</option><option value="all">Everyone's</option></select>
-        <label class="cxk appt"><input type="checkbox" data-k="appt" checked>Appointments</label>
-        <label class="cxk task"><input type="checkbox" data-k="task" checked>Tasks</label>
-        <label class="cxk next"><input type="checkbox" data-k="next" checked>Next steps</label>
-        <label class="cxk ext" id="cxExtToggle" hidden><input type="checkbox" data-k="ext" checked><span id="cxExtName">My calendar</span></label>
+        <label class="cxk cx-appt"><input type="checkbox" data-k="appt" checked>Appointments</label>
+        <label class="cxk cx-task"><input type="checkbox" data-k="task" checked>Tasks</label>
+        <label class="cxk cx-next"><input type="checkbox" data-k="next" checked>Next steps</label>
+        <label class="cxk cx-ext" id="cxExtToggle" hidden><input type="checkbox" data-k="ext" checked><span id="cxExtName">My calendar</span></label>
         <span class="city" id="cxNote"></span>
       </div>
       <div id="cxBody"></div>
@@ -1849,7 +1850,7 @@ function cxEvents(from,to){
   return out.sort((x,y)=>x.date.localeCompare(y.date)||(x.min??-1)-(y.min??-1));
 }
 function cxChip(e,withTime){
-  const b=el("button","ev "+e.k+(e.done?" done":"")+(e.late?" late":"")+(e.clash?" clash":""));b.type="button";
+  const b=el("button","ev cx-"+e.k+(e.done?" done":"")+(e.late?" late":"")+(e.clash?" clash":""));b.type="button";
   if(withTime&&e.min!=null)b.append(el("b",null,fmtClock(e.min)+" "));b.append(document.createTextNode(e.title));
   b.title=[e.min!=null?fmtClock(e.min):"All day",e.title,e.sub,e.clash&&"Overlaps: "+e.clash,e.late&&"Overdue"].filter(Boolean).join("\n");
   b.onclick=ev=>{ev.stopPropagation();if(e.open)e.open();else toast(e.title+(e.min!=null?" at "+fmtClock(e.min):"")+" · "+e.sub)};
