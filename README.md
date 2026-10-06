@@ -17,3 +17,11 @@ Create a private roster JSON array outside Git, with objects containing `id`, `n
 ## Muninn with local Codex
 
 Muninn uses each member's signed-in Codex CLI through a local bridge; no OpenAI API key is configured on the Worker. Install Node.js and Codex CLI, run `codex login`, and start `node bridge/muninn-bridge.mjs` while using The Voyage. On macOS, `sh bridge/install-macos.sh` installs the bridge as a per-user LaunchAgent. The bridge listens on `127.0.0.1:38917`, runs Codex read-only, and accepts requests from the Voyage site origins. The Worker supplies current CRM context from D1, and each member's Muninn history is saved separately in D1. Muninn cannot edit CRM records or send messages.
+
+## Admin page
+
+Editors see an **Admin** page with Overview, Usage, Security, Data health, and System tabs. Guests cannot open it, and the Worker refuses `/api/admin` and `GET /api/usage` for them.
+
+- Usage records page views and action labels per member (never record contents or typed text), with device type and the coarse city/region/country Cloudflare reports. Rows older than 180 days are deleted when an editor loads usage. Apply `migrations/0004_usage_events.sql` before or after deploying; until it exists, usage writes are ignored and the Usage tab says it is off.
+- Security lists members, signed-in devices, and invitation status, and lets an editor sign a member out of every device. Token hashes are never returned.
+- Data health and System are computed from existing records.

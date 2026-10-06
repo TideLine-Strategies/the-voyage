@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import worker from "../src/worker.js";
+import worker, { deviceFrom } from "../src/worker.js";
 
 function fixture() {
   const sqlite = new DatabaseSync(":memory:");
@@ -114,4 +114,57 @@ test("vendors are editor-only: editors manage them, guests cannot see or change 
   assert.equal((await call("b", "DELETE", "/api/document/vendors/photo")).status, 403);
   assert.doesNotMatch((await (await call("b", "GET", "/api/muninn/context")).json()).context, /Jordan Lee/);
   assert.equal((await call("a", "DELETE", `/api/document/vendors/${id}`)).status, 200);
+});
+
+test("usage: everyone reports their own events, only editors read them", async () => {
+  const { call, sqlite } = fixture();
+  const before = await call("b", "POST", "/api/usage", { events: [{ kind: "view", view: "accounts" }] });
+  assert.equal(before.status, 202);
+  assert.equal((await call("a", "GET", "/api/usage")).status, 503);
+  sqlite.exec(fs.readFileSync(new URL("../migrations/0004_usage_events.sql", import.meta.url), "utf8"));
+  const saved = await call("b", "POST", "/api/usage", { events: [
+    { kind: "open", view: "dash" },
+    { kind: "view", view: "accounts", ts: 1 },
+    { kind: "action", view: "accounts", action: "Saved".repeat(40) },
+    { kind: "nonsense", view: "accounts" },
+    { kind: "view" },
+  ] });
+  assert.equal((await saved.json()).saved, 3);
+  assert.equal((await call("b", "GET", "/api/usage")).status, 403);
+  const { events, members } = await (await call("a", "GET", "/api/usage?days=7")).json();
+  assert.equal(events.length, 3);
+  assert.ok(events.every(event => event.who === "MJ"));
+  assert.ok(events.every(event => event.ts > Date.now() - 60000), "client timestamps outside the last day are replaced");
+  assert.equal(events.find(event => event.kind === "action").action.length, 80);
+  assert.ok(members.some(member => member.id === "MJ" && !("email" in member)));
+  sqlite.prepare("INSERT INTO usage_events (member_id, ts, kind, view) VALUES ('QS', ?, 'view', 'dash')").run(Date.now() - 200 * 86400000);
+  await call("a", "GET", "/api/usage?days=180");
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM usage_events WHERE member_id = 'QS'").get().n, 0);
+});
+
+test("usage device labels", () => {
+  assert.equal(deviceFrom("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"), "Phone, Safari");
+  assert.equal(deviceFrom("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0"), "Computer, Edge");
+  assert.equal(deviceFrom(""), "Computer, Other browser");
+});
+
+test("admin: editors see access, invitations, and storage without secrets; guests are refused", async () => {
+  const { call, seed, sqlite } = fixture();
+  seed("opps", "account", { name: "Gym", stage: 1 });
+  sqlite.prepare("INSERT INTO invites (token_hash, member_id, email, expires_at) VALUES ('secret-hash', 'JK', 'jack@example.com', ?)").run(Date.now() + 86400000);
+  assert.equal((await call("b", "GET", "/api/admin")).status, 403);
+  assert.equal((await call("b", "POST", "/api/admin/signout", { member: "QS" })).status, 403);
+  const response = await call("a", "GET", "/api/admin");
+  assert.equal(response.status, 200);
+  const text = await response.clone().text();
+  assert.doesNotMatch(text, /secret-hash|token_hash/);
+  const data = await response.json();
+  assert.ok(data.members.some(member => member.id === "MJ" && member.role === "guest"));
+  assert.ok(data.sessions.some(session => session.member_id === "QS" && session.current === 1));
+  assert.equal(data.invites.find(invite => invite.member_id === "JK").email, "jack@example.com");
+  assert.equal(data.storage.find(row => row.collection === "opps").records, 1);
+  assert.equal(data.usageEvents, null);
+  const out = await call("a", "POST", "/api/admin/signout", { member: "MJ" });
+  assert.equal((await out.json()).signedOut, 1);
+  assert.equal((await call("b", "GET", "/api/me")).status, 403);
 });

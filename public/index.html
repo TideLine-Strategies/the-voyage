@@ -318,10 +318,36 @@ textarea{min-height:70px;resize:vertical}
 }
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
+.view-badge[hidden]{display:none}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
 body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!important}
+body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
+.usec{margin-top:22px}.usec h2{font-size:16px;margin:0 0 4px}.usec .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
+.ucols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.ubar{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) 6.5rem;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);font-size:14px}
+.ubar:first-child{border-top:0}
+.ubar .track{height:8px;border-radius:4px;background:var(--line)}.ubar .fill{height:100%;border-radius:4px;background:var(--blue);min-width:2px}
+.ubar.zero{color:var(--muted)}.ubar.zero .fill{background:none}
+.ubar small{color:var(--muted);text-align:right;white-space:nowrap}
+.utbl .row{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) 4.5rem 4.5rem minmax(0,1fr) minmax(0,1.2fr);cursor:default}
+.ulog .row{grid-template-columns:7.5rem minmax(0,.8fr) minmax(0,1.6fr) minmax(0,1.3fr);cursor:default}
+.utbl .row:hover,.ulog .row:hover{background:none}
+.uhours{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;align-items:end;height:90px;padding:12px 16px 4px}
+.uhours div{background:var(--blue);border-radius:3px 3px 0 0;min-height:2px}
+.arow{display:grid;grid-template-columns:12px minmax(0,1fr) 16px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font-size:14px;color:var(--text)}
+.arow:first-child{border-top:0}.arow:hover{background:var(--card)}
+.adot{width:10px;height:10px;border-radius:50%}.adot.red{background:var(--red)}.adot.amber{background:var(--amber)}.adot.blue{background:var(--blue)}
+.htbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.stbl .row{grid-template-columns:minmax(0,1.4fr) 5rem minmax(0,1fr) minmax(0,1fr) auto;cursor:default}
+.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.2fr);cursor:default}
+.ytbl .row{grid-template-columns:minmax(0,1.6fr) 5rem 6rem minmax(0,1fr);cursor:default}
+.stbl .row:hover,.itbl .row:hover,.ytbl .row:hover{background:none}
+.city.warn{color:var(--amber)}
+@media (max-width:860px){.stbl .row{grid-template-columns:minmax(0,1fr) auto}.stbl .row>:nth-child(2),.stbl .row>:nth-child(3),.stbl .row>:nth-child(4){display:none}.itbl .row>:nth-child(2){display:none}.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.uhl{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;padding:0 16px 10px}
+@media (max-width:860px){.ucols{grid-template-columns:1fr}.utbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.utbl .row>:nth-child(n+3){display:none}.ulog .row{grid-template-columns:6rem minmax(0,1fr)}.ulog .row>:nth-child(2),.ulog .row>:nth-child(4){display:none}}
 .vtbl .row{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr)}
 .vtbl .row a{color:var(--blue);text-decoration:none;font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vtbl .row a:hover{text-decoration:underline}
@@ -350,6 +376,7 @@ body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!impor
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="cadence">Pillage</button>
     <button class="nav" data-view="order">Order</button>
+    <button class="nav" data-view="admin">Admin</button>
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
@@ -408,6 +435,25 @@ body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!impor
       </div>
       <div class="cnt" id="vCount"></div>
       <div class="tbl vtbl" id="vList"></div>
+    </section>
+
+    <section id="view-admin" hidden>
+      <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
+      <div class="ntabs" id="adTabs" role="tablist">
+        <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="system">System</button>
+      </div>
+      <div id="adOverview"></div>
+      <div id="adUsage" hidden>
+        <div class="hint" style="color:var(--muted);font-size:13px;margin-bottom:10px">Who uses The Voyage, what they open and do, when, and from where. It records page names and actions, never what anyone typed.</div>
+        <div class="bhead">
+          <select id="uDays" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="180">Last 180 days</option></select>
+          <select id="uWho" aria-label="Person"><option value="">Everyone</option></select>
+        </div>
+        <div id="uBody"><div class="empty">Loading usage…</div></div>
+      </div>
+      <div id="adSecurity" hidden></div>
+      <div id="adHealth" hidden></div>
+      <div id="adSystem" hidden></div>
     </section>
 
     <section id="view-activity" hidden>
@@ -896,8 +942,9 @@ function renderActs(){
     const tx=el("div",null,a.text);if(a.by)tx.append(el("span","by",nameOf(a.by)));r.append(tm,tx);w.append(r);
   });
 }
+function track(kind,action){if(live&&window.voyageUsage)window.voyageUsage.track(kind,view,action)}
 async function write(fn,okMsg){
-  try{await fn();toast(okMsg)}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
+  try{await fn();toast(okMsg);track("action",okMsg)}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
 }
 $("saveBtn").onclick=async()=>{
   const data=readForm();if(!data)return;
@@ -1197,7 +1244,7 @@ async function sendMsg(){
   const m={ch:tcCh,text:t.slice(0,4000),by:me,ts:Date.now(),reactions:{}};
   $("tcIn").value="";tcAutoGrow();setTyping(false);tcForceScroll=true;
   if(!live){msgs.push({id:"m"+Date.now(),...m});renderTeam();return}
-  try{await db.collection("messages").add(m)}catch(e){$("tcIn").value=t;toast(e&&e.code==="quota_exceeded"?"Chat storage is full. Delete old messages to keep going.":"Message didn't send. Try again.")}
+  try{await db.collection("messages").add(m);track("action","Sent a team chat message")}catch(e){$("tcIn").value=t;toast(e&&e.code==="quota_exceeded"?"Chat storage is full. Delete old messages to keep going.":"Message didn't send. Try again.")}
 }
 async function react(m,e){
   const r={...(m.reactions||{})};const w=new Set(r[e]||[]);w.has(me)?w.delete(me):w.add(me);r[e]=[...w];
@@ -1394,16 +1441,202 @@ $("vDel").onclick=async()=>{
   if(!live){vendors=vendors.filter(x=>x!==v);renderVendors();return}
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
+
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",admin:"Admin",usage:"Admin"};
+let usage=null,usageBusy=false;
+async function loadUsage(){
+  if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
+  try{const r=await fetch("/api/usage?days="+$("uDays").value,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Usage could not load.");usage=j;renderUsage()}
+  catch(e){$("uBody").replaceChildren(el("div","empty",e.message||"Usage could not load."))}
+  finally{usageBusy=false}
+}
+const ago=ts=>{const m=Math.round((Date.now()-ts)/60000);return m<1?"Just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" hr ago":Math.round(m/1440)===1?"1 day ago":Math.round(m/1440)+" days ago"};
+const whereOf=e=>[e.city,e.region,e.country].filter(Boolean).join(", ")||"Unknown location";
+const mostOf=list=>{const m=new Map();list.forEach(x=>m.set(x,(m.get(x)||0)+1));return [...m].sort((a,b)=>b[1]-a[1])[0]?.[0]};
+function usageCounts(list,key){const m=new Map();list.forEach(e=>{const k=key(e);const c=m.get(k)||{n:0,who:new Set()};c.n++;c.who.add(e.who);m.set(k,c)});return m}
+function usageBars(rows,unit){
+  const max=Math.max(1,...rows.map(r=>r[1].n)),t=el("div","tbl");
+  rows.forEach(([label,c])=>{const r=el("div","ubar"+(c.n?"":" zero"));const tr=el("div","track");const f=el("div","fill");f.style.width=(c.n?Math.max(2,c.n/max*100):0)+"%";tr.append(f);
+    r.append(el("span",null,label),tr,el("small",null,c.n?`${c.n} ${c.n===1?unit.replace(/s$/,""):unit}, ${c.who.size} ${c.who.size===1?"person":"people"}`:"Never opened"));t.append(r)});
+  return t;
+}
+function usageSection(title,hint){const s=el("div","usec");s.append(el("h2",null,title),el("div","hint",hint));return s}
+function renderUsage(){
+  if(!usage)return;
+  const ws=$("uWho"),wv=ws.value;
+  ws.replaceChildren(new Option("Everyone",""),...usage.members.map(m=>new Option(m.name+(m.role==="guest"?" (guest)":""),m.id)));ws.value=usage.members.some(m=>m.id===wv)?wv:"";
+  const ev=usage.events.filter(e=>!ws.value||e.who===ws.value);
+  const body=$("uBody");body.replaceChildren();
+  if(!ev.length){body.append(el("div","empty","No usage recorded in this period yet. Recording starts once this update is live."));return}
+  const views=ev.filter(e=>e.kind==="view"),acts=ev.filter(e=>e.kind==="action"),opens=ev.filter(e=>e.kind==="open");
+  const people=new Set(ev.map(e=>e.who)).size;
+  const stats=el("div","stats");
+  [[people,people===1?"person active":"people active"],[opens.length,"visits"],[views.length,"page views"],[acts.length,"actions taken"]].forEach(([n,l])=>{const s=el("div","stat");s.append(el("b",null,String(n)),el("span",null,l));stats.append(s)});
+  body.append(stats);
+
+  const pv=usageCounts(views,e=>e.view);
+  const pages=Object.keys(VIEW_NAMES).filter(k=>k!=="usage"&&k!=="admin").map(k=>[VIEW_NAMES[k],pv.get(k)||{n:0,who:new Set()}]).sort((a,b)=>b[1].n-a[1].n);
+  const actions=[...usageCounts(acts,e=>e.action||"Other")].sort((a,b)=>b[1].n-a[1].n).slice(0,15);
+  const cols=el("div","ucols");
+  const s1=usageSection("Pages","What people open most. Pages nobody opens are candidates to improve, move, or drop.");s1.append(usageBars(pages,"views"));
+  const s2=usageSection("Actions","What people actually do once they're in.");s2.append(actions.length?usageBars(actions,"times"):el("div","empty","No actions yet."));
+  cols.append(s1,s2);body.append(cols);
+
+  const ps=usageSection("People","When each person was last in, how often they come back, and what they lean on.");
+  const t=el("div","tbl utbl");const hd=el("div","row hd");["Person","Last active","Days active","Actions","Uses most","Usually from"].forEach(x=>hd.append(el("span",null,x)));t.append(hd);
+  usage.members.filter(m=>!ws.value||m.id===ws.value).map(m=>({m,e:ev.filter(x=>x.who===m.id)})).sort((a,b)=>(b.e[0]?.ts||0)-(a.e[0]?.ts||0)).forEach(({m,e})=>{
+    const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.role==="guest"?"Guest":"Editor"));
+    if(!e.length){r.append(n,el("span","city","Not in this period"),el("span","city","0"),el("span","city","0"),el("span","city","–"),el("span","city","–"));t.append(r);return}
+    const days=new Set(e.map(x=>new Date(x.ts).toDateString())).size;
+    const topPage=mostOf(e.filter(x=>x.kind==="view").map(x=>VIEW_NAMES[x.view]||x.view));
+    const from=mostOf(e.map(x=>whereOf(x)+" · "+(x.device||"Unknown device")));
+    r.append(n,el("span","city",ago(e[0].ts)),el("span","city",String(days)),el("span","city",String(e.filter(x=>x.kind==="action").length)),el("span","city",topPage||"–"),el("span","city",from));t.append(r);
+  });
+  ps.append(t);body.append(ps);
+
+  const hs=usageSection("When","Activity by hour of day, in your time zone.");
+  const hours=Array(24).fill(0);ev.forEach(e=>hours[new Date(e.ts).getHours()]++);const hm=Math.max(1,...hours);
+  const hb=el("div","tbl"),hg=el("div","uhours");hours.forEach((n,h)=>{const b=el("div");b.style.height=Math.max(2,n/hm*100)+"%";b.title=`${(h%12)||12}${h<12?"am":"pm"}: ${n} events`;hg.append(b)});
+  const hl=el("div","uhl");["12am","6am","12pm","6pm","11pm"].forEach(x=>hl.append(el("span",null,x)));hb.append(hg,hl);hs.append(hb);body.append(hs);
+
+  const rs=usageSection("Recent activity","The latest 100 events.");
+  const lg=el("div","tbl ulog");const lh=el("div","row hd");["When","Who","What","From"].forEach(x=>lh.append(el("span",null,x)));lg.append(lh);
+  ev.slice(0,100).forEach(e=>{const r=el("div","row");const d=new Date(e.ts);const page=VIEW_NAMES[e.view]||e.view;
+    const what=e.kind==="open"?"Opened The Voyage":e.kind==="view"?"Viewed "+page:(e.action||"Action")+" on "+page;
+    r.append(el("span","city",d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+", "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})),el("span",null,nameOf(e.who)),el("span",null,what),el("span","city",whereOf(e)+" · "+(e.device||"Unknown device")));lg.append(r)});
+  rs.append(lg);body.append(rs);
+}
+$("uDays").onchange=loadUsage;$("uWho").onchange=renderUsage;$("uRefresh").onclick=loadAdmin;
+
+let admin=null,adTab="overview",adminErr="";
+const AD_PANELS={overview:"adOverview",usage:"adUsage",security:"adSecurity",health:"adHealth",system:"adSystem"};
+$("adTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;adTab=t;renderAdmin();track("action","Opened Admin "+t)};
+async function loadAdmin(){
+  adminErr="";renderAdmin();
+  try{const r=await fetch("/api/admin",{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Admin data could not load.");admin=j}
+  catch(e){adminErr=e.message||"Admin data could not load."}
+  await loadUsage();renderAdmin();
+}
+const fmtDay=ts=>new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric",year:new Date(ts).getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+function adTiles(list){const s=el("div","stats");list.forEach(([n,l])=>{const t=el("div","stat");t.append(el("b",null,String(n)),el("span",null,l));s.append(t)});return s}
+function adTable(cls,head,rows){const t=el("div","tbl "+cls);const hd=el("div","row hd");head.forEach(x=>hd.append(el("span",null,x)));t.append(hd);rows.forEach(r=>t.append(r));return t}
+function cell(text,cls){return el("span",cls||"city",text)}
+
+// Data health is computed from records already loaded in the app.
+function healthChecks(){
+  const t=today(),open=items.filter(i=>!i.done);
+  const norm=s=>(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const byName=new Map();opps.forEach(o=>{const k=norm(o.name);if(k)byName.set(k,[...(byName.get(k)||[]),o])});
+  return [
+    {key:"overdueNext",sev:"red",title:"Next step is overdue",hint:"The planned next step's date has passed.",list:opps.filter(o=>o.next&&o.next.date&&o.next.date<t),fmt:o=>o.next.label+", due "+fmtDate(o.next.date)},
+    {key:"overdueItems",sev:"red",title:"Tasks and appointments past due",hint:"Still open after their date.",list:open.filter(i=>i.date&&i.date<t),fmt:i=>i.type+(i.oppName?" with "+i.oppName:"")+", "+fmtDate(i.date),item:true},
+    {key:"stale",sev:"amber",title:"No contact in 30+ days",hint:"Accounts nobody has touched in a month.",list:opps.filter(o=>daysSince(o.lastTouch)>=30),fmt:o=>`Last touched ${daysSince(o.lastTouch)} days ago`},
+    {key:"noNext",sev:"amber",title:"No next step set",hint:"Accounts past Prospecting with nothing planned.",list:opps.filter(o=>o.stage>=1&&!o.next),fmt:o=>STAGES[o.stage]},
+    {key:"dupes",sev:"amber",title:"Possible duplicate accounts",hint:"Accounts with the same name.",list:[...byName.values()].filter(g=>g.length>1).map(g=>g[0]),fmt:o=>byName.get(norm(o.name)).length+" accounts with this name"},
+    {key:"noOwner",sev:"blue",title:"No owner",hint:"Nobody is responsible for these accounts.",list:opps.filter(o=>!o.owner),fmt:o=>STAGES[o.stage]},
+    {key:"noWeb",sev:"blue",title:"Missing website",hint:"Harder to research or verify.",list:opps.filter(o=>!o.website),fmt:o=>o.city||""},
+    {key:"noCity",sev:"blue",title:"Missing city",hint:"Location helps with routing and reporting.",list:opps.filter(o=>!o.city),fmt:o=>STAGES[o.stage]},
+  ];
+}
+function renderHealth(){
+  const w=$("adHealth");w.replaceChildren();const checks=healthChecks();
+  w.append(adTiles([[opps.length,"accounts"],[items.filter(i=>!i.done).length,"open tasks and appointments"],[checks[0].list.length+checks[1].list.length,"overdue"],[checks[2].list.length,"untouched 30+ days"]]));
+  checks.forEach(c=>{
+    const s=usageSection(c.title+` (${c.list.length})`,c.hint);
+    if(!c.list.length){s.append(el("div","empty","All clear."));w.append(s);return}
+    const rows=c.list.slice(0,10).map(x=>{const r=el("button","row");r.append(el("span","nm",c.item?(x.oppName||x.type):x.name),cell(c.fmt(x)));r.onclick=()=>c.item?openT(x.kind,x):openAccount(x.id,"accounts");return r});
+    const t=adTable("htbl",["Name","Detail"],rows);if(c.list.length>10)t.append(el("div","empty",`And ${c.list.length-10} more.`));s.append(t);w.append(s);
+  });
+}
+function renderSecurity(){
+  const w=$("adSecurity");w.replaceChildren();
+  if(!admin){w.append(el("div","empty",adminErr||"Loading…"));return}
+  const now=admin.now,active=admin.members.filter(m=>m.active),pending=admin.invites.filter(i=>!i.used_at&&i.expires_at>now);
+  w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"],[pending.length,"unused invitations"]]));
+  const st=usageSection("How sign-in works","Current access settings.");
+  const sl=el("div","tbl");[
+    ["Sign-in method","One-time invitation link per person, sent privately"],
+    ["Invitation links","Work once and expire after "+admin.settings.inviteDays+" days"],
+    ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
+    ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: the invitation link is the only gate"],
+    ["Guests","Can edit existing CRM records. Cannot create, delete, see vendors, or open Admin"],
+  ].forEach(([k,v])=>{const r=el("div","ubar");r.style.gridTemplateColumns="minmax(0,10rem) minmax(0,1fr)";r.append(el("span","nm",k),cell(v));sl.append(r)});
+  st.append(sl);w.append(st);
+  const ms=usageSection("People with access","Sign someone out to end every session on every device. They need a new invitation to get back in.");
+  const rows=admin.members.map(m=>{
+    const ss=admin.sessions.filter(s=>s.member_id===m.id),last=ss[0]?.created_at;
+    const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.email));
+    const b=el("span");
+    if(ss.length){const btn=el("button","btn danger",m.id===me?"Sign out my devices":"Sign out everywhere");btn.onclick=()=>adminSignOut(m,ss.length);b.append(btn)}
+    r.append(n,cell(m.active?(m.role==="guest"?"Guest":"Editor"):"Removed"),cell(ss.length?`${ss.length} device${ss.length===1?"":"s"}${ss.some(s=>s.current)&&m.id===me?" (incl. this one)":""}`:"Not signed in"),cell(last?"Signed in "+fmtDay(last):"–"),b);
+    return r;
+  });
+  ms.append(adTable("stbl",["Person","Role","Signed in on","Latest sign-in",""],rows));w.append(ms);
+  const is=usageSection("Invitation links","Unused links still work until they expire. Ask for a new one if someone lost theirs.");
+  const irows=admin.invites.slice(0,50).map(i=>{const r=el("div","row");const n=admin.members.find(m=>m.id===i.member_id);
+    const status=i.used_at?"Used "+fmtDay(i.used_at):i.expires_at>now?"Unused, expires "+fmtDay(i.expires_at):"Expired unused";
+    r.append(el("span","nm",n?n.name:i.member_id),cell(i.email),cell(status,i.used_at||i.expires_at<=now?"city":"city warn"));return r});
+  is.append(irows.length?adTable("itbl",["Person","Email","Status"],irows):el("div","empty","No invitations on record."));w.append(is);
+}
+async function adminSignOut(m,n){
+  const self=m.id===me;
+  if(!confirm(self?`Sign out all ${n} of your devices, including this one?`:`Sign ${m.name} out of ${n} device${n===1?"":"s"}? They'll need a new invitation to get back in.`))return;
+  try{const r=await fetch("/api/admin/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({member:m.id})});if(!r.ok)throw Error();
+    track("action","Signed out "+(self?"own devices":"a member"));toast(self?"Signed out":"Signed "+m.name+" out");if(self){location.reload();return}loadAdmin()}
+  catch(_){toast("That didn't work. Try again.")}
+}
+const COLLECTION_NAMES={opps:"Accounts",activities:"Tasks and appointments",activity:"Activity log",notes:"Meeting notes",channels:"Team chats (editors)",messages:"Chat messages (editors)",guest_channels:"Team chats (guests)",guest_messages:"Chat messages (guests)",reads:"Read markers",vendors:"Vendors",assistant_threads:"Muninn conversations",settings:"Settings"};
+function renderSystem(){
+  const w=$("adSystem");w.replaceChildren();
+  if(!admin){w.append(el("div","empty",adminErr||"Loading…"));return}
+  const total=admin.storage.reduce((a,s)=>a+(s.bytes||0),0),records=admin.storage.reduce((a,s)=>a+s.records,0);
+  w.append(adTiles([[records.toLocaleString(),"records"],[(total/1024).toFixed(0)+" KB","of CRM data"],[admin.usageEvents==null?"Off":admin.usageEvents.toLocaleString(),"usage events"],[admin.expiredSessions,"expired sign-ins on file"]]));
+  const s=usageSection("What's stored","Everything lives in TideLine's Cloudflare D1 database.");
+  s.append(adTable("ytbl",["Kind","Records","Size","Last changed"],admin.storage.map(x=>{const r=el("div","row");r.append(el("span","nm",COLLECTION_NAMES[x.collection]||x.collection),cell(x.records.toLocaleString()),cell(((x.bytes||0)/1024).toFixed(1)+" KB"),cell(x.updated?fmtDay(x.updated):"–"));return r})));
+  w.append(s);
+  if(admin.usageEvents==null){const n=usageSection("Usage tracking is off","Apply migration 0004_usage_events.sql to start recording usage.");w.append(n)}
+}
+function renderOverview(){
+  const w=$("adOverview");w.replaceChildren();
+  const checks=healthChecks(),attention=[];
+  if(admin){
+    const now=admin.now;
+    admin.invites.filter(i=>!i.used_at&&i.expires_at>now).forEach(i=>attention.push(["amber",`Unused invitation for ${i.email}, expires ${fmtDay(i.expires_at)}. Anyone with that link can sign in as them.`,"security"]));
+    admin.members.filter(m=>m.active&&!admin.sessions.some(s=>s.member_id===m.id)).forEach(m=>attention.push(["blue",`${m.name} isn't signed in on any device.`,"security"]));
+    const old=admin.sessions.filter(s=>now-s.created_at>90*864e5).length;if(old)attention.push(["blue",`${old} sign-in${old===1?" is":"s are"} over 90 days old. Consider signing out devices that aren't in use.`,"security"]);
+    if(!admin.settings.cloudflareAccess)attention.push(["blue","Cloudflare Access is off, so the invitation link is the only sign-in check.","security"]);
+    if(admin.usageEvents==null)attention.push(["amber","Usage tracking isn't set up on this database yet (migration 0004).","system"]);
+  }else if(adminErr)attention.push(["red",adminErr,"overview"]);
+  if(usage){
+    const since=Date.now()-14*864e5;
+    usage.members.filter(m=>!usage.events.some(e=>e.who===m.id&&e.ts>since)).forEach(m=>attention.push(["blue",`${m.name} hasn't used The Voyage in 14+ days.`,"usage"]));
+    const seen=new Set(usage.events.filter(e=>e.kind==="view").map(e=>e.view));
+    const unused=["accounts","vendors","activity","notes","stages","team"].filter(v=>!seen.has(v)).map(v=>VIEW_NAMES[v]);
+    if(unused.length&&usage.events.length)attention.push(["blue",`Nobody opened ${unused.join(", ")} in the last ${usage.days} days.`,"usage"]);
+  }
+  checks.filter(c=>c.list.length&&c.sev!=="blue").forEach(c=>attention.push([c.sev,`${c.title}: ${c.list.length} ${c.item?(c.list.length===1?"item":"items"):(c.list.length===1?"account":"accounts")}.`,"health"]));
+  const ev=usage?.events||[];
+  w.append(adTiles([[admin?admin.members.filter(m=>m.active).length:"–","people with access"],[new Set(ev.filter(e=>e.ts>Date.now()-7*864e5).map(e=>e.who)).size,"active this week"],[opps.length,"accounts"],[checks[0].list.length+checks[1].list.length,"overdue items"]]));
+  const s=usageSection("Needs attention",attention.length?"Most important first. Click one to see the details.":"Nothing needs attention right now.");
+  const order={red:0,amber:1,blue:2};
+  const list=el("div","tbl");attention.sort((a,b)=>order[a[0]]-order[b[0]]).forEach(([sev,text,tab])=>{const r=el("button","arow");const d=el("span","adot "+sev);r.append(d,el("span",null,text),el("span","city","›"));r.onclick=()=>{adTab=tab;renderAdmin()};list.append(r)});
+  if(attention.length)s.append(list);w.append(s);
+}
+function renderAdmin(){
+  [...$("adTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===adTab));
+  Object.entries(AD_PANELS).forEach(([t,id])=>$(id).hidden=t!==adTab);
+  if(adTab==="overview")renderOverview();else if(adTab==="security")renderSecurity();else if(adTab==="health")renderHealth();else if(adTab==="system")renderSystem();
+}
 const SOON={
   cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
   order:["Order","Where opps land once they're won: orders placed, what was sold, and what's been delivered."],
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
-  if(v==="oden"){openChat();return}
-  view=v;const navV=v==="account"?acctFrom:v;
+  if(v==="oden"){openChat();track("action","Opened Muninn");return}
+  view=v;track("view");const navV=v==="account"?acctFrom:v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-admin").hidden=v!=="admin";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="admin"&&!guest)loadAdmin();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -1459,7 +1692,7 @@ async function loadChatTurns(){
 }
 function stripMd(t){return t.replace(/\*\*(.+?)\*\*/g,"$1").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[*]\s+/gm,"• ").replace(/^\s*-\s+/gm,"• ")}
 async function sendChat(q){
-  q=(q||"").trim();if(!q||chatBusy)return;
+  q=(q||"").trim();if(!q||chatBusy)return;track("action","Asked Muninn a question");
   const body=$("chatBody");body.querySelectorAll(".chips").forEach(c=>c.remove());
   const questionBubble=el("div","msg u",q);body.append(questionBubble);$("chatIn").value="";autoGrow();
   const bubble=el("div","msg a wait","Thinking…");body.append(bubble);body.scrollTop=body.scrollHeight;
@@ -1500,7 +1733,7 @@ loadChatTurns();
 render();renderActs();renderItems();
 (async()=>{
   db=window.voyageDb;
-  try{const actor=await db.init();me=actor.id;guest=actor.role==="guest";if(guest)showGuestAccess();live=true;fillMe();render();renderItems();renderActs()}
+  try{const actor=await db.init();me=actor.id;guest=actor.role==="guest";if(guest)showGuestAccess();live=true;track("open");fillMe();render();renderItems();renderActs()}
   catch(_){$("boot").textContent="The Voyage could not connect. Reload to try again.";return}
   roomNs=window.voyageRoom;
   roomNs.presence({who:me,view}).catch(()=>{});

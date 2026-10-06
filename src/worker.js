@@ -90,7 +90,7 @@ async function handleInvite(request, env, token) {
 // Guests can change existing CRM records and use their private chat space.
 export function canWrite(actor, path, method) {
   if (actor.role === "edit") return true;
-  if (path[1] === "presence" || path[1] === "muninn") return true;
+  if (path[1] === "presence" || path[1] === "muninn" || path[1] === "usage") return true;
   if (path[1] === "document" && path[2] === "reads") return path[3] === actor.id;
   if (path[1] === "document" && CRM_COLLECTIONS.has(path[2])) return method === "PATCH";
   if (CHAT_COLLECTIONS.has(path[2])) {
@@ -238,6 +238,80 @@ async function handleMuninn(request, env, actor) {
   return reply({ answer, turns: saved.turns });
 }
 
+const USAGE_KINDS = new Set(["open", "view", "action"]);
+const USAGE_KEEP_MS = 180 * 86400000;
+
+export function deviceFrom(userAgent) {
+  const ua = String(userAgent || "");
+  const kind = /iPad|Tablet/i.test(ua) ? "Tablet" : /Mobi|iPhone|Android/i.test(ua) ? "Phone" : "Computer";
+  const browser = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Other browser";
+  return `${kind}, ${browser}`;
+}
+
+// Every member reports their own page views and action labels; only editors can read them.
+// Usage must never break the app, so a missing table (before migration 0004) is ignored on write.
+async function handleUsage(request, env, actor) {
+  if (request.method === "POST") {
+    const body = await readJson(request);
+    const events = (Array.isArray(body.events) ? body.events : []).slice(0, 50)
+      .filter(event => event && USAGE_KINDS.has(event.kind) && typeof event.view === "string" && event.view);
+    const cf = request.cf || {};
+    const device = deviceFrom(request.headers.get("user-agent"));
+    const now = Date.now();
+    try {
+      for (const event of events) {
+        const ts = Number.isFinite(event.ts) && event.ts <= now && event.ts > now - 86400000 ? event.ts : now;
+        await env.DB.prepare("INSERT INTO usage_events (member_id, ts, kind, view, action, device, city, region, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+          .bind(actor.id, ts, event.kind, event.view.slice(0, 40), typeof event.action === "string" ? event.action.slice(0, 80) : null,
+            device, cf.city || null, cf.region || null, cf.country || null).run();
+      }
+    } catch { return reply({ ok: false }, 202); }
+    return reply({ ok: true, saved: events.length });
+  }
+  if (request.method !== "GET") return error("Method not allowed", 405);
+  if (actor.role !== "edit") return error("Not available to guests", 403);
+  const days = Math.min(180, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));
+  try {
+    await env.DB.prepare("DELETE FROM usage_events WHERE ts < ?").bind(Date.now() - USAGE_KEEP_MS).run();
+    const { results } = await env.DB.prepare("SELECT member_id AS who, ts, kind, view, action, device, city, region, country FROM usage_events WHERE ts > ? ORDER BY ts DESC LIMIT 20000")
+      .bind(Date.now() - days * 86400000).all();
+    return reply({ days, events: results, members: await teamMembers(env.DB) });
+  } catch {
+    return error("Usage tracking is not set up yet. Apply migration 0004.", 503);
+  }
+}
+
+// Editor-only admin view: access, sign-ins, invitations, and storage. Never returns token hashes.
+async function handleAdmin(request, env, actor, path) {
+  if (actor.role !== "edit") return error("Not available to guests", 403);
+  const now = Date.now();
+  if (path.length === 3 && path[2] === "signout" && request.method === "POST") {
+    const { member } = await readJson(request);
+    if (typeof member !== "string" || !ID_PATTERN.test(member)) return error("Expected a member", 400);
+    const result = await env.DB.prepare("DELETE FROM sessions WHERE member_id = ?").bind(member).run();
+    return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  if (path.length !== 2 || request.method !== "GET") return error("Not found", 404);
+  const cookie = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
+  const currentHash = cookie ? await tokenHash(cookie) : "";
+  const all = async (sql, ...args) => (await env.DB.prepare(sql).bind(...args).all()).results;
+  let usageEvents = null;
+  try { usageEvents = (await env.DB.prepare("SELECT COUNT(*) AS n FROM usage_events").first()).n; } catch { /* migration 0004 not applied yet */ }
+  return reply({
+    now,
+    members: await all("SELECT id, name, email, role, active FROM members ORDER BY active DESC, role, name"),
+    sessions: await all("SELECT member_id, created_at, expires_at, token_hash = ? AS current FROM sessions WHERE expires_at > ? ORDER BY created_at DESC LIMIT 200", currentHash, now),
+    expiredSessions: (await env.DB.prepare("SELECT COUNT(*) AS n FROM sessions WHERE expires_at <= ?").bind(now).first()).n,
+    invites: await all("SELECT member_id, email, expires_at, used_at FROM invites ORDER BY expires_at DESC LIMIT 200"),
+    storage: await all("SELECT collection, COUNT(*) AS records, SUM(LENGTH(data_json)) AS bytes, MAX(updated_at) AS updated FROM documents GROUP BY collection ORDER BY collection"),
+    usageEvents,
+    settings: {
+      sessionDays: SESSION_MAX_AGE / 86400, inviteDays: 30,
+      cloudflareAccess: Boolean(env.POLICY_AUD && !env.POLICY_AUD.startsWith("CONFIGURE_") && env.TEAM_DOMAIN),
+    },
+  });
+}
+
 async function handleApi(request, env, actor, path) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
@@ -246,6 +320,8 @@ async function handleApi(request, env, actor, path) {
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
+  if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
+  if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
     return reply({ context: await muninnContext(env.DB, actor) });
   }
