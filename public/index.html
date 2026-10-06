@@ -325,6 +325,15 @@ textarea{min-height:70px;resize:vertical}
 .nav-profile .view-badge{margin-top:4px;align-self:flex-start}
 .pcard{display:flex;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
 .av.pbig{width:56px;height:56px;font-size:20px}
+.pinfo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin-top:-10px;padding:18px 16px 14px;font-size:14px}
+.pinfo:empty{display:none}
+.pinfo .k{color:var(--muted);font-size:12px}.pinfo .full{grid-column:1/-1;white-space:pre-wrap}
+.pinfo a{color:var(--blue);text-decoration:none;word-break:break-all}
+.pdir{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.pdc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pdc .top{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.pdc a{color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:860px){.pinfo{grid-template-columns:1fr}}
 .pset{grid-template-columns:minmax(0,10rem) minmax(0,1fr)!important}
 .pset select{justify-self:start;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;color:var(--text);font-size:14px}
 .dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
@@ -450,7 +459,9 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 
     <section id="view-profile" hidden>
       <div class="head"><div><h1>Profile</h1><div class="sub">Your account, settings, and signed-in devices.</div></div></div>
-      <div class="pcard"><span class="av OT pbig" id="pAv">?</span><div><div class="nm" id="pName"></div><div class="city" id="pEmail"></div><div class="city" id="pRole"></div></div></div>
+      <div class="pcard"><span class="av OT pbig" id="pAv">?</span><div style="flex:1;min-width:0"><div class="nm" id="pName"></div><div class="city" id="pTitle"></div><div class="city" id="pEmail"></div><div class="city" id="pRole"></div></div><button class="btn primary" id="pEdit">Edit profile</button></div>
+      <div class="pinfo" id="pInfo"></div>
+      <div class="usec"><h2>Team directory</h2><div class="hint">Everyone with access to The Voyage, and how to reach them.</div><div class="pdir" id="pDir"></div></div>
       <div class="usec"><h2>Your work</h2><div class="hint">What's on your plate right now.</div><div id="pWork"></div></div>
       <div class="usec"><h2>Settings</h2><div class="hint">Saved on this device.</div>
         <div class="tbl"><div class="ubar pset"><span class="nm">Appearance</span><select id="pTheme" aria-label="Appearance"><option value="">Match this device</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
@@ -624,6 +635,31 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="acts">
       <div><button class="btn danger" id="delBtn">Delete</button></div>
       <div><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save opp</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="pdlg" aria-labelledby="pdlgTitle">
+  <div class="dlg">
+    <h2 id="pdlgTitle">Edit profile</h2>
+    <p class="city" style="margin:-4px 0 12px">Your teammates can see this. Your name and sign-in email are managed by Quan.</p>
+    <div class="grid2">
+      <label>Job title<input id="peTitle" maxlength="100" autocomplete="off" placeholder="Business development"></label>
+      <label>Phone<input id="pePhone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="(555) 555-5555"></label>
+    </div>
+    <div class="grid2">
+      <label>Location<input id="peLoc" maxlength="100" autocomplete="off" placeholder="Chicago, IL"></label>
+      <label>Time zone<select id="peTz"></select></label>
+    </div>
+    <div class="grid2">
+      <label>Working hours<input id="peHours" maxlength="100" autocomplete="off" placeholder="Mon–Fri, 9am–5pm"></label>
+      <label>Best way to reach you<select id="peContact"><option value="">No preference</option><option>Team chat</option><option>Phone call</option><option>Text</option><option>Email</option></select></label>
+    </div>
+    <label>LinkedIn<input id="peLi" type="url" inputmode="url" maxlength="300" autocomplete="off" placeholder="linkedin.com/in/..."></label>
+    <label>What you cover<input id="peFocus" maxlength="300" autocomplete="off" placeholder="North suburbs, martial arts and dance studios"></label>
+    <label>About you<textarea id="peBio" maxlength="1500" placeholder="A few lines about your background and what you're working on"></textarea></label>
+    <div class="acts">
+      <div></div>
+      <div><button class="btn" id="peCancel">Cancel</button><button class="btn primary" id="peSave">Save profile</button></div>
     </div>
   </div>
 </dialog>
@@ -1653,7 +1689,55 @@ function renderOverview(){
   const list=el("div","tbl");attention.sort((a,b)=>order[a[0]]-order[b[0]]).forEach(([sev,text,tab])=>{const r=el("button","arow");const d=el("span","adot "+sev);r.append(d,el("span",null,text),el("span","city","›"));r.onclick=()=>{adTab=tab;renderAdmin()};list.append(r)});
   if(attention.length)s.append(list);w.append(s);
 }
-let profile=null;
+let profile=null,profiles=[];
+const TZS=[["America/New_York","Eastern"],["America/Chicago","Central"],["America/Denver","Mountain"],["America/Phoenix","Arizona"],["America/Los_Angeles","Pacific"],["America/Anchorage","Alaska"],["Pacific/Honolulu","Hawaii"]];
+const tzName=tz=>(TZS.find(t=>t[0]===tz)||[tz,tz])[1];
+const localTime=tz=>{try{return new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit",timeZone:tz})}catch(_){return ""}};
+const profOf=id=>profiles.find(p=>p.id===id)||{};
+function infoLink(text,href){const a=el("a",null,text);a.href=href;if(/^https?:/.test(href)){a.target="_blank";a.rel="noopener noreferrer"}return a}
+function renderMyInfo(){
+  const p=profOf(me),w=$("pInfo");w.replaceChildren();
+  $("pTitle").textContent=p.title||"";
+  const add=(k,v,full)=>{if(!v)return;const d=el("div",full?"full":null);d.append(el("div","k",k));d.append(typeof v==="string"?el("div",null,v):v);w.append(d)};
+  add("Phone",p.phone&&infoLink(p.phone,"tel:"+p.phone.replace(/[^\d+]/g,"")));
+  add("Location",[p.location,p.timezone&&tzName(p.timezone)+" time"].filter(Boolean).join(" · "));
+  add("Working hours",p.hours);add("Best way to reach you",p.contact);
+  add("LinkedIn",p.linkedin&&infoLink(p.linkedin.replace(/^https?:\/\/(www\.)?/i,""),p.linkedin));
+  add("What you cover",p.focus,true);add("About",p.bio,true);
+}
+function renderDirectory(){
+  const w=$("pDir");w.replaceChildren();
+  [...team].sort((a,b)=>(a.id===me?-1:b.id===me?1:a.name.localeCompare(b.name))).forEach(m=>{
+    const p=profOf(m.id),c=el("div","pdc"),top=el("div","top"),n=el("div");
+    n.append(el("div","nm",m.name+(m.id===me?" (you)":"")),el("div","city",[p.title,m.role==="guest"?"Guest":"Editor"].filter(Boolean).join(" · ")));
+    top.append(avatar(m.id),n);c.append(top);
+    if(p.phone)c.append(infoLink(p.phone,"tel:"+p.phone.replace(/[^\d+]/g,"")));
+    if(p.location||p.timezone)c.append(el("span","city",[p.location,p.timezone&&`${localTime(p.timezone)} their time`].filter(Boolean).join(" · ")));
+    if(p.hours)c.append(el("span","city",p.hours));
+    if(p.contact)c.append(el("span","city","Prefers "+p.contact.toLowerCase()));
+    if(p.focus)c.append(el("span",null,p.focus));
+    if(!Object.keys(p).some(k=>PROFILE_KEYS.includes(k)&&p[k]))c.append(el("span","city",m.id===me?"Add your details with Edit profile.":"Hasn't filled in a profile yet."));
+    w.append(c);
+  });
+}
+const PROFILE_KEYS=["title","phone","location","timezone","hours","contact","linkedin","focus","bio"];
+function openProfileEdit(){
+  const p=profOf(me),tz=$("peTz");
+  if(!tz.options.length){tz.append(new Option("Not set",""));TZS.forEach(([v,l])=>tz.append(new Option(l+" time",v)))}
+  let guessTz="";try{guessTz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(_){}
+  $("peTitle").value=p.title||"";$("pePhone").value=p.phone||"";$("peLoc").value=p.location||"";
+  tz.value=p.timezone||(TZS.some(t=>t[0]===guessTz)?guessTz:"");
+  $("peHours").value=p.hours||"";$("peContact").value=p.contact||"";$("peLi").value=p.linkedin||"";$("peFocus").value=p.focus||"";$("peBio").value=p.bio||"";
+  $("pdlg").showModal();setTimeout(()=>$("peTitle").focus(),30);
+}
+$("pEdit").onclick=openProfileEdit;
+$("peCancel").onclick=()=>$("pdlg").close();
+$("peSave").onclick=async()=>{
+  const data={title:$("peTitle").value.trim(),phone:$("pePhone").value.trim(),location:$("peLoc").value.trim(),timezone:$("peTz").value,hours:$("peHours").value.trim(),contact:$("peContact").value,linkedin:normUrl($("peLi").value),focus:$("peFocus").value.trim(),bio:$("peBio").value.trim()};
+  $("pdlg").close();
+  if(!live){profiles=[...profiles.filter(p=>p.id!==me),{id:me,...data}];renderProfile();toast("Saved for this session only");return}
+  await write(()=>db.doc("profiles/"+me).set(data),"Profile saved");
+};
 async function loadProfile(){
   renderProfile();
   try{const r=await fetch("/api/me/profile",{credentials:"same-origin",cache:"no-store"});if(!r.ok)throw Error();profile=await r.json()}catch(_){profile=null}
@@ -1669,7 +1753,7 @@ function renderProfile(){
   $("pTheme").value=theme;
   const t=today(),mine=opps.filter(o=>(o.owner||"CK")===me),myItems=items.filter(i=>!i.done&&((i.owner||"CK")===me||(i.shared||[]).includes(me)));
   const work=adTiles([[mine.length,"accounts you own"],[myItems.length,"open tasks and appointments"],[myItems.filter(i=>i.date&&i.date<t).length+mine.filter(o=>o.next&&o.next.date&&o.next.date<t).length,"overdue"],[mine.filter(o=>daysSince(o.lastTouch)>=30).length,"untouched 30+ days"]]);
-  $("pWork").replaceChildren(work);
+  $("pWork").replaceChildren(work);renderMyInfo();renderDirectory();
   const d=$("pDevices");
   if(!profile){d.replaceChildren(el("div","empty","Loading…"));return}
   d.replaceChildren(adTable("dtbl",["Device","Signed in","Stays signed in until"],profile.devices.map(x=>{const r=el("div","row");r.append(el("span","nm",x.current?"This device":"Another device"),cell(fmtDay(x.created_at)),cell(fmtDay(x.expires_at)));return r})));
@@ -1821,6 +1905,7 @@ render();renderActs();renderItems();
     if(!firstMsgs){const fresh=msgs.filter(m=>!prevIds.has(m.id)&&m.by!==me);const n=fresh.sort((a,b)=>b.ts-a.ts)[0];if(n&&!(view==="team"&&tcCh===n.ch))toast(nameOf(n.by)+" in "+chName(n.ch)+": "+n.text.slice(0,60))}
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
+  db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
   if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
     vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
   },failed)}

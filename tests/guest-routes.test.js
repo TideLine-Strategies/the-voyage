@@ -185,3 +185,19 @@ test("profile: every member sees their own account and devices and can sign out"
   assert.equal((await call("b", "GET", "/api/me")).status, 403);
   assert.equal((await call("a", "GET", "/api/me")).status, 200, "other members stay signed in");
 });
+
+test("profiles: anyone can read the directory, but each member edits only their own", async () => {
+  const { call } = fixture();
+  assert.equal((await call("b", "PUT", "/api/document/profiles/MJ", { title: "Sales", phone: "555-0100", bio: "Hi" })).status, 200);
+  assert.equal((await call("a", "PUT", "/api/document/profiles/QS", { title: "Founder", timezone: "America/Chicago" })).status, 200);
+  const docs = (await (await call("b", "GET", "/api/collection/profiles")).json()).docs;
+  assert.deepEqual(docs.map(doc => doc.id).sort(), ["MJ", "QS"]);
+  assert.ok(docs.find(doc => doc.id === "MJ").data.updatedTs > 0);
+  assert.equal((await call("a", "PUT", "/api/document/profiles/MJ", { title: "Changed by someone else" })).status, 403);
+  assert.equal((await call("a", "DELETE", "/api/document/profiles/MJ")).status, 403);
+  assert.equal((await call("b", "PATCH", "/api/document/profiles/QS", { title: "Nope" })).status, 403);
+  assert.equal((await call("a", "POST", "/api/collection/profiles", { title: "Random id" })).status, 403);
+  assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { role: "edit" })).status, 400);
+  assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { bio: "x".repeat(1501) })).status, 400);
+  assert.equal((await call("b", "PATCH", "/api/document/profiles/MJ", { hours: "9–5" })).status, 200);
+});

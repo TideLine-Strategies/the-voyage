@@ -1,5 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles"]);
+// Profile fields each member can fill in about themselves, with maximum lengths.
+const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
 const EDITOR_COLLECTIONS = new Set(["vendors"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
@@ -91,7 +93,7 @@ async function handleInvite(request, env, token) {
 export function canWrite(actor, path, method) {
   if (actor.role === "edit") return true;
   if (path[1] === "presence" || path[1] === "muninn" || path[1] === "usage" || path[1] === "me") return true;
-  if (path[1] === "document" && path[2] === "reads") return path[3] === actor.id;
+  if (path[1] === "document" && (path[2] === "reads" || path[2] === "profiles")) return path[3] === actor.id;
   if (path[1] === "document" && CRM_COLLECTIONS.has(path[2])) return method === "PATCH";
   if (CHAT_COLLECTIONS.has(path[2])) {
     if (path[1] === "collection") return method === "POST";
@@ -141,6 +143,14 @@ export function validateDocument(collection, id, data, actor, method) {
   if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected an object");
   if (collection === "settings") throw new Error("Team settings cannot be changed here");
   if (collection === "reads" && id !== actor.id) throw new Error("Wrong member");
+  if (collection === "profiles") {
+    if (id !== actor.id) throw new Error("Wrong member");
+    for (const [key, value] of Object.entries(data)) {
+      if (key === "updatedTs") continue;
+      if (!Object.hasOwn(PROFILE_FIELDS, key) || typeof value !== "string" || value.length > PROFILE_FIELDS[key]) throw new Error(`Invalid profile field: ${key}`);
+    }
+    data.updatedTs = Date.now();
+  }
   if (collection === "messages") {
     if (method === "PATCH") {
       if (Object.keys(data).some(key => key !== "reactions")) throw new Error("Only reactions can be updated");
@@ -345,6 +355,7 @@ async function handleApi(request, env, actor, path) {
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
   if (EDITOR_COLLECTIONS.has(path[2]) && (path[1] === "collection" || path[1] === "document") && actor.role !== "edit") return error("Not available to guests", 403);
+  if (path[2] === "profiles" && method !== "GET" && (path[1] !== "document" || path[3] !== actor.id)) return error("You can only edit your own profile", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
@@ -451,7 +462,7 @@ export default {
     }
     try { return await handleApi(request, env, actor, path); }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },
