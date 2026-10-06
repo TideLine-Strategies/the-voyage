@@ -369,6 +369,10 @@ textarea{min-height:70px;resize:vertical}
 .dlproc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-2px 0 12px;padding-top:10px;border-top:1px solid var(--line)}.dlproc span{display:block;font-size:12px;color:var(--muted)}.dlproc b{font-variant-numeric:tabular-nums;color:var(--green)}
 .dlproc[hidden]{display:none}
 @media (max-width:860px){.ppres{grid-template-columns:1fr 1fr}}
+.docbox{border:1px dashed var(--line-2);border-radius:10px;padding:12px;margin:0 0 14px}.docbox.over{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.docrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.docrow:last-child{border-bottom:0}.docrow a{color:var(--blue);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.docrow .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
+.docdrop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.docdrop select{background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--text)}
+#dcReq{font-weight:600;text-transform:none;letter-spacing:0;margin-left:6px}#dcReq.ok{color:var(--green)}#dcReq.no{color:var(--red)}
 /* Calendar */
 .cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
@@ -597,6 +601,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
           </div>
           <div class="dlsec" id="dlCloseSec"><h2><span>5</span>Close package</h2>
             <p class="city" id="dlCloseHint" style="margin:-4px 0 10px">Fill this in once the deal is approved and signed. It's what the team needs to start the customer.</p>
+            <div class="docbox" id="dcDocs"><div class="pphead" style="margin-top:0">Signed documents <span id="dcReq"></span></div><div id="dcList"></div><div class="docdrop" id="dcDrop"><input type="file" id="dcFile" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.heic,application/pdf,image/*" hidden><select id="dcKind" aria-label="Document type"><option value="signed">Signed agreement</option><option value="other">Other document</option></select><button class="btn" id="dcUpload" type="button">Upload</button><span class="city">or drop files here. PDF, Word, or photo, up to 15 MB each.</span></div></div>
             <label class="chk"><input type="checkbox" id="dcSigned">Signed agreement received</label>
             <div class="grid3"><label>Date signed<input id="dcDate" type="date"></label><label>Signed by<input id="dcName" maxlength="120" autocomplete="off" placeholder="Pat Owner"></label><label>Their title<input id="dcTitle" maxlength="120" autocomplete="off" placeholder="Owner"></label></div>
             <div class="grid3"><label>Signer email<input id="dcEmail" type="email" maxlength="200" autocomplete="off"></label><label>Billing contact email<input id="dcBilling" type="email" maxlength="200" autocomplete="off"></label><label>Contract start date<input id="dcStart" type="date"></label></div>
@@ -2134,7 +2139,7 @@ function renderCatalog(w){
 function blankDeal(oppId){const o=opps.find(x=>x.id===oppId);return {name:o?o.name+" deal":"",oppId:oppId||"",owner:o?.owner||me,expectedClose:o?.next?.date||"",probability:null,lines:[],terms:{startDate:"",months:12,freeMonths:0,paymentTerms:"Net 30",billingFrequency:"Monthly",autoRenew:true,special:""},close:{agreementSigned:false,signedDate:"",signerName:"",signerTitle:"",signerEmail:"",billingEmail:"",paymentMethod:"",handoff:""},processing:{enabled:false,volume:null,txns:null,amexShare:0,rate:null,perTxn:null,monthlyFee:0,currentRate:null,currentPerTxn:null,currentMonthly:0,interchangePct:null,batches:26,hosted:true},notes:"",status:"draft",history:[]}}
 function openDeal(id,oppId){
   if(view==="deal"&&dlDirty&&!confirm("Leave this deal without saving your changes?"))return;
-  const d=id&&deals.find(x=>x.id===id);dlId=d?d.id:null;dl=JSON.parse(JSON.stringify(d||blankDeal(oppId)));dlDirty=false;
+  const d=id&&deals.find(x=>x.id===id);dlId=d?d.id:null;dlFiles=[];dl=JSON.parse(JSON.stringify(d||blankDeal(oppId)));dlDirty=false;
   go("deal");window.scrollTo(0,0);fillBuilder();
 }
 function fillBuilder(){
@@ -2154,7 +2159,7 @@ function fillBuilder(){
   const pk=$("dlPick");pk.replaceChildren(new Option("+ Add a product or service…",""));products().filter(p=>p.active!==false).forEach(p=>pk.append(new Option(`${p.name} · ${usd(p.price)}${p.billing==="monthly"?"/mo":p.billing==="annual"?"/yr":" one-time"}`,p.id)));
   if(!products().some(p=>p.active!==false&&isImpl(p)))pk.append(new Option("Implementation · one-time (enter price)","__impl"));
   pk.disabled=!editable;$("dlAddCustom").disabled=!editable;
-  renderLines();renderHistory();refreshSummary();
+  renderLines();renderHistory();refreshSummary();renderDealFiles();loadDealFiles();
 }
 function renderLines(){
   const editable=dl.status==="draft"||dl.status==="changes",w=$("dlLines");w.replaceChildren();
@@ -2266,6 +2271,38 @@ $("dcStart").addEventListener("input",()=>{$("dlStart").value=$("dcStart").value
 window.addEventListener("beforeunload",e=>{if(view==="deal"&&dlDirty){e.preventDefault();e.returnValue=""}});
 // Implementation is always in the product dropdown: a catalog item if one exists, otherwise a one-time line to price.
 function isImpl(p){return /implementation/i.test(p.name)}
+// Signed documents: uploaded to the deal; closing won requires at least one signed agreement.
+let dlFiles=[];
+async function loadDealFiles(){
+  const id=dlId;if(!id){dlFiles=[];renderDealFiles();return}
+  try{const r=await fetch(`/api/deals/${id}/files`,{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error);if(id===dlId){dlFiles=j.files;renderDealFiles()}}
+  catch(e){$("dcList").replaceChildren(el("div","city",e.message||"Documents couldn't load."))}
+}
+function renderDealFiles(){
+  const w=$("dcList"),locked=!dl||dl.status==="won"||dl.status==="lost",signed=dlFiles.filter(f=>f.kind==="signed").length;w.replaceChildren();
+  $("dcReq").textContent=signed?`✓ ${signed} signed`:"Required to close";$("dcReq").className=signed?"ok":"no";
+  if(!dlFiles.length)w.append(el("div","city","No documents yet."));
+  dlFiles.forEach(f=>{const r=el("div","docrow"),a=el("a",null,f.name);a.href=`/api/deals/${dlId}/files/${f.id}`;a.title="Download";
+    r.append(a,el("span","spill "+(f.kind==="signed"?"won":""),f.kind==="signed"?"Signed":"Other"),el("span","city",`${f.size<1048576?Math.max(1,Math.round(f.size/1024))+" KB":(f.size/1048576).toFixed(1)+" MB"} · ${nameOf(f.uploaded_by)} · ${fmtDay(f.uploaded_ts)}`));
+    if(!locked){const x=el("button","lx","×");x.title="Remove";x.onclick=async()=>{if(!confirm(`Remove ${f.name}?`))return;try{const r2=await fetch(`/api/deals/${dlId}/files/${f.id}`,{method:"DELETE",credentials:"same-origin"});const j=await r2.json();if(!r2.ok)throw Error(j.error);dlFiles=j.files;renderDealFiles();toast("Removed")}catch(e){toast(e.message)}};r.append(x)}
+    w.append(r)});
+  $("dcDrop").hidden=locked;
+}
+async function uploadDealFiles(files){
+  if(!files.length)return;
+  if(!dlId&&!(await saveDeal(false)))return;
+  for(const f of files){
+    if(f.size>15*1024*1024){toast(f.name+" is over 15 MB");continue}
+    toast("Uploading "+f.name+"…");
+    try{const r=await fetch(`/api/deals/${dlId}/files?name=${encodeURIComponent(f.name)}&kind=${$("dcKind").value}`,{method:"POST",credentials:"same-origin",headers:{"content-type":f.type||"application/octet-stream"},body:f});const j=await r.json();if(!r.ok)throw Error(j.error);dlFiles=j.files;renderDealFiles();toast("Uploaded "+f.name);track("action","Uploaded a deal document")}
+    catch(e){toast(f.name+": "+e.message)}
+  }
+}
+$("dcUpload").onclick=()=>{$("dcFile").value="";$("dcFile").click()};
+$("dcFile").onchange=()=>uploadDealFiles([...$("dcFile").files]);
+$("dcDocs").ondragover=e=>{if(!$("dcDrop").hidden){e.preventDefault();$("dcDocs").classList.add("over")}};
+$("dcDocs").ondragleave=()=>$("dcDocs").classList.remove("over");
+$("dcDocs").ondrop=e=>{e.preventDefault();$("dcDocs").classList.remove("over");if(!$("dcDrop").hidden)uploadDealFiles([...e.dataTransfer.files])};
 // Make unsaved work obvious, with a Save button up top and Ctrl+S.
 function markDirty(){const editable=dl&&(dl.status==="draft"||dl.status==="changes"||dl.status==="approved");$("dlUnsaved").hidden=!dlDirty;$("dlSaveTop").hidden=!(dlDirty&&editable)}
 $("dlSaveTop").onclick=()=>dl.status==="approved"?dealStep("package"):saveDeal(true);

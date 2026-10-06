@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { approvalFlags, calculateProcessing, calculateTotals, closeProblems, sanitizeDeal, sanitizeProcessing, sanitizeProcessingSettings } from "../src/deals.js";
+import { approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessing, sanitizeProcessingSettings } from "../src/deals.js";
 
 test("totals: one-time, monthly, annual, discounts, and free months", () => {
   const deal = sanitizeDeal({ lines: [
@@ -40,8 +40,9 @@ test("price below list counts as discount; bad input is cleaned", () => {
 
 test("close package requirements", () => {
   const deal = sanitizeDeal({ terms: { startDate: "2026-11-01" }, close: { agreementSigned: true, signedDate: "2026-10-20", signerName: "Pat Owner", signerEmail: "pat@example.com", billingEmail: "billing@example.com" } });
-  assert.deepEqual(closeProblems(deal), []);
-  assert.equal(closeProblems(sanitizeDeal({})).length, 6);
+  assert.deepEqual(closeProblems(deal, { signedDocs: 1 }), []);
+  assert.deepEqual(closeProblems(deal), ["Attach the signed agreement"]);
+  assert.equal(closeProblems(sanitizeDeal({})).length, 7);
 });
 
 // Illustrative numbers only; real partner rates live in the CRM database, never in this public repo.
@@ -80,4 +81,14 @@ test("processing settings and inputs are cleaned", () => {
   assert.equal(sanitizeProcessingSettings({}).defaultInterchangePct, null);
   const p = sanitizeProcessing({ enabled: "yes", volume: -5, rate: "", hosted: undefined });
   assert.deepEqual([p.enabled, p.volume, p.rate, p.hosted], [true, 0, null, true]);
+});
+
+test("attachment types are detected from content", () => {
+  const b = s => new TextEncoder().encode(s);
+  assert.equal(detectFileType(b("%PDF-1.4"), "x.pdf"), "application/pdf");
+  assert.equal(detectFileType(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), "photo.jpg"), "image/jpeg");
+  assert.equal(detectFileType(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), "scan.png"), "image/png");
+  assert.equal(detectFileType(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), "contract.docx"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+  assert.equal(detectFileType(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), "archive.zip"), null);
+  assert.equal(detectFileType(b("<html>"), "fake.pdf"), null);
 });

@@ -145,7 +145,7 @@ export function submitProblems(deal, totals) {
   if (!deal.expectedClose) problems.push("Set the expected close date");
   return problems;
 }
-export function closeProblems(deal) {
+export function closeProblems(deal, { signedDocs = 0 } = {}) {
   const c = deal.close, problems = [];
   if (!c.agreementSigned) problems.push("Confirm the signed agreement was received");
   if (!c.signedDate) problems.push("Add the date it was signed");
@@ -153,5 +153,20 @@ export function closeProblems(deal) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.signerEmail)) problems.push("Add the signer's email");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.billingEmail)) problems.push("Add the billing contact's email");
   if (!deal.terms.startDate) problems.push("Set the contract start date");
+  if (!(signedDocs > 0)) problems.push("Attach the signed agreement");
   return problems;
+}
+
+// Accepted attachments, checked by their first bytes so a renamed file can't slip through.
+export const MAX_FILE_BYTES = 15 * 1024 * 1024;
+export function detectFileType(bytes, name = "") {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const starts = (...sig) => sig.every((v, i) => b[i] === v);
+  const ext = String(name).toLowerCase().split(".").pop();
+  if (starts(0x25, 0x50, 0x44, 0x46)) return "application/pdf";
+  if (starts(0x89, 0x50, 0x4e, 0x47)) return "image/png";
+  if (starts(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (b.length > 12 && String.fromCharCode(...b.slice(4, 8)) === "ftyp" && /^(heic|heix|mif1|msf1)$/.test(String.fromCharCode(...b.slice(8, 12)))) return "image/heic";
+  if (starts(0x50, 0x4b, 0x03, 0x04) && ext === "docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  return null;
 }

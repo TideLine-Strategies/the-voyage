@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
-import { DEFAULT_RULES, EDITABLE, approvalFlags, calculateProcessing, calculateTotals, closeProblems, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
+import { DEFAULT_RULES, EDITABLE, MAX_FILE_BYTES, approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
 const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
@@ -384,6 +384,7 @@ async function handleDeals(request, env, actor, path) {
   const processing = await getDocument(env.DB, "catalog", "processing").catch(() => null) || {};
   const refresh = deal => { deal.totals = { ...calculateTotals(deal), processing: calculateProcessing(deal.processing, processing) }; deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
   const event = (deal, what, note) => { deal.history = [...(deal.history || []), { ts: now, by: actor.id, action: what, ...(note ? { note: String(note).slice(0, 1000) } : {}) }].slice(-100); };
+  if (id && action === "files") return handleDealFiles(request, env, actor, id, path[4]);
   const body = method === "GET" || method === "DELETE" || !request.body ? {} : await readJson(request);
   if (!id && method === "POST") {
     const deal = refresh({ ...sanitizeDeal(body), id: crypto.randomUUID(), status: "draft", createdTs: now, createdBy: actor.id });
@@ -410,6 +411,7 @@ async function handleDeals(request, env, actor, path) {
   if (!action && method === "DELETE") {
     if (!EDITABLE.has(deal.status) && deal.status !== "lost") return error("Only drafts and lost deals can be deleted", 409);
     await env.DB.prepare("DELETE FROM documents WHERE collection = 'deals' AND id = ?").bind(id).run();
+    await deleteDealFiles(env, id);
     await audit(env, actor.id, "Deleted", "deals", id, deal.name);
     return reply({ ok: true });
   }
@@ -440,7 +442,7 @@ async function handleDeals(request, env, actor, path) {
     const blocked = wrongStatus(["approved"]); if (blocked) return blocked;
     if (body.close) deal.close = sanitizeDeal({ ...deal, close: body.close }).close;
     if (body.terms?.startDate !== undefined) deal.terms = { ...deal.terms, startDate: sanitizeDeal({ terms: { ...deal.terms, startDate: body.terms.startDate } }).terms.startDate };
-    const problems = closeProblems(deal);
+    const problems = closeProblems(deal, { signedDocs: await signedDocCount(env, id) });
     if (problems.length) return reply({ error: "Complete the close package", problems }, 400);
     deal.status = "won"; deal.wonTs = now; deal.closedBy = actor.id;
     event(deal, "Closed won", note);
@@ -469,6 +471,74 @@ async function handleDeals(request, env, actor, path) {
   await save(deal);
   await audit(env, actor.id, { submit: "Submitted", approve: "Approved", changes: "Requested changes", package: "Updated close package", won: "Closed won", lost: "Closed lost", reopen: "Reopened" }[action], "deals", id, deal.name);
   return reply(deal);
+}
+
+// Documents attached to a deal (signed agreements and supporting files), stored in D1 in 512 KB chunks.
+const CHUNK = 512 * 1024;
+async function signedDocCount(env, dealId) {
+  try { return (await env.DB.prepare("SELECT COUNT(*) AS n FROM deal_files WHERE deal_id = ? AND kind = 'signed'").bind(dealId).first()).n; }
+  catch { return 0; }
+}
+async function deleteDealFiles(env, dealId) {
+  try {
+    await env.DB.prepare("DELETE FROM deal_file_chunks WHERE file_id IN (SELECT id FROM deal_files WHERE deal_id = ?)").bind(dealId).run();
+    await env.DB.prepare("DELETE FROM deal_files WHERE deal_id = ?").bind(dealId).run();
+  } catch { /* files table not created yet */ }
+}
+async function handleDealFiles(request, env, actor, dealId, fileId) {
+  const method = request.method;
+  const deal = await getDocument(env.DB, "deals", dealId);
+  if (!deal) return error("Deal not found", 404);
+  const list = async () => (await env.DB.prepare("SELECT id, name, content_type, size, kind, uploaded_by, uploaded_ts FROM deal_files WHERE deal_id = ? ORDER BY uploaded_ts").bind(dealId).all()).results;
+  try {
+    if (!fileId && method === "GET") return reply({ files: await list() });
+    if (!fileId && method === "POST") {
+      if (["won", "lost"].includes(deal.status)) return error("Reopen the deal to change its documents", 409);
+      const params = new URL(request.url).searchParams;
+      const name = (params.get("name") || "document").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 150);
+      const kind = params.get("kind") === "other" ? "other" : "signed";
+      const declared = Number(request.headers.get("content-length") || 0);
+      if (declared > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (!bytes.length) return error("The file is empty", 400);
+      if (bytes.length > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
+      const type = detectFileType(bytes, name);
+      if (!type) return error("Upload a PDF, Word document (.docx), or photo (JPG, PNG, HEIC)", 415);
+      const id = crypto.randomUUID(), chunks = Math.ceil(bytes.length / CHUNK);
+      const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(x => x.toString(16).padStart(2, "0")).join("");
+      for (let i = 0; i < chunks; i++) {
+        await env.DB.prepare("INSERT INTO deal_file_chunks (file_id, idx, data) VALUES (?, ?, ?)").bind(id, i, bytes.slice(i * CHUNK, (i + 1) * CHUNK)).run();
+      }
+      await env.DB.prepare("INSERT INTO deal_files (id, deal_id, name, content_type, size, sha256, kind, chunks, uploaded_by, uploaded_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(id, dealId, name, type, bytes.length, sha256, kind, chunks, actor.id, Date.now()).run();
+      await audit(env, actor.id, kind === "signed" ? "Attached signed document" : "Attached document", "deals", dealId, `${deal.name}: ${name}`);
+      return reply({ files: await list() }, 201);
+    }
+    if (!fileId || !ID_PATTERN.test(fileId)) return error("Not found", 404);
+    const file = await env.DB.prepare("SELECT * FROM deal_files WHERE id = ? AND deal_id = ?").bind(fileId, dealId).first();
+    if (!file) return error("File not found", 404);
+    if (method === "GET") {
+      const parts = [];
+      for (let i = 0; i < file.chunks; i++) {
+        const row = await env.DB.prepare("SELECT data FROM deal_file_chunks WHERE file_id = ? AND idx = ?").bind(fileId, i).first();
+        if (!row) return error("This file is incomplete", 500);
+        parts.push(new Uint8Array(row.data));
+      }
+      const safeName = file.name.replace(/[^\w .()-]/g, "_");
+      return new Response(new Blob(parts, { type: file.content_type }), { headers: {
+        "content-type": file.content_type, "content-disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+        "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'; sandbox",
+      } });
+    }
+    if (method === "DELETE") {
+      if (["won", "lost"].includes(deal.status)) return error("Reopen the deal to change its documents", 409);
+      await env.DB.prepare("DELETE FROM deal_file_chunks WHERE file_id = ?").bind(fileId).run();
+      await env.DB.prepare("DELETE FROM deal_files WHERE id = ?").bind(fileId).run();
+      await audit(env, actor.id, "Removed document", "deals", dealId, `${deal.name}: ${file.name}`);
+      return reply({ files: await list() });
+    }
+    return error("Method not allowed", 405);
+  } catch { return error("Document storage is not set up yet. Apply migration 0006.", 503); }
 }
 
 // A member's own outside calendar (Google, Outlook, Apple), shown only to them on the Calendar page.

@@ -333,7 +333,13 @@ test("deal workflow: draft, guardrails, review by the other editor, close packag
   const incomplete = await call("a", "POST", `/api/deals/${created.id}/won`, { close: { agreementSigned: true } });
   assert.equal(incomplete.status, 400);
   assert.ok((await incomplete.json()).problems.length >= 4);
-  const won = await (await call("a", "POST", `/api/deals/${created.id}/won`, { terms: { startDate: "2026-11-01" }, close: { agreementSigned: true, signedDate: "2026-10-28", signerName: "Pat", signerEmail: "pat@gym.example", billingEmail: "ap@gym.example" } })).json();
+  const closeBody = { terms: { startDate: "2026-11-01" }, close: { agreementSigned: true, signedDate: "2026-10-28", signerName: "Pat", signerEmail: "pat@gym.example", billingEmail: "ap@gym.example" } };
+  const noDoc = await call("a", "POST", `/api/deals/${created.id}/won`, closeBody);
+  assert.deepEqual((await noDoc.json()).problems, ["Attach the signed agreement"], "can't close without the signed document");
+  migrate(sqlite, "0006_deal_files.sql");
+  const upload = await worker.fetch(new Request(`https://voyage.example/api/deals/${created.id}/files?name=signed.pdf&kind=signed`, { method: "POST", headers: { cookie: `voyage_session=${"a".repeat(64)}`, origin: "https://voyage.example" }, body: new TextEncoder().encode("%PDF-1.7 signed") }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } });
+  assert.equal(upload.status, 201);
+  const won = await (await call("a", "POST", `/api/deals/${created.id}/won`, closeBody)).json();
   assert.equal(won.status, "won");
   assert.deepEqual(won.history.map(h => h.action), ["Created", "Submitted for approval", "Changes requested", "Submitted (within guardrails, auto-approved)", "Closed won"]);
   const opp = JSON.parse(sqlite.prepare("SELECT data_json FROM documents WHERE collection='opps' AND id='gym'").get().data_json);
@@ -360,4 +366,26 @@ test("residuals and processing settings are editor-only and validated", async ()
   const s = (await (await call("a", "GET", "/api/document/catalog/processing")).json()).data;
   assert.deepEqual([s.sharePct, s.cardPct, s.extra], [20, 0, undefined]);
   assert.equal((await call("b", "GET", "/api/document/catalog/processing")).status, 403);
+});
+
+test("deal documents: editors upload, list, download, and remove; types are checked; guests are refused", async () => {
+  const { call, sqlite } = fixture();
+  migrate(sqlite, "0006_deal_files.sql");
+  const dealId = (await (await call("a", "POST", "/api/deals", { name: "Doc test", lines: [] })).json()).id;
+  const send = (who, body, query = "name=agreement.pdf&kind=signed") => worker.fetch(new Request(`https://voyage.example/api/deals/${dealId}/files?${query}`, {
+    method: "POST", headers: { cookie: `voyage_session=${who.repeat(64)}`, origin: "https://voyage.example" }, body }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } });
+  const big = new Uint8Array(1200 * 1024); big.set(new TextEncoder().encode("%PDF-1.7"));
+  assert.equal((await send("b", big)).status, 403, "guests can't upload");
+  assert.equal((await send("a", new TextEncoder().encode("<html><script>alert(1)</script>"), "name=evil.pdf")).status, 415, "content is checked, not the name");
+  const up = await send("a", big);
+  assert.equal(up.status, 201);
+  const [file] = (await up.json()).files;
+  assert.deepEqual([file.name, file.kind, file.size, file.content_type], ["agreement.pdf", "signed", big.length, "application/pdf"]);
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM deal_file_chunks WHERE file_id = ?").get(file.id).n, 3, "stored in 512 KB chunks");
+  const dl = await call("a", "GET", `/api/deals/${dealId}/files/${file.id}`);
+  assert.match(dl.headers.get("content-disposition"), /^attachment/);
+  assert.deepEqual(new Uint8Array(await dl.arrayBuffer()), big, "downloads byte-for-byte");
+  assert.equal((await call("b", "GET", `/api/deals/${dealId}/files/${file.id}`)).status, 403);
+  assert.equal((await (await call("a", "DELETE", `/api/deals/${dealId}/files/${file.id}`)).json()).files.length, 0);
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM deal_file_chunks").get().n, 0);
 });
