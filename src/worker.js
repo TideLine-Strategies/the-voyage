@@ -1,11 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
+import { STARTER_SEQUENCES, nextStepDate, sanitizeSequence, stepTask, OUTCOMES } from "./sequences.js";
 import { DEFAULT_RULES, EDITABLE, MAX_FILE_BYTES, approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals", "sequences", "enrollments"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
-const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals"]);
+const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals", "sequences", "enrollments"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -172,6 +173,7 @@ export function validateDocument(collection, id, data, actor, method) {
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
   if (collection === "catalog" && id === "processing") return sanitizeProcessingSettings(data);
+  if (collection === "sequences") { if (method === "PATCH") throw new Error("Invalid sequence: save the whole sequence"); return sanitizeSequence(data); }
   // One month of actual processing results for one merchant, entered by hand until the partner portal feeds it.
   if (collection === "residuals") {
     const n = (v, max) => { const x = Number(v); if (!Number.isFinite(x) || x < 0 || x > max) throw new Error("Invalid residual amount"); return Math.round(x * 100) / 100; };
@@ -473,6 +475,132 @@ async function handleDeals(request, env, actor, path) {
   return reply(deal);
 }
 
+// Sequences: enroll accounts, and move each enrollment forward one task at a time.
+const STAGE_NAMES = ["Prospecting", "Discovery", "Alignment", "Assessment", "Validation", "Proposal", "Business review"];
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const putDoc = (env, collection, id, data) => env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
+  .bind(collection, id, JSON.stringify(data), Date.now()).run();
+const dropDoc = (env, collection, id) => env.DB.prepare("DELETE FROM documents WHERE collection = ? AND id = ?").bind(collection, id).run();
+async function templateVars(env, oppId, ownerId) {
+  const opp = await getDocument(env.DB, "opps", oppId) || {};
+  const owner = await memberForId(ownerId, env.DB), profile = await getDocument(env.DB, "profiles", ownerId) || {};
+  return { account: opp.name || "", city: opp.city || "", stage: STAGE_NAMES[opp.stage] || "", my_name: owner?.name || "", my_title: profile.title || "", my_phone: profile.phone || "" };
+}
+async function scheduleStep(env, sequence, enrollment, index, date) {
+  const taskId = crypto.randomUUID();
+  await putDoc(env, "activities", taskId, stepTask({ ...sequence }, enrollment, index, date, await templateVars(env, enrollment.oppId, enrollment.owner), Date.now()));
+  enrollment.stepIndex = index; enrollment.taskId = taskId; enrollment.nextDue = date;
+}
+async function removeOpenTask(env, enrollment) {
+  if (!enrollment.taskId) return;
+  const task = await getDocument(env.DB, "activities", enrollment.taskId);
+  if (task && !task.done) await dropDoc(env, "activities", enrollment.taskId);
+  enrollment.taskId = null; enrollment.nextDue = null;
+}
+async function handleSequences(request, env, actor, path) {
+  const method = request.method, now = Date.now();
+  const body = method === "POST" && request.body ? await readJson(request) : {};
+  if (path[1] === "sequences" && path[2] === "starters" && method === "POST") {
+    const created = [];
+    for (const starter of STARTER_SEQUENCES) { const id = crypto.randomUUID(); await putDoc(env, "sequences", id, { ...sanitizeSequence(starter), createdTs: now, by: actor.id }); created.push(id); }
+    await audit(env, actor.id, "Created", "sequences", null, "Starter sequences");
+    return reply({ created }, 201);
+  }
+  if (path[1] === "sequences" && path[3] === "enroll" && method === "POST") {
+    const sequence = await getDocument(env.DB, "sequences", path[2]);
+    if (!sequence) return error("Sequence not found", 404);
+    if (!sequence.steps?.length) return error("Add at least one step to this sequence first", 400);
+    sequence.id = path[2];
+    const oppIds = [...new Set((Array.isArray(body.oppIds) ? body.oppIds : []).filter(id => typeof id === "string" && ID_PATTERN.test(id)))].slice(0, 500);
+    if (!oppIds.length) return error("Pick at least one account", 400);
+    const start = /^\d{4}-\d{2}-\d{2}$/.test(body.startDate || "") ? body.startDate : todayIso();
+    const { results } = await env.DB.prepare("SELECT data_json FROM documents WHERE collection = 'enrollments'").all();
+    const activeOn = new Set(results.map(row => JSON.parse(row.data_json)).filter(e => e.sequenceId === sequence.id && ["active", "paused"].includes(e.status)).map(e => e.oppId));
+    let enrolled = 0, skipped = 0;
+    for (const oppId of oppIds) {
+      const opp = await getDocument(env.DB, "opps", oppId);
+      if (!opp || activeOn.has(oppId)) { skipped++; continue; }
+      const owner = typeof body.owner === "string" && await memberForId(body.owner, env.DB) ? body.owner : opp.owner || actor.id;
+      const enrollment = { id: crypto.randomUUID(), sequenceId: sequence.id, sequenceName: sequence.name, audience: sequence.audience, oppId, oppName: opp.name, owner,
+        startDate: start, status: "active", stepIndex: 0, steps: sequence.steps.length, completed: [], createdTs: now, by: actor.id, updatedTs: now };
+      await scheduleStep(env, sequence, enrollment, 0, addDaysIso(start, sequence.steps[0].day));
+      await putDoc(env, "enrollments", enrollment.id, enrollment);
+      enrolled++;
+    }
+    await audit(env, actor.id, "Enrolled accounts", "sequences", sequence.id, `${sequence.name}: ${enrolled} enrolled`);
+    return reply({ enrolled, skipped });
+  }
+  if (path[1] === "enrollments" && path[3] && method === "POST") {
+    const enrollment = await getDocument(env.DB, "enrollments", path[2]);
+    if (!enrollment) return error("Enrollment not found", 404);
+    enrollment.id = path[2];
+    const sequence = await getDocument(env.DB, "sequences", enrollment.sequenceId);
+    const action = path[3];
+    if (action === "pause" && enrollment.status === "active") { await removeOpenTask(env, enrollment); enrollment.status = "paused"; }
+    else if (action === "resume" && enrollment.status === "paused") {
+      if (!sequence || !sequence.steps[enrollment.stepIndex]) return error("This sequence has changed; stop and re-enroll instead", 409);
+      sequence.id = enrollment.sequenceId; enrollment.status = "active"; await scheduleStep(env, sequence, enrollment, enrollment.stepIndex, todayIso());
+    } else if (action === "stop" && ["active", "paused"].includes(enrollment.status)) {
+      await removeOpenTask(env, enrollment); enrollment.status = "stopped"; enrollment.stopReason = `Stopped by ${actor.name}`;
+    } else if (action === "skip" && enrollment.status === "active") {
+      await removeOpenTask(env, enrollment);
+      enrollment.completed = [...(enrollment.completed || []), { step: enrollment.stepIndex, outcome: "skipped", ts: now, by: actor.id }];
+      if (!sequence || enrollment.stepIndex + 1 >= (sequence.steps?.length || 0)) { enrollment.status = "completed"; }
+      else { sequence.id = enrollment.sequenceId; await scheduleStep(env, sequence, enrollment, enrollment.stepIndex + 1, nextStepDate(sequence, enrollment.stepIndex, todayIso())); }
+    } else return error(`Can't ${action} an enrollment that is ${enrollment.status}`, 409);
+    enrollment.updatedTs = now;
+    await putDoc(env, "enrollments", enrollment.id, enrollment);
+    await audit(env, actor.id, { pause: "Paused", resume: "Resumed", stop: "Stopped", skip: "Skipped a step" }[action] || action, "enrollments", enrollment.id, `${enrollment.sequenceName}: ${enrollment.oppName}`);
+    return reply(enrollment);
+  }
+  return error("Not found", 404);
+}
+const addDaysIso = (iso, days) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+
+// Runs after a successful change to tasks or accounts: advance, pause, or stop sequences.
+async function sequenceHooks(env, actor, method, collection, docId, before) {
+  try {
+    if (collection === "activities" && docId) {
+      const task = method === "DELETE" ? null : await getDocument(env.DB, "activities", docId);
+      const seq = (task || before)?.seq;
+      if (seq?.enrollmentId) {
+        const enrollment = await getDocument(env.DB, "enrollments", seq.enrollmentId);
+        if (enrollment && enrollment.taskId === docId && enrollment.status === "active") {
+          enrollment.id = seq.enrollmentId;
+          if (method === "DELETE") { enrollment.status = "paused"; enrollment.taskId = null; enrollment.nextDue = null; enrollment.pauseReason = "Its task was deleted"; }
+          else if (task?.done && !before?.done) {
+            const sequence = await getDocument(env.DB, "sequences", enrollment.sequenceId);
+            enrollment.completed = [...(enrollment.completed || []), { step: enrollment.stepIndex, outcome: OUTCOMES.has(task.outcome) ? task.outcome : "done", ts: Date.now(), by: actor.id }];
+            if (!sequence || enrollment.stepIndex + 1 >= (sequence.steps?.length || 0)) { enrollment.status = "completed"; enrollment.taskId = null; enrollment.nextDue = null; }
+            else { sequence.id = enrollment.sequenceId; await scheduleStep(env, sequence, enrollment, enrollment.stepIndex + 1, nextStepDate(sequence, enrollment.stepIndex, todayIso())); }
+          } else return;
+          enrollment.updatedTs = Date.now();
+          await putDoc(env, "enrollments", enrollment.id, enrollment);
+        }
+      }
+      // Booking an appointment counts as a win for the sequence: stop it and clear its open task.
+      if (method === "POST" || method === "PUT") {
+        if (task?.kind === "appt" && task.oppId) await stopEnrollmentsFor(env, task.oppId, "Meeting booked", sequence => sequence?.stopOnMeeting !== false);
+      }
+    }
+    if (collection === "opps" && docId && (method === "PATCH" || method === "PUT") && before) {
+      const opp = await getDocument(env.DB, "opps", docId);
+      if (opp && opp.stage !== before.stage) await stopEnrollmentsFor(env, docId, `Moved to ${STAGE_NAMES[opp.stage] || "a new stage"}`, sequence => sequence?.stopOnStage && sequence.audience === "prospect");
+    }
+  } catch { /* sequences are best-effort; never block the change itself */ }
+}
+async function stopEnrollmentsFor(env, oppId, reason, applies) {
+  const { results } = await env.DB.prepare("SELECT id, data_json FROM documents WHERE collection = 'enrollments'").all();
+  for (const row of results) {
+    const enrollment = { ...JSON.parse(row.data_json), id: row.id };
+    if (enrollment.oppId !== oppId || !["active", "paused"].includes(enrollment.status)) continue;
+    if (!applies(await getDocument(env.DB, "sequences", enrollment.sequenceId))) continue;
+    await removeOpenTask(env, enrollment);
+    Object.assign(enrollment, { status: "stopped", stopReason: reason, success: reason === "Meeting booked", updatedTs: Date.now() });
+    await putDoc(env, "enrollments", enrollment.id, enrollment);
+  }
+}
+
 // Documents attached to a deal (signed agreements and supporting files), stored in D1 in 512 KB chunks.
 const CHUNK = 512 * 1024;
 async function signedDocCount(env, dealId) {
@@ -678,6 +806,8 @@ async function handleApi(request, env, actor, path) {
   if (EDITOR_COLLECTIONS.has(path[2]) && (path[1] === "collection" || path[1] === "document") && actor.role !== "edit") return error("Not available to guests", 403);
   if (path[2] === "profiles" && method !== "GET" && (path[1] !== "document" || path[3] !== actor.id)) return error("You can only edit your own profile", 403);
   if (path[2] === "deals" && method !== "GET" && (path[1] === "document" || path[1] === "collection")) return error("Use the deal builder to change deals", 403);
+  if (path[2] === "enrollments" && method !== "GET" && (path[1] === "document" || path[1] === "collection")) return error("Use the sequence actions to change enrollments", 403);
+  if (path[1] === "sequences" || path[1] === "enrollments") return actor.role === "edit" ? handleSequences(request, env, actor, path) : error("Not available to guests", 403);
   if (path[1] === "deals") return actor.role === "edit" ? handleDeals(request, env, actor, path) : error("Not available to guests", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
@@ -787,15 +917,18 @@ export default {
     try {
       const change = request.method !== "GET" && (path[1] === "collection" || path[1] === "document") && path[2] !== "reads" && path[2] !== "activity";
       const label = change ? await auditLabel(request, env, actor, path) : null;
+      const watched = change && (path[2] === "activities" || path[2] === "opps") && path[3];
+      const before = watched ? await getDocument(env.DB, path[2], path[3]).catch(() => null) : null;
       const response = await handleApi(request, env, actor, path);
       if (change && response.ok) {
         const id = path[3] || (await response.clone().json().catch(() => ({}))).id || null;
+        if (path[2] === "activities" || path[2] === "opps") await sequenceHooks(env, actor, request.method, path[2], id, before);
         await audit(env, actor.id, { POST: "Created", PUT: "Saved", PATCH: "Updated", DELETE: "Deleted" }[request.method], path[2], id, label);
       }
       return response;
     }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

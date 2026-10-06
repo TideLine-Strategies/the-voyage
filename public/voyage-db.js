@@ -98,6 +98,8 @@
     doc(path) { const [collection, id] = path.split("/"); return documentRef(collection, id); },
     collection: collectionRef,
     get member() { return member; },
+    // Re-read everything now, after a change made through a custom endpoint (deals, sequences, files).
+    refresh() { notifyWatchers(); },
   };
 
   let state = { view: "dash", typing: null };

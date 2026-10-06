@@ -373,6 +373,32 @@ textarea{min-height:70px;resize:vertical}
 .docrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.docrow:last-child{border-bottom:0}.docrow a{color:var(--blue);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.docrow .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
 .docdrop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.docdrop select{background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--text)}
 #dcReq{font-weight:600;text-transform:none;letter-spacing:0;margin-left:6px}#dcReq.ok{color:var(--green)}#dcReq.no{color:var(--red)}
+/* Pillage */
+dialog.wide{width:min(860px,calc(100% - 24px))}
+.sqrules{display:flex;gap:18px;flex-wrap:wrap;margin:-4px 0 6px}.sqrules .chk{margin:0}
+.sqstep{display:grid;grid-template-columns:4.5rem 9rem minmax(0,1fr) auto;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.sqstep input,.sqstep select,.sqstep textarea{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:7px;padding:6px 7px;font-size:13px;color:var(--text);margin:0}
+.sqstep textarea{grid-column:3/4;min-height:70px;font-family:inherit}.sqstep .sqx{display:flex;gap:2px}.sqstep .sqx button{background:none;border:0;color:var(--muted);font-size:15px;cursor:pointer;padding:4px}
+.enlist{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.enlist label{display:flex;align-items:center;gap:10px;margin:0;padding:8px 12px;border-top:1px solid var(--line);color:var(--text);font-size:14px;cursor:pointer}.enlist label:first-child{border-top:0}
+.enlist input{width:auto;margin:0}.enlist small{color:var(--muted);margin-left:auto;font-size:12px;text-align:right}
+.goal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.goal b{font-size:22px}.goal span{color:var(--muted);font-size:13px;margin-left:4px}.goal .bar{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}.goal .bar i{display:block;height:100%;background:var(--green);border-radius:3px}
+.goal .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between}
+.goal input{width:3.5rem;background:var(--card);border:1px solid var(--line-2);border-radius:6px;padding:1px 5px;font-size:12px;color:var(--text)}
+.goals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dueitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.dueitem.late{border-left:3px solid var(--red)}
+.duetop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.duetop .nm{flex:1;min-width:10rem}
+.duetype{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--violet-bg);color:var(--violet);white-space:nowrap}
+.dueseq{font-size:12px;color:var(--muted)}
+.dueacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.dueacts .btn{padding:5px 10px;font-size:13px}
+.duescript{white-space:pre-wrap;font-size:13px;background:var(--card);border-radius:8px;padding:10px;margin-top:8px;color:var(--text)}
+.seqcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.seqsteps{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.seqsteps span{font-size:12px;background:var(--card);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.etbl .row{grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) 5rem 7rem 8rem auto;cursor:default}.etbl .row:hover{background:none}
+.etbl .row .acts2{display:flex;gap:4px}.etbl .row .acts2 button{font-size:12px;padding:3px 8px}
+@media (max-width:860px){.goals{grid-template-columns:1fr 1fr}.sqstep{grid-template-columns:3.5rem minmax(0,1fr) auto}.sqstep>:nth-child(3){grid-column:1/-1}.sqstep textarea{grid-column:1/-1}.etbl .row{grid-template-columns:minmax(0,1fr) auto}.etbl .row>:nth-child(n+2):not(:last-child){display:none}}
 /* Calendar */
 .cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
@@ -441,7 +467,7 @@ textarea{min-height:70px;resize:vertical}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
-body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
+body.guest .nav[data-view="cadence"],body.guest #view-cadence,body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
 body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
 .usec{margin-top:22px}.usec h2{font-size:16px;margin:0 0 4px}.usec .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
 .ucols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
@@ -558,6 +584,13 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div class="cnt" id="vCount"></div>
       <div class="tbl vtbl" id="vList"></div>
+    </section>
+
+    <section id="view-cadence" hidden>
+      <div class="head"><div><h1>Pillage</h1><div class="sub">Your daily outreach: prospecting new studios and growing existing clients. Sequences create one task at a time and stop when a meeting is booked.</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" id="plEnroll">Enroll accounts</button><button class="btn primary" id="plNewSeq">+ New sequence</button></div></div>
+      <div class="ntabs" id="plTabs" role="tablist"><button data-t="today" class="on">Today</button><button data-t="sequences">Sequences</button><button data-t="enrolled">Enrolled</button><button data-t="results">Results</button></div>
+      <div id="plBody"></div>
     </section>
 
     <section id="view-deals" hidden>
@@ -834,6 +867,30 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </div>
   </div>
 </dialog>
+<dialog id="sqdlg" aria-labelledby="sqTitle" class="wide">
+  <div class="dlg">
+    <h2 id="sqTitle">New sequence</h2>
+    <div class="grid2"><label>Name<input id="sqName" maxlength="100" autocomplete="off" placeholder="New studio outreach"></label><label>For<select id="sqAud"><option value="prospect">Prospecting new accounts</option><option value="upsell">Existing clients (upsell)</option></select></label></div>
+    <label>Description<input id="sqDesc" maxlength="500" autocomplete="off" placeholder="What this sequence is for"></label>
+    <div class="sqrules"><label class="chk"><input type="checkbox" id="sqStopMeet" checked>Stop when a meeting is booked</label><label class="chk" id="sqStopStageWrap"><input type="checkbox" id="sqStopStage" checked>Stop when the account moves to a new stage</label></div>
+    <div class="pphead">Steps <span class="city" style="text-transform:none;letter-spacing:0;font-weight:400">Day is counted from enrollment; each next step keeps the same gap from when the last one was done. Merge fields: {{account}} {{city}} {{stage}} {{my_name}} {{my_title}} {{my_phone}}</span></div>
+    <div id="sqSteps"></div>
+    <button class="btn" id="sqAddStep" type="button">+ Add step</button>
+    <div class="acts">
+      <div><button class="btn danger" id="sqDel">Delete</button></div>
+      <div><button class="btn" id="sqCancel">Cancel</button><button class="btn primary" id="sqSave">Save sequence</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="endlg" aria-labelledby="enTitle" class="wide">
+  <div class="dlg">
+    <h2 id="enTitle">Enroll accounts</h2>
+    <div class="grid3" style="grid-template-columns:repeat(3,minmax(0,1fr))"><label>Sequence<select id="enSeq"></select></label><label>Start on<input id="enStart" type="date"></label><label>Assign tasks to<select id="enOwner"></select></label></div>
+    <div class="bhead" style="margin:4px 0 8px"><input id="enSearch" type="search" placeholder="Find an account"><select id="enFilter"></select><label class="chk" style="margin:0"><input type="checkbox" id="enAll">Select all shown</label></div>
+    <div class="enlist" id="enList"></div>
+    <div class="acts"><div class="city" id="enCount"></div><div><button class="btn" id="enCancel">Cancel</button><button class="btn primary" id="enGo">Enroll</button></div></div>
+  </div>
+</dialog>
 <dialog id="xdlg" aria-labelledby="xdlgTitle">
   <div class="dlg">
     <h2 id="xdlgTitle">Connect your calendar</h2>
@@ -985,7 +1042,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 const STAGES=["Prospecting","Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const SHORT=["Prospect","Discovery","Alignment","Assess","Validation","Proposal","Review"];
 const $=id=>document.getElementById(id);
-const TASK_TYPES=["Cold call","VITO letter","Phone call","Email","Video"];
+const TASK_TYPES=["Cold call","VITO letter","Phone call","Email","Video","Text","LinkedIn","In-person visit"];
 const APPT_TYPES=["Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const TEAM_DEFAULT=[{id:"CK",name:"Cody"},{id:"QS",name:"Quan"}];
 let team=TEAM_DEFAULT, scope="all", sItem=null;
@@ -1072,7 +1129,7 @@ function render(){
   const sb=$("stats");sb.replaceChildren();
   stats.forEach(([n,l,c,fn,tip])=>{const d=el("button","stat stat-btn");d.title=tip;d.setAttribute("aria-label",n+" "+l+". "+tip);const b=el("b",null,n);if(c&&n)b.style.color=c;d.append(b,el("span",null,l),el("i","stat-go","View ›"));d.onclick=fn;sb.append(d)});
   if(!$("drill").hidden&&drillKind)openDrill(drillKind,true);
-  renderBoard();renderAccount();renderAccounts();renderAccountDeals();if(view==="calendar")renderCalendar();
+  renderBoard();renderAccount();renderAccounts();renderAccountDeals();if(view==="calendar")renderCalendar();if(view==="cadence"&&!document.activeElement?.closest?.("#plBody input"))renderPillage();
 }
 
 function drawStagePick(){
@@ -1634,7 +1691,7 @@ async function removeLoc(o,l){
 }
 $("aLocSel").onchange=()=>{locSelId=$("aLocSel").value||null;const o=opps.find(x=>x.id===acctId);if(o)renderLocations(o)};
 $("aAddLoc").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(!o)return;locSelId="new";renderLocations(o);setTimeout(()=>{const i=$("aLocDetail").querySelector("input");if(i)i.focus()},30)};
-function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat",calendar:"Calendar"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
+function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat",calendar:"Calendar",cadence:"Pillage"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
 function renderAccount(){
   if(view!=="account")return;
   const o=opps.find(x=>x.id===acctId);
@@ -1725,7 +1782,7 @@ $("vDel").onclick=async()=>{
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
 
-const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
 let usage=null,usageBusy=false;
 async function loadUsage(){
   if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
@@ -1941,6 +1998,173 @@ async function importAccounts(file){
   logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
   toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
 }
+// Pillage: sequences (cadences), enrollments, and the daily outreach list. The server creates each
+// step's task, advances on completion, and stops on a booked meeting or stage change.
+let sequences=[],enrollments=[],plTab="today",sqEdit=null,sqSteps=[],plOpen=new Set();
+const STEP_TYPES=["Cold call","Phone call","Email","VITO letter","Text","LinkedIn","In-person visit","Video"];
+const CALL_TYPES=new Set(["Cold call","Phone call"]),MSG_TYPES=new Set(["Email","Text","LinkedIn"]);
+const OUTCOME_LABEL={connected:"Connected",voicemail:"Left voicemail","no-answer":"No answer",sent:"Sent",done:"Done",skipped:"Skipped"};
+let plGoals={calls:20,emails:15,other:5,meetings:3};try{Object.assign(plGoals,JSON.parse(localStorage.getItem("voyage-goals")||"{}"))}catch(_){}
+const isWonAcct=o=>o.closed==="won"||deals.some(d=>d.oppId===o.id&&d.status==="won");
+const liveEnroll=(oppId,aud)=>enrollments.find(e=>e.oppId===oppId&&["active","paused"].includes(e.status)&&(!aud||e.audience===aud));
+async function seqApi(path,body){const r=await fetch("/api"+path,{method:"POST",credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||"That didn't work");db.refresh?.();return j}
+function renderPillage(){
+  [...$("plTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===plTab));
+  const w=$("plBody");w.replaceChildren();
+  if(plTab==="today")plToday(w);else if(plTab==="sequences")plSequences(w);else if(plTab==="enrolled")plEnrolled(w);else plResults(w);
+}
+function mailtoFor(i){
+  const lines=String(i.notes||"").split("\n"),si=lines.findIndex(l=>/^subject:/i.test(l.trim()));
+  const subject=si>=0?lines[si].replace(/^subject:\s*/i,""):(lines[0]||i.type);
+  const body=(si>=0?lines.slice(si+1):lines.slice(1)).join("\n").replace(/^\n+/,"");
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+async function completeStep(i,outcome){
+  const o=opps.find(x=>x.id===i.oppId);
+  if(o)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});
+  logAct(`${OUTCOME_LABEL[outcome]||"Done"}: ${i.type}${i.oppName?" with "+i.oppName:""}`,i.oppId);
+  await write(()=>db.doc("activities/"+i.id).update({done:true,doneTs:Date.now(),outcome}),i.seq?(i.seq.step<i.seq.of?"Done. Next step scheduled":"Done. Sequence complete"):"Done");
+  track("action","Completed outreach: "+outcome);
+}
+function dueItem(i){
+  const t=today(),late=i.date<t,c=el("div","dueitem"+(late?" late":"")),top=el("div","duetop");
+  const lines=String(i.notes||"").split("\n").filter(Boolean),title=lines[0]||i.type;
+  top.append(el("span","duetype",i.type));const n=el("div","nm");n.append(el("div",null,i.oppName||"No account"),el("div","city",title));top.append(n);
+  if(i.seq)top.append(el("span","dueseq",`${i.seq.name} · step ${i.seq.step} of ${i.seq.of}`));
+  top.append(el("span","city"+(late?" warnx":""),late?"Due "+fmtDate(i.date):"Today"));c.append(top);
+  const acts=el("div","dueacts"),b=(label,cls,fn)=>{const x=el("button","btn "+cls,label);x.type="button";x.onclick=fn;acts.append(x);return x};
+  if(CALL_TYPES.has(i.type)){b("Connected","primary",()=>completeStep(i,"connected"));b("Voicemail","",()=>completeStep(i,"voicemail"));b("No answer","",()=>completeStep(i,"no-answer"))}
+  else if(i.type==="Email"){const a=el("a","btn primary","Open in email");a.href=mailtoFor(i);a.style.textDecoration="none";acts.append(a);b("Mark sent","",()=>completeStep(i,"sent"))}
+  else if(MSG_TYPES.has(i.type)){b("Mark sent","primary",()=>completeStep(i,"sent"))}
+  else b("Done","primary",()=>completeStep(i,"done"));
+  if(lines.length>1){const s=b(plOpen.has(i.id)?"Hide script":"Show script","",()=>{plOpen.has(i.id)?plOpen.delete(i.id):plOpen.add(i.id);renderPillage()})}
+  if(i.seq){const e=enrollments.find(x=>x.id===i.seq.enrollmentId);if(e&&e.status==="active")b("Skip step","",async()=>{try{await seqApi(`/enrollments/${e.id}/skip`);toast("Skipped")}catch(err){toast(err.message)}})}
+  if(i.oppId)b("Open account","",()=>openAccount(i.oppId,"cadence"));
+  b("Edit","",()=>openT("task",i));
+  c.append(acts);
+  if(plOpen.has(i.id)){const s=el("div","duescript",lines.slice(1).join("\n"));c.append(s)}
+  return c;
+}
+function plToday(w){
+  const t=today(),wk=Date.now()-6*864e5,mineItem=i=>(i.owner||"CK")===me||(i.shared||[]).includes(me);
+  const doneToday=items.filter(i=>i.done&&i.doneTs&&iso(new Date(i.doneTs))===t&&mineItem(i));
+  const counts={calls:doneToday.filter(i=>CALL_TYPES.has(i.type)).length,emails:doneToday.filter(i=>MSG_TYPES.has(i.type)).length,other:doneToday.filter(i=>!CALL_TYPES.has(i.type)&&!MSG_TYPES.has(i.type)).length,meetings:items.filter(i=>i.kind==="appt"&&(i.createdTs||0)>wk&&mineItem(i)).length};
+  const g=el("div","goals");
+  [["calls","Calls today"],["emails","Emails and messages today"],["other","Other touches today"],["meetings","Meetings booked, last 7 days"]].forEach(([k,label])=>{
+    const box=el("div","goal"),lbl=el("div","lbl"),inp=document.createElement("input");inp.type="number";inp.min=0;inp.value=plGoals[k];inp.title="Daily goal";
+    inp.onchange=()=>{plGoals[k]=Math.max(0,Number(inp.value)||0);try{localStorage.setItem("voyage-goals",JSON.stringify(plGoals))}catch(_){}renderPillage()};
+    lbl.append(el("span",null,label),inp);const v=el("div");v.append(el("b",null,String(counts[k])),el("span",null,"of "+plGoals[k]));
+    const bar=el("div","bar"),fill=document.createElement("i");fill.style.width=Math.min(100,plGoals[k]?counts[k]/plGoals[k]*100:0)+"%";bar.append(fill);box.append(lbl,v,bar);g.append(box)});
+  w.append(g);
+  const due=items.filter(i=>!i.done&&i.kind==="task"&&i.date&&i.date<=t&&mineItem(i)).sort((a,b)=>(a.date<t?0:1)-(b.date<t?0:1)||a.date.localeCompare(b.date)||(CALL_TYPES.has(b.type)-CALL_TYPES.has(a.type)));
+  const ds=usageSection(`Due today (${due.length})`,due.length?"Overdue first, then calls. Logging an outcome finishes the step and schedules the next one.":"Nothing due. Start a sequence below to fill tomorrow.");
+  due.forEach(i=>ds.append(dueItem(i)));w.append(ds);
+  const soon=items.filter(i=>!i.done&&i.kind==="task"&&i.date>t&&i.date<=iso(addDays(new Date(),7))&&mineItem(i));
+  if(soon.length){const ss=usageSection(`Coming up this week (${soon.length})`,"");ss.lastChild.remove();const list=el("div","tbl");soon.sort((a,b)=>a.date.localeCompare(b.date)).forEach(i=>{const r=el("button","row");r.style.gridTemplateColumns="7rem 8rem minmax(0,1fr)";r.append(el("span","city",fmtDate(i.date)),el("span","duetype",i.type),el("span",null,(i.oppName||"No account")+(i.seq?" · "+i.seq.name:"")));r.onclick=()=>openT("task",i);list.append(r)});ss.append(list);w.append(ss)}
+  const pros=opps.filter(o=>o.stage===0&&!isWonAcct(o)&&!liveEnroll(o.id)&&!items.some(i=>!i.done&&i.oppId===o.id)).sort((a,b)=>(b.rank??-1)-(a.rank??-1)).slice(0,8);
+  const ps=usageSection("Prospects to start","Prospecting accounts with nothing scheduled and no active sequence, highest rank first.");
+  if(!pros.length)ps.append(el("div","empty","Every prospect has something scheduled."));
+  else{const list=el("div","tbl");pros.forEach(o=>{const r=el("div","row");r.style.cssText="grid-template-columns:minmax(0,1fr) auto auto;cursor:default";r.append(el("span","nm",o.name+(o.city?" · "+o.city:"")),el("span","city",o.rank!=null?"Rank "+o.rank:""),(()=>{const x=el("button","btn","Start sequence");x.onclick=()=>openEnroll("prospect",[o.id]);return x})());list.append(r)});ps.append(list)}
+  w.append(ps);
+  const clients=opps.filter(o=>isWonAcct(o)&&!liveEnroll(o.id,"upsell"));
+  const us=usageSection("Clients to grow","Current clients without an active upsell sequence, with products they don't have yet.");
+  if(!clients.length)us.append(el("div","empty",opps.some(isWonAcct)?"Every client is in an upsell sequence.":"No clients yet. Accounts appear here once a deal is closed won."));
+  else{const list=el("div","tbl");clients.slice(0,8).forEach(o=>{const owned=new Set(deals.filter(d=>d.oppId===o.id&&d.status==="won").flatMap(d=>d.lines.map(l=>l.productId)).filter(Boolean));const gaps=products().filter(p=>p.active!==false&&!owned.has(p.id)&&p.billing!=="once").map(p=>p.name).slice(0,3);
+    const r=el("div","row");r.style.cssText="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto;cursor:default";r.append(el("span","nm",o.name),el("span","city",gaps.length?"Could add: "+gaps.join(", "):"Has everything in the catalog"),(()=>{const x=el("button","btn","Start upsell");x.onclick=()=>openEnroll("upsell",[o.id]);return x})());list.append(r)});us.append(list)}
+  w.append(us);
+}
+function plSequences(w){
+  if(!sequences.length){const e=el("div","empty");e.append(el("div",null,"No sequences yet. Start from two ready-made ones (new studio outreach, and existing client check-in and upsell), then edit them to match how you sell."));const b=el("button","btn primary","Add starter sequences");b.style.marginTop="10px";b.onclick=async()=>{try{await seqApi("/sequences/starters");toast("Starter sequences added");track("action","Added starter sequences")}catch(err){toast(err.message)}};e.append(b);w.append(e);return}
+  ["prospect","upsell"].forEach(aud=>{
+    const list=sequences.filter(s=>s.audience===aud).sort((a,b)=>a.name.localeCompare(b.name));if(!list.length)return;
+    w.append(el("div","pphead",aud==="prospect"?"Prospecting":"Existing clients (upsell)"));
+    list.forEach(s=>{const c=el("div","seqcard"),h=el("div","sech"),act=enrollments.filter(e=>e.sequenceId===s.id&&e.status==="active").length;
+      h.append(el("h2",null,s.name),el("span","city",`${s.steps.length} steps over ${s.steps.at(-1)?.day??0} days · ${act} active`));c.append(h);
+      if(s.description)c.append(el("div","city",s.description));
+      const st=el("div","seqsteps");s.steps.forEach(x=>st.append(el("span",null,`Day ${x.day} · ${x.type}`)));c.append(st);
+      const a=el("div");a.style.cssText="display:flex;gap:8px";const e1=el("button","btn","Edit");e1.onclick=()=>openSeq(s);const e2=el("button","btn primary","Enroll accounts");e2.onclick=()=>openEnroll(s.audience,[],s.id);a.append(e1,e2);c.append(a);w.append(c)});
+  });
+}
+function plEnrolled(w){
+  const bar=el("div","bhead"),sel=document.createElement("select");[["live","Active and paused"],["active","Active"],["paused","Paused"],["completed","Completed"],["stopped","Stopped"],["all","All"]].forEach(([v,l])=>sel.append(new Option(l,v)));sel.value=plEnrolled.f||"live";sel.onchange=()=>{plEnrolled.f=sel.value;renderPillage()};bar.append(sel);w.append(bar);
+  const f=plEnrolled.f||"live",list=enrollments.filter(e=>f==="all"||(f==="live"?["active","paused"].includes(e.status):e.status===f)).sort((a,b)=>(a.nextDue||"9").localeCompare(b.nextDue||"9"));
+  const rows=list.map(e=>{const r=el("div","row"),pill=el("span","spill "+({active:"approved",paused:"pending",completed:"",stopped:e.success?"won":"lost"}[e.status]||""),e.status==="stopped"&&e.success?"Meeting booked":e.status[0].toUpperCase()+e.status.slice(1));pill.title=e.stopReason||e.pauseReason||"";
+    const a=el("div","acts2"),btn=(l,fn)=>{const x=el("button","btn",l);x.onclick=async()=>{try{await seqApi(`/enrollments/${e.id}/${fn}`);toast({pause:"Paused",resume:"Resumed. A task is due today",skip:"Skipped to the next step",stop:"Stopped"}[fn])}catch(err){toast(err.message)}};a.append(x)};
+    if(e.status==="active"){btn("Pause","pause");btn("Skip","skip");btn("Stop","stop")}else if(e.status==="paused"){btn("Resume","resume");btn("Stop","stop")}
+    r.append(el("span","nm",e.oppName),el("span","city",e.sequenceName),el("span","city",`${Math.min(e.stepIndex+1,e.steps)} of ${e.steps}`),el("span","city",e.nextDue?fmtDate(e.nextDue):"–"),pill,a);return r});
+  w.append(adTable("etbl",["Account","Sequence","Step","Next due","Status",""],rows));if(!rows.length)w.lastChild.append(emptyRow("No enrollments here."));
+}
+function plResults(w){
+  if(!sequences.length){w.append(el("div","empty","Results appear once you run a sequence."));return}
+  const rows=sequences.map(s=>{const es=enrollments.filter(e=>e.sequenceId===s.id),booked=es.filter(e=>e.success).length,ended=es.filter(e=>["completed","stopped"].includes(e.status)).length;
+    const outcomes=es.flatMap(e=>e.completed||[]),connected=outcomes.filter(o=>o.outcome==="connected").length,callsMade=outcomes.filter(o=>["connected","voicemail","no-answer"].includes(o.outcome)).length;
+    const wonDeals=deals.filter(d=>d.status==="won"&&es.some(e=>e.oppId===d.oppId&&d.wonTs>e.createdTs));
+    const r=el("div","row");r.append(el("span","nm",s.name),cell(String(es.length)),cell(String(es.filter(e=>e.status==="active").length)),el("span","money",ended?Math.round(booked/ended*100)+"% ("+booked+")":String(booked)),cell(callsMade?Math.round(connected/callsMade*100)+"%":"–"),el("span","money",wonDeals.length?usd(wonDeals.reduce((a,d)=>a+(d.totals?.tcv||0),0)):"–"));return r});
+  w.append(el("div","hint","Meeting rate counts finished enrollments that ended with a booked meeting. Won value counts deals closed after the account was enrolled."));w.lastChild.style.cssText="color:var(--muted);font-size:13px;margin-bottom:10px";
+  w.append(adTable("ftbl",["Sequence","Enrolled","Active","Meetings booked","Calls connected","Won value"],rows));
+}
+// Sequence editor.
+function openSeq(s){
+  sqEdit=s||null;sqSteps=JSON.parse(JSON.stringify(s?.steps||[{day:0,type:"Cold call",title:"",script:""}]));
+  $("sqTitle").textContent=s?"Edit sequence":"New sequence";$("sqName").value=s?.name||"";$("sqAud").value=s?.audience||"prospect";$("sqDesc").value=s?.description||"";
+  $("sqStopMeet").checked=s?.stopOnMeeting!==false;$("sqStopStage").checked=s?.stopOnStage!==false;$("sqStopStageWrap").hidden=$("sqAud").value==="upsell";
+  $("sqDel").hidden=!s;renderSeqSteps();$("sqdlg").showModal();
+}
+function renderSeqSteps(){
+  const w=$("sqSteps");w.replaceChildren();
+  sqSteps.forEach((st,ix)=>{const r=el("div","sqstep"),day=document.createElement("input");day.type="number";day.min=0;day.max=365;day.value=st.day;day.title="Day";day.oninput=()=>st.day=Number(day.value)||0;
+    const ty=document.createElement("select");STEP_TYPES.forEach(t=>ty.append(new Option(t)));ty.value=st.type;ty.onchange=()=>st.type=ty.value;
+    const ti=document.createElement("input");ti.placeholder="Step title, e.g. Intro call to {{account}}";ti.value=st.title||"";ti.oninput=()=>st.title=ti.value;
+    const x=el("div","sqx");[["↑",-1],["↓",1]].forEach(([l,d])=>{const b=el("button",null,l);b.type="button";b.title=d<0?"Move up":"Move down";b.onclick=()=>{const j=ix+d;if(j<0||j>=sqSteps.length)return;[sqSteps[ix],sqSteps[j]]=[sqSteps[j],sqSteps[ix]];renderSeqSteps()};x.append(b)});
+    const del=el("button",null,"×");del.type="button";del.title="Remove step";del.onclick=()=>{sqSteps.splice(ix,1);renderSeqSteps()};x.append(del);
+    const sc=document.createElement("textarea");sc.placeholder=st.type==="Email"?"Subject: …\n\nEmail body. Use {{account}}, {{my_name}}…":"Talking points or script";sc.value=st.script||"";sc.oninput=()=>st.script=sc.value;
+    r.append(day,ty,ti,x,el("span"),el("span"),sc);w.append(r)});
+}
+$("sqAud").onchange=()=>{$("sqStopStageWrap").hidden=$("sqAud").value==="upsell"};
+$("sqAddStep").onclick=()=>{const last=sqSteps.at(-1);sqSteps.push({day:(last?.day||0)+3,type:"Phone call",title:"",script:""});renderSeqSteps()};
+$("sqCancel").onclick=()=>$("sqdlg").close();
+$("sqSave").onclick=async()=>{
+  const name=$("sqName").value.trim();if(!name){toast("Name the sequence");$("sqName").focus();return}
+  if(!sqSteps.length){toast("Add at least one step");return}
+  const data={name,audience:$("sqAud").value,description:$("sqDesc").value.trim(),stopOnMeeting:$("sqStopMeet").checked,stopOnStage:$("sqStopStage").checked,active:true,steps:sqSteps.map((s,i)=>({id:s.id||"s"+Date.now().toString(36)+i,day:s.day,type:s.type,title:s.title,script:s.script}))};
+  $("sqdlg").close();await write(()=>db.doc("sequences/"+(sqEdit?.id||crypto.randomUUID())).set(data),"Sequence saved");track("action","Saved a sequence");
+};
+$("sqDel").onclick=()=>{const s=sqEdit;if(!s)return;if(enrollments.some(e=>e.sequenceId===s.id&&["active","paused"].includes(e.status))){toast("Stop its active enrollments first (Enrolled tab)");return}if(!confirm("Delete "+s.name+"?"))return;$("sqdlg").close();write(()=>db.doc("sequences/"+s.id).delete(),"Sequence deleted")};
+// Enroll dialog.
+let enSel=new Set();
+function openEnroll(aud,preselect,seqId){
+  const seqs=sequences.filter(s=>!aud||s.audience===aud);
+  if(!sequences.length){toast("Add a sequence first (Sequences tab)");plTab="sequences";go("cadence");return}
+  const ss=$("enSeq");ss.replaceChildren(...(seqs.length?seqs:sequences).map(s=>new Option(`${s.name} (${s.audience==="upsell"?"clients":"prospecting"})`,s.id)));if(seqId)ss.value=seqId;
+  $("enStart").value=today();const ow=$("enOwner");ow.replaceChildren(new Option("Each account's owner",""),...editors().map(m=>new Option(m.name,m.id)));
+  enSel=new Set(preselect||[]);$("enSearch").value="";fillEnrollFilter();renderEnrollList();$("endlg").showModal();
+}
+function fillEnrollFilter(){
+  const s=sequences.find(x=>x.id===$("enSeq").value),f=$("enFilter");
+  f.replaceChildren(...(s?.audience==="upsell"?[["won","Clients (closed won)"],["all","All accounts"]]:[["prospecting","Prospecting stage"],["quiet","Not touched in 30+ days"],["open","All open accounts"],...LEAD_SOURCES.map(x=>["src:"+x,"Lead source: "+x])]).map(([v,l])=>new Option(l,v)));
+}
+function renderEnrollList(){
+  const s=sequences.find(x=>x.id===$("enSeq").value),f=$("enFilter").value,q=$("enSearch").value.trim().toLowerCase(),w=$("enList");w.replaceChildren();
+  const pass=o=>f==="won"?isWonAcct(o):f==="prospecting"?o.stage===0&&!isWonAcct(o):f==="quiet"?!isWonAcct(o)&&daysSince(o.lastTouch)>=30:f==="open"?!isWonAcct(o):f.startsWith("src:")?o.source===f.slice(4):true;
+  const list=opps.filter(o=>(pass(o)||enSel.has(o.id))&&(!q||(o.name+" "+(o.city||"")).toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name));
+  list.forEach(o=>{const already=s&&enrollments.some(e=>e.sequenceId===s.id&&e.oppId===o.id&&["active","paused"].includes(e.status)),l=el("label"),cb=document.createElement("input");cb.type="checkbox";cb.checked=enSel.has(o.id);cb.disabled=already;
+    cb.onchange=()=>{cb.checked?enSel.add(o.id):enSel.delete(o.id);enCount()};l.append(cb,el("span",null,o.name),el("small",null,already?"Already in this sequence":[STAGES[o.stage],o.city,nameOf(o.owner||"CK")].filter(Boolean).join(" · ")));w.append(l)});
+  if(!list.length)w.append(el("div","empty","No accounts match."));
+  $("enAll").checked=false;enCount();
+}
+function enCount(){$("enCount").textContent=`${enSel.size} selected`;$("enGo").disabled=!enSel.size}
+$("enSeq").onchange=()=>{fillEnrollFilter();renderEnrollList()};$("enFilter").onchange=renderEnrollList;$("enSearch").oninput=renderEnrollList;
+$("enAll").onchange=()=>{$("enList").querySelectorAll("input[type=checkbox]:not(:disabled)").forEach(cb=>{cb.checked=$("enAll").checked;cb.onchange()})};
+$("enCancel").onclick=()=>$("endlg").close();
+$("enGo").onclick=async()=>{
+  try{const r=await seqApi(`/sequences/${$("enSeq").value}/enroll`,{oppIds:[...enSel],startDate:$("enStart").value,owner:$("enOwner").value||undefined});$("endlg").close();
+    toast(`Enrolled ${r.enrolled}${r.skipped?`, skipped ${r.skipped} already in it`:""}. First tasks are scheduled.`);track("action","Enrolled accounts in a sequence")}
+  catch(err){toast(err.message)}
+};
+$("plTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;plTab=t;renderPillage();track("action","Opened Pillage "+t)};
+$("plNewSeq").onclick=()=>openSeq(null);
+$("plEnroll").onclick=()=>openEnroll(null,[]);
+
 // Deals: builder, approvals, close package, and financials. The server recomputes totals and owns
 // every status change; the math here mirrors src/deals.js for the live preview.
 let deals=[],catalog=[],dsTab="pipeline",dsFilter="open",dsQuery="",dl=null,dlId=null,dlDirty=false;
@@ -1989,7 +2213,7 @@ const canReview=d=>d.status==="pending"&&(d.submittedBy!==me||!editors().some(m=
 function statusPill(s){return el("span","spill "+s,STATUS_LABEL[s]||s)}
 async function dealApi(method,path,body){
   const r=await fetch("/api/deals"+path,{method,credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.error||"That didn't work");e.problems=j.problems;throw e}return j;
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.error||"That didn't work");e.problems=j.problems;throw e}db.refresh?.();return j;
 }
 function updateDealBadge(){const n=deals.filter(canReview).length;$("dealBadge").hidden=!n;$("dealBadge").textContent=n;$("dsApprovalCount").hidden=!n;$("dsApprovalCount").textContent=n}
 
@@ -2672,14 +2896,13 @@ function renderAdmin(){
   if(adTab==="overview")renderOverview();else if(adTab==="security")renderSecurity();else if(adTab==="health")renderHealth();else if(adTab==="system")renderSystem();else if(adTab==="audit")loadAudit();
 }
 const SOON={
-  cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account"){renderAccount();renderAccountDeals()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account"){renderAccount();renderAccountDeals()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -2801,6 +3024,7 @@ render();renderActs();renderItems();
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
   db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
+  if(!guest){db.collection("sequences").onSnapshot(snap=>{sequences=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="cadence")renderPillage()},()=>{});db.collection("enrollments").onSnapshot(snap=>{enrollments=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="cadence"&&!document.activeElement?.closest?.("#plBody input"))renderPillage()},()=>{})}
   if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("residuals").onSnapshot(snap=>{residuals=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="financials"&&!document.activeElement?.closest?.(".dlsec"))renderDeals()},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
   if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
     vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
