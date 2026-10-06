@@ -52,3 +52,11 @@ Each member can connect one outside calendar (Google, Outlook, or Apple) by past
 4. **Financials**: booked revenue by quarter and month, new yearly recurring revenue, win rate, average deal and discount, weighted pipeline, a three-month forecast, and breakdowns by rep and lead source. Deals export to CSV under Admin › System.
 
 All status changes go through `/api/deals` (src/deals.js has the math and rules); the generic document API refuses deal writes, totals are recomputed on the server, and editors can't approve their own deals while another editor exists. Every step is in the deal history and the audit log. No migration is needed.
+
+## Payment processing
+
+Deals can include payment processing referred to a processing partner. In the deal builder, enter the merchant's monthly card volume and transactions, what they pay today, and our offer; the summary estimates their savings, the partner's net revenue, and TideLine's revenue share. Pricing that costs more than it brings in needs approval.
+
+The partner's cost basis and TideLine's revenue share come from the referral agreement and are **entered in the app** (Deals › Products & rules › Payment processing partner), stored only in the database, and visible to editors only. This repository is public, so never commit partner rates, customer pricing, or merchant data; code defaults are zero.
+
+Until the partner's portal can be connected, record each merchant's actual monthly results (volume, transactions, residual paid) under Deals › Financials › Payment processing. Records use the `residuals` collection, one per merchant per month (`<accountId>_<YYYY-MM>`), with `source: "manual"`; a future portal import can write the same shape with `source: "portal"`. Residuals export to CSV under Admin › System.

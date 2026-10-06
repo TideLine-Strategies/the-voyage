@@ -342,6 +342,7 @@ textarea{min-height:70px;resize:vertical}
 .dlflag{font-size:13px;border-radius:8px;padding:8px 10px;margin-bottom:8px}
 .dlflag.warn{background:color-mix(in srgb,var(--amber) 15%,transparent)}.dlflag.ok{background:var(--green-bg);color:var(--green)}.dlflag.bad{background:var(--red-bg)}
 .dlflag ul{margin:4px 0 0;padding-left:18px}
+.dlunsaved{font-size:13px;color:var(--amber);font-weight:600}.dlunsaved[hidden]{display:none}
 .dlacts{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dlacts .btn{width:100%}
 #dlNote{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text);margin:4px 0 8px}
 .spill{font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--card);color:var(--muted);border:1px solid var(--line-2)}
@@ -361,6 +362,14 @@ textarea{min-height:70px;resize:vertical}
 .fbars b{font-size:11px;color:var(--text);font-weight:600;white-space:nowrap}
 @media (max-width:980px){.dlgrid{grid-template-columns:1fr}.dlside{position:static}}
 @media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:minmax(0,1fr) 5rem 28px}.dllines .row>:nth-child(n+2):not(:nth-child(6)):not(:last-child){display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
+.pphead{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+#ppPartner{margin-left:6px}
+.ppres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.ppres>div{background:var(--card);border-radius:10px;padding:10px 12px}.ppres span{display:block;font-size:12px;color:var(--muted)}.ppres b{font-size:18px;font-variant-numeric:tabular-nums}
+.ppres .good b{color:var(--green)}.ppres .bad b{color:var(--red)}.ppres .wide{grid-column:1/-1;font-size:13px}
+.dlproc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-2px 0 12px;padding-top:10px;border-top:1px solid var(--line)}.dlproc span{display:block;font-size:12px;color:var(--muted)}.dlproc b{font-variant-numeric:tabular-nums;color:var(--green)}
+.dlproc[hidden]{display:none}
+@media (max-width:860px){.ppres{grid-template-columns:1fr 1fr}}
 /* Calendar */
 .cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
@@ -557,7 +566,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 
     <section id="view-deal" hidden>
       <button class="back" id="dlBack">‹ Back to Deals</button>
-      <div class="head"><div><h1 id="dlTitle">New deal</h1><div class="sub" id="dlSub"></div></div><span class="spill" id="dlStatus"></span></div>
+      <div class="head"><div><h1 id="dlTitle">New deal</h1><div class="sub" id="dlSub"></div></div><div style="display:flex;gap:8px;align-items:center"><span class="dlunsaved" id="dlUnsaved" hidden>Unsaved changes</span><button class="btn primary" id="dlSaveTop" hidden>Save</button><span class="spill" id="dlStatus"></span></div></div>
       <div class="dlgrid">
         <div class="dlmain" id="dlMain">
           <div class="dlsec"><h2><span>1</span>Basics</h2>
@@ -574,7 +583,21 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
             <label>Special terms<textarea id="dlSpecial" maxlength="2000" placeholder="Anything non-standard: cancellation rights, price locks, custom SLAs. Special terms always need approval."></textarea></label>
             <label>Internal notes<textarea id="dlNotes" maxlength="3000" placeholder="Context for the reviewer"></textarea></label>
           </div>
-          <div class="dlsec" id="dlCloseSec"><h2><span>4</span>Close package</h2>
+          <div class="dlsec" id="dlProcSec"><h2><span>4</span>Payment processing</h2>
+            <label class="chk"><input type="checkbox" id="ppOn">This deal includes payment processing<span class="city" id="ppPartner"></span></label>
+            <div id="ppBody" hidden>
+              <div class="pphead">Their volume</div>
+              <div class="grid3"><label>Monthly card volume ($)<input id="ppVol" type="number" min="0" step="100" inputmode="decimal"></label><label>Transactions per month<input id="ppTx" type="number" min="0" step="1"></label><label>Amex share of volume (%)<input id="ppAmex" type="number" min="0" max="100" step="1" value="0"></label></div>
+              <div class="pphead">What they pay today</div>
+              <div class="grid3"><label>Current rate (%)<input id="ppCurRate" type="number" min="0" step="0.01"></label><label>Current per transaction ($)<input id="ppCurTx" type="number" min="0" step="0.01"></label><label>Current monthly fees ($)<input id="ppCurMon" type="number" min="0" step="0.01" value="0"></label></div>
+              <div class="pphead">Our offer</div>
+              <div class="grid3"><label>Our rate (%)<input id="ppRate" type="number" min="0" step="0.01"></label><label>Our per transaction ($)<input id="ppPer" type="number" min="0" step="0.01"></label><label>Our monthly fee ($)<input id="ppMon" type="number" min="0" step="0.01" value="0"></label></div>
+              <div class="pphead">Cost assumptions</div>
+              <div class="grid3"><label>Estimated interchange (%)<input id="ppIc" type="number" min="0" step="0.01"></label><label>Settled batches per month<input id="ppBatch" type="number" min="0" step="1" value="26"></label><label class="chk" style="align-self:end"><input type="checkbox" id="ppHosted" checked>Uses hosted payment links</label></div>
+              <div class="ppres" id="ppRes"></div>
+            </div>
+          </div>
+          <div class="dlsec" id="dlCloseSec"><h2><span>5</span>Close package</h2>
             <p class="city" id="dlCloseHint" style="margin:-4px 0 10px">Fill this in once the deal is approved and signed. It's what the team needs to start the customer.</p>
             <label class="chk"><input type="checkbox" id="dcSigned">Signed agreement received</label>
             <div class="grid3"><label>Date signed<input id="dcDate" type="date"></label><label>Signed by<input id="dcName" maxlength="120" autocomplete="off" placeholder="Pat Owner"></label><label>Their title<input id="dcTitle" maxlength="120" autocomplete="off" placeholder="Owner"></label></div>
@@ -588,6 +611,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
           <div class="dlsum">
             <div class="k">Total contract value</div><div class="big" id="dsTcv">$0</div>
             <div class="dlnums"><div><span>Monthly</span><b id="dsMrr">$0</b></div><div><span>Yearly</span><b id="dsArr">$0</b></div><div><span>One-time</span><b id="dsOne">$0</b></div><div><span>Discount</span><b id="dsDisc">0%</b></div></div>
+            <div class="dlproc" id="dsProc" hidden><div><span>Processing residual (est.)</span><b id="dsResid">$0/mo</b></div><div><span>Merchant saves</span><b id="dsSave">–</b></div></div>
             <div id="dsFlags"></div>
             <div id="dsProblems"></div>
             <textarea id="dlNote" rows="2" placeholder="Note for the history (optional)" hidden></textarea>
@@ -1874,6 +1898,7 @@ const EXPORTS={
   "Meeting notes":()=>[["Account","Meeting type","Date","Written by","Notes"],...notes.map(n=>[n.oppName,n.type,n.date,nameOf(n.by),n.text])],
   "Vendors":()=>[["Name","Company","What they do","Email","Phone","Website","Related account","Notes"],...vendors.map(v=>[v.name,v.company,v.kind,v.email,v.phone,v.website,opps.find(o=>o.id===v.oppId)?.name||"",v.notes])],
   "Deals":()=>[["Deal","Account","Status","Owner","Monthly","Yearly","One-time","Contract value","Discount %","Term (months)","Start","Expected close","Won","Lost reason"],...deals.map(d=>[d.name,oppNameOf(d.oppId),STATUS_LABEL[d.status],nameOf(d.owner),d.totals?.mrr,d.totals?.arr,d.totals?.oneTime,d.totals?.tcv,d.totals?.discountPct,d.terms?.months,d.terms?.startDate,d.expectedClose,d.wonTs?new Date(d.wonTs).toLocaleDateString():"",d.lostReason])],
+  "Processing residuals":()=>[["Merchant","Month","Card volume","Transactions","Residual","Source","Note"],...residuals.map(r=>[oppNameOf(r.oppId),r.month,r.volume,r.txns,r.residual,r.source,r.note])],
   "Activity log":()=>[["When","Who","What"],...acts.map(a=>[new Date(a.ts).toLocaleString(),nameOf(a.by),a.text])],
 };
 function exportCsv(kind){downloadCsv(`voyage-${kind.toLowerCase().replace(/\s+/g,"-")}-${today()}.csv`,EXPORTS[kind]());track("action","Exported "+kind.toLowerCase())}
@@ -1929,7 +1954,20 @@ function dealTotals(d){
   const months=d.terms?.months||12,billable=Math.max(0,months-(d.terms?.freeMonths||0));let one=0,mrr=0,lone=0,lmrr=0;
   (d.lines||[]).forEach(l=>{const list=l.qty*(l.listPrice??l.price),net=l.qty*l.price*(1-(l.discount||0)/100);if(l.billing==="once"){one+=net;lone+=list}else{const f=l.billing==="annual"?1/12:1;mrr+=net*f;lmrr+=list*f}});
   const tcv=one+mrr*billable,ltcv=lone+lmrr*months,r=x=>Math.round(x*100)/100;
-  return {oneTime:r(one),mrr:r(mrr),arr:r(mrr*12),tcv:r(tcv),listTcv:r(ltcv),discountPct:ltcv>0?Math.round((1-tcv/ltcv)*1000)/10:0};
+  return {oneTime:r(one),mrr:r(mrr),arr:r(mrr*12),tcv:r(tcv),listTcv:r(ltcv),discountPct:ltcv>0?Math.round((1-tcv/ltcv)*1000)/10:0,processing:calcProcessing(d.processing)};
+}
+// Processing estimate; mirrors calculateProcessing in src/deals.js. Partner rates come from the database.
+const PROC_DEFAULTS={partner:"",sharePct:0,defaultInterchangePct:null,cardPct:0,cardAuth:0,amexPct:0,amexAuth:0,batchFee:0,midMonthly:0,gatewayMonthly:0,hostedPerTxn:0,gatewayBilledToMerchant:false};
+const procSettings=()=>({...PROC_DEFAULTS,...(catalog.find(c=>c.id==="processing")||{})});
+function calcProcessing(p){
+  if(!p?.enabled)return null;const s=procSettings(),missing=[],r=x=>Math.round(x*100)/100;
+  if(!(p.volume>0))missing.push("monthly card volume");if(!(p.txns>0))missing.push("monthly transactions");
+  if(p.rate==null)missing.push("our rate (%)");if(p.perTxn==null)missing.push("our per-transaction fee");
+  const ic=p.interchangePct??s.defaultInterchangePct;if(ic==null)missing.push("estimated interchange (%)");if(!s.sharePct)missing.push("revenue share (set it under Products & rules)");
+  const V=p.volume||0,N=p.txns||0,a=(p.amexShare||0)/100,merchant=V*(p.rate||0)/100+N*(p.perTxn||0)+(p.monthlyFee||0),gateway=s.gatewayMonthly+(p.hosted?N*s.hostedPerTxn:0);
+  const cost=V*(ic||0)/100+V*(1-a)*s.cardPct/100+N*(1-a)*s.cardAuth+V*a*s.amexPct/100+N*a*s.amexAuth+(p.batches||0)*s.batchFee+s.midMonthly+(s.gatewayBilledToMerchant?0:gateway);
+  const mTotal=merchant+(s.gatewayBilledToMerchant?gateway:0),cur=p.currentRate==null?null:V*p.currentRate/100+N*(p.currentPerTxn||0)+(p.currentMonthly||0),net=merchant-cost,res=Math.max(0,net)*s.sharePct/100;
+  return {merchantMonthly:r(mTotal),currentMonthly:cur==null?null:r(cur),savingsMonthly:cur==null?null:r(cur-mTotal),effectiveRate:V?Math.round(mTotal/V*10000)/100:null,costMonthly:r(cost),netMonthly:r(net),residualMonthly:r(res),residualAnnual:r(res*12),belowCost:!missing.length&&net<0,missing};
 }
 function dealFlags(d,t){
   const r=dealRules(),f=[];
@@ -1939,6 +1977,7 @@ function dealFlags(d,t){
   if(PAY_DAYS[d.terms.paymentTerms]>r.maxNetDays)f.push(`${d.terms.paymentTerms} payment terms are longer than Net ${r.maxNetDays}`);
   if(d.terms.freeMonths>r.maxFreeMonths)f.push(`${d.terms.freeMonths} free months is more than ${r.maxFreeMonths}`);
   if(d.terms.special)f.push("Has special terms");
+  if(t.processing?.belowCost)f.push("Payment processing is priced below cost");
   return f;
 }
 const dealProb=d=>d.status==="won"?100:d.status==="lost"?0:d.probability!=null?d.probability:(STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10);
@@ -2021,7 +2060,41 @@ function renderFinancials(w){
   const src=[...new Set(won.concat(open).map(d=>opps.find(o=>o.id===d.oppId)?.source||"Not set"))];
   ss.append(adTable("ftbl",["Lead source","Won","Won value","Open pipeline"],src.map(s=>{const f=d=>(opps.find(o=>o.id===d.oppId)?.source||"Not set")===s,sw=won.filter(f);const r=el("div","row");r.append(el("span","nm",s),cell(String(sw.length)),el("span","money",usd(sum(sw,tcv))),el("span","money",usd(sum(open.filter(f),tcv))));return r})));
   if(!src.length)ss.append(el("div","empty","No deals yet."));w.append(ss);
+  renderProcessingFinancials(w,won,open);
   if(recentLost.length){const ls=usageSection("Why deals were lost","Last 12 months.");ls.append(adTable("htbl",["Deal","Reason"],recentLost.map(d=>{const r=el("button","row");r.append(el("span","nm",d.name),cell(d.lostReason||""));r.onclick=()=>openDeal(d.id);return r})));w.append(ls)}
+}
+// Payment processing: estimates from deals, plus actual monthly results entered by hand for now.
+// Each month is one "residuals" record per merchant, the same shape a partner-portal import will use.
+let residuals=[];
+function renderProcessingFinancials(w,won,open){
+  const s=procSettings(),est=d=>d.totals?.processing&&!d.totals.processing.missing?.length?d.totals.processing:null,sum=(l,f)=>l.reduce((a,x)=>a+(f(x)||0),0);
+  const wonP=won.filter(est),openP=open.filter(est),now=new Date(),thisMonth=iso(now).slice(0,7);
+  const sec=usageSection("Payment processing"+(s.partner?" ("+s.partner+")":""),"Estimated residuals from deals, and the actual results you record each month.");
+  const t=adTiles([[usd(sum(wonP,d=>est(d).residualMonthly))+"/mo","estimated residual from won deals"],[usdK(sum(wonP,d=>d.processing.volume)),"monthly card volume, won merchants"],[usd(sum(openP,d=>est(d).residualMonthly*dealProb(d)/100))+"/mo","weighted residual in the pipeline"],[usdK(sum(wonP,d=>(est(d).savingsMonthly||0)*12)),"yearly savings for won merchants"]]);
+  sec.append(t);
+  if(!s.sharePct)sec.append(el("div","dlflag warn","Set your revenue share and the partner's cost basis under Deals › Products & rules to turn on residual estimates."));
+  const months=[...Array(6)].map((_,i)=>iso(new Date(now.getFullYear(),now.getMonth()-5+i,1)).slice(0,7));
+  const byMonth=months.map(m=>sum(residuals.filter(r=>r.month===m),r=>r.residual)),mx=Math.max(1,...byMonth),fb=el("div","fbars");
+  months.forEach((m,i)=>{const c=el("div");c.append(el("b",null,byMonth[i]?usd(byMonth[i]):""));const bar=document.createElement("i");bar.style.height=(byMonth[i]/mx*100)+"%";bar.style.background="var(--blue)";c.append(bar,el("span",null,new Date(m+"-01T00:00").toLocaleDateString(undefined,{month:"short"})));fb.append(c)});
+  const box=el("div","tbl");box.append(el("div","pphead","Actual residuals paid, last 6 months"),fb);box.firstChild.style.padding="12px 16px 0";box.style.paddingBottom="10px";sec.append(box);
+  const merchants=[...new Set([...wonP.map(d=>d.oppId),...residuals.map(r=>r.oppId)])];
+  const rows=merchants.map(id=>{const d=wonP.find(x=>x.oppId===id),rs=residuals.filter(r=>r.oppId===id).sort((a,b)=>b.month.localeCompare(a.month)),last=rs[0];
+    const r=el("div","row");r.append(el("span","nm",oppNameOf(id)),el("span","money",d?usd(est(d).residualMonthly):"–"),el("span","money",last?usd(last.residual):"–"),el("span","city",last?new Date(last.month+"-01T00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"})+(last.volume?" · "+usdK(last.volume)+" volume":""):"Nothing recorded"),el("span","money",usd(sum(rs.filter(x=>x.month.startsWith(String(now.getFullYear()))),x=>x.residual))));return r});
+  const mt=adTable("ftbl",["Merchant","Estimate / mo","Last actual","Month","This year"],rows);if(!rows.length)mt.append(emptyRow("No processing merchants yet. Turn on payment processing in a deal, or record a month below."));sec.append(mt);
+  // Manual entry form.
+  const f=el("div","dlsec");f.style.marginTop="12px";f.append(el("div","pphead","Record a month"));f.firstChild.style.marginTop="0";
+  const g=el("div","grid3"),mk=(label,el2)=>{const l=el("label",null,label);l.append(el2);g.append(l);return el2};
+  const ms=document.createElement("select");[...new Set([...merchants,...won.map(d=>d.oppId)])].map(id=>[id,oppNameOf(id)]).concat(opps.filter(o=>!merchants.includes(o.id)&&!won.some(d=>d.oppId===o.id)).map(o=>[o.id,o.name])).forEach(([v,l])=>ms.append(new Option(l,v)));mk("Merchant",ms);
+  const mo=document.createElement("input");mo.type="month";mo.value=iso(new Date(now.getFullYear(),now.getMonth()-1,1)).slice(0,7);mo.max=thisMonth;mk("Month",mo);
+  const vol=document.createElement("input");vol.type="number";vol.min=0;vol.step="0.01";mk("Card volume ($)",vol);
+  const tx=document.createElement("input");tx.type="number";tx.min=0;mk("Transactions",tx);
+  const res=document.createElement("input");res.type="number";res.min=0;res.step="0.01";mk("Residual paid to TideLine ($)",res);
+  const note=document.createElement("input");note.type="text";note.maxLength=500;note.placeholder="Optional";mk("Note",note);
+  const fill=()=>{const r=residuals.find(x=>x.oppId===ms.value&&x.month===mo.value);vol.value=r?.volume??"";tx.value=r?.txns??"";res.value=r?.residual??"";note.value=r?.note??""};ms.onchange=fill;mo.onchange=fill;fill();
+  const sv=el("button","btn primary","Save month");sv.onclick=()=>{if(!ms.value||!mo.value||res.value===""){toast("Pick the merchant and month, and enter the residual");return}
+    write(()=>db.doc(`residuals/${ms.value}_${mo.value}`).set({month:mo.value,oppId:ms.value,volume:Number(vol.value)||0,txns:Number(tx.value)||0,residual:Number(res.value)||0,note:note.value.trim(),source:"manual"}),"Month saved").then(()=>track("action","Recorded a processing month"))};
+  f.append(g,sv,el("div","city","Copy these from the partner's monthly residual report. Saving the same merchant and month again replaces it. When the partner portal is connected, it will fill these in automatically."));
+  sec.append(f);w.append(sec);
 }
 function renderCatalog(w){
   const ps=usageSection("Products and services","What you sell, with list prices. Reps pick from this list in the deal builder; prices below list count as a discount.");
@@ -2044,10 +2117,23 @@ function renderCatalog(w){
   const ins=[fld("Highest discount without approval (%)","maxDiscount",0,100),fld("Shortest term without approval (months)","minTermMonths",1,120),fld("Longest payment terms without approval (days)","maxNetDays",0,60),fld("Most free months without approval","maxFreeMonths",0,24)];
   const sv=el("button","btn primary","Save guardrails");sv.onclick=()=>{const data={kind:"rules"};ins.forEach(i=>data[i.dataset.k]=Math.max(Number(i.min),Math.min(Number(i.max),Number(i.value)||0)));write(()=>db.doc("catalog/rules").set(data),"Guardrails saved")};
   g.append(grid,sv);rs.append(g,el("div","city","Special terms always need approval."));w.append(rs);
+  // Processing partner terms: entered here, stored in the database, never in code.
+  const s=procSettings(),pp=usageSection("Payment processing partner","From your referral agreement: your revenue share and the partner's cost basis. Used to estimate residuals on each deal. Only Quan and Cody can see these.");
+  const box=el("div","dlsec"),fields=[];
+  const field=(grid,label,key,step,type)=>{const l=el("label",null,label);const i=document.createElement("input");i.type=type||"number";if(!type){i.min=0;i.step=step||"0.01"}i.value=s[key]??"";i.dataset.k=key;l.append(i);grid.append(l);fields.push(i)};
+  const head=t=>{const h=el("div","pphead",t);box.append(h)};
+  const g1=el("div","grid3");field(g1,"Partner name","partner",null,"text");field(g1,"Your share of their net revenue (%)","sharePct","0.1");field(g1,"Default interchange estimate (%)","defaultInterchangePct");box.append(g1);
+  head("Visa, Mastercard, Discover cost");const g2=el("div","grid3");add(g2,"Volume (%)","cardPct","0.001");add(g2,"Per authorization ($)","cardAuth");box.append(g2);
+  head("Amex cost");const g3=el("div","grid3");add(g3,"Volume (%)","amexPct","0.001");add(g3,"Per authorization ($)","amexAuth");box.append(g3);
+  head("Account and gateway cost");const g4=el("div","grid3");add(g4,"Per settled batch ($)","batchFee");add(g4,"Monthly per merchant account ($)","midMonthly");add(g4,"Gateway license, monthly ($)","gatewayMonthly");add(g4,"Hosted payments, per transaction ($)","hostedPerTxn");
+  const gl=el("label","chk");const gb=document.createElement("input");gb.type="checkbox";gb.checked=!!s.gatewayBilledToMerchant;gl.append(gb,"Gateway fees are billed to the merchant");gl.style.alignSelf="end";g4.append(gl);box.append(g4);
+  const save=el("button","btn primary","Save processing terms");save.style.marginTop="8px";
+  save.onclick=()=>{const data={partner:"",gatewayBilledToMerchant:gb.checked};fields.forEach(i=>{data[i.dataset.k]=i.type==="text"?i.value.trim():i.value===""?null:Number(i.value)});write(()=>db.doc("catalog/processing").set(data),"Processing terms saved")};
+  box.append(save);pp.append(box);w.append(pp);
 }
 
 // The builder.
-function blankDeal(oppId){const o=opps.find(x=>x.id===oppId);return {name:o?o.name+" deal":"",oppId:oppId||"",owner:o?.owner||me,expectedClose:o?.next?.date||"",probability:null,lines:[],terms:{startDate:"",months:12,freeMonths:0,paymentTerms:"Net 30",billingFrequency:"Monthly",autoRenew:true,special:""},close:{agreementSigned:false,signedDate:"",signerName:"",signerTitle:"",signerEmail:"",billingEmail:"",paymentMethod:"",handoff:""},notes:"",status:"draft",history:[]}}
+function blankDeal(oppId){const o=opps.find(x=>x.id===oppId);return {name:o?o.name+" deal":"",oppId:oppId||"",owner:o?.owner||me,expectedClose:o?.next?.date||"",probability:null,lines:[],terms:{startDate:"",months:12,freeMonths:0,paymentTerms:"Net 30",billingFrequency:"Monthly",autoRenew:true,special:""},close:{agreementSigned:false,signedDate:"",signerName:"",signerTitle:"",signerEmail:"",billingEmail:"",paymentMethod:"",handoff:""},processing:{enabled:false,volume:null,txns:null,amexShare:0,rate:null,perTxn:null,monthlyFee:0,currentRate:null,currentPerTxn:null,currentMonthly:0,interchangePct:null,batches:26,hosted:true},notes:"",status:"draft",history:[]}}
 function openDeal(id,oppId){
   if(view==="deal"&&dlDirty&&!confirm("Leave this deal without saving your changes?"))return;
   const d=id&&deals.find(x=>x.id===id);dlId=d?d.id:null;dl=JSON.parse(JSON.stringify(d||blankDeal(oppId)));dlDirty=false;
@@ -2062,10 +2148,13 @@ function fillBuilder(){
   $("dlName").value=d.name;$("dlClose").value=d.expectedClose||"";$("dlProb").value=d.probability??"";$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10}%)`;
   const t=d.terms;$("dlStart").value=t.startDate||"";$("dlMonths").value=t.months;$("dlFree").value=t.freeMonths;$("dlPay").value=t.paymentTerms;$("dlBill").value=t.billingFrequency;$("dlRenew").checked=!!t.autoRenew;$("dlSpecial").value=t.special||"";$("dlNotes").value=d.notes||"";
   $("dcStart").value=t.startDate||"";const c=d.close;$("dcSigned").checked=!!c.agreementSigned;$("dcDate").value=c.signedDate||"";$("dcName").value=c.signerName||"";$("dcTitle").value=c.signerTitle||"";$("dcEmail").value=c.signerEmail||"";$("dcBilling").value=c.billingEmail||"";$("dcPay").value=c.paymentMethod||"";$("dcHandoff").value=c.handoff||"";
-  [...$("dlMain").querySelectorAll(".dlsec")].slice(0,3).forEach(s=>s.classList.toggle("locked",!editable));
+  [...$("dlMain").querySelectorAll(".dlsec")].slice(0,4).forEach(s=>s.classList.toggle("locked",!editable));
+  const pp=d.processing||blankDeal().processing,ps=procSettings(),pv=v=>v??"";$("ppOn").checked=!!pp.enabled;$("ppBody").hidden=!pp.enabled;$("ppPartner").textContent=ps.partner?"(through "+ps.partner+")":"";
+  $("ppVol").value=pv(pp.volume);$("ppTx").value=pv(pp.txns);$("ppAmex").value=pp.amexShare??0;$("ppRate").value=pv(pp.rate);$("ppPer").value=pv(pp.perTxn);$("ppMon").value=pp.monthlyFee??0;$("ppCurRate").value=pv(pp.currentRate);$("ppCurTx").value=pv(pp.currentPerTxn);$("ppCurMon").value=pp.currentMonthly??0;$("ppIc").value=pv(pp.interchangePct);$("ppIc").placeholder=ps.defaultInterchangePct!=null?"Default "+ps.defaultInterchangePct+"%":"From their statement";$("ppBatch").value=pp.batches||26;$("ppHosted").checked=pp.hosted!==false;
   $("dlCloseSec").classList.toggle("locked",!closeOk);
   $("dlCloseHint").textContent=d.status==="won"?`Closed won ${fmtDay(d.wonTs)} by ${nameOf(d.closedBy)}.`:closeOk?"Fill this in once the deal is approved and signed. It's what the team needs to start the customer.":"Unlocks once the deal is approved.";
   const pk=$("dlPick");pk.replaceChildren(new Option("+ Add a product or service…",""));products().filter(p=>p.active!==false).forEach(p=>pk.append(new Option(`${p.name} · ${usd(p.price)}${p.billing==="monthly"?"/mo":p.billing==="annual"?"/yr":" one-time"}`,p.id)));
+  if(!products().some(p=>p.active!==false&&isImpl(p)))pk.append(new Option("Implementation · one-time (enter price)","__impl"));
   pk.disabled=!editable;$("dlAddCustom").disabled=!editable;
   renderLines();renderHistory();refreshSummary();
 }
@@ -2089,11 +2178,30 @@ function readBuilder(){
   const d=dl;d.name=$("dlName").value.trim();d.oppId=$("dlOpp").value;d.owner=$("dlOwner").value;d.expectedClose=$("dlClose").value;d.probability=$("dlProb").value===""?null:Math.min(100,Math.max(0,Number($("dlProb").value)));
   d.terms={startDate:$("dlStart").value,months:Math.min(120,Math.max(1,Number($("dlMonths").value)||12)),freeMonths:Math.min(24,Math.max(0,Number($("dlFree").value)||0)),paymentTerms:$("dlPay").value,billingFrequency:$("dlBill").value,autoRenew:$("dlRenew").checked,special:$("dlSpecial").value.trim()};
   d.notes=$("dlNotes").value.trim();
+  const nv=id=>$(id).value===""?null:Math.max(0,Number($(id).value)||0);
+  d.processing={enabled:$("ppOn").checked,volume:nv("ppVol"),txns:nv("ppTx"),amexShare:Math.min(100,nv("ppAmex")||0),rate:nv("ppRate"),perTxn:nv("ppPer"),monthlyFee:nv("ppMon")||0,currentRate:nv("ppCurRate"),currentPerTxn:nv("ppCurTx"),currentMonthly:nv("ppCurMon")||0,interchangePct:nv("ppIc"),batches:nv("ppBatch")||0,hosted:$("ppHosted").checked};
   d.close={agreementSigned:$("dcSigned").checked,signedDate:$("dcDate").value,signerName:$("dcName").value.trim(),signerTitle:$("dcTitle").value.trim(),signerEmail:$("dcEmail").value.trim(),billingEmail:$("dcBilling").value.trim(),paymentMethod:$("dcPay").value,handoff:$("dcHandoff").value.trim()};
 }
 function refreshSummary(){
   readBuilder();const d=dl,t=dealTotals(d),flags=dealFlags(d,t);
   $("dsTcv").textContent=usd(t.tcv);$("dsMrr").textContent=usd(t.mrr);$("dsArr").textContent=usd(t.arr);$("dsOne").textContent=usd(t.oneTime);$("dsDisc").textContent=t.discountPct+"%";
+  const pr=t.processing;$("ppBody").hidden=!pr;$("dsProc").hidden=!pr;
+  if(pr){
+    $("dsResid").textContent=pr.missing.length?"Needs inputs":usd(pr.residualMonthly)+"/mo";
+    $("dsSave").textContent=pr.savingsMonthly==null||pr.missing.length?"–":usd(pr.savingsMonthly*12)+"/yr";
+    const box=$("ppRes");box.replaceChildren();
+    const tile=(label,value,cls)=>{const x=el("div",cls||null);x.append(el("span",null,label),el("b",null,value));box.append(x)};
+    if(pr.missing.length&&!(dl.processing.volume>0)){tile("They pay today",dl.processing.currentRate!=null?`${dl.processing.currentRate}% + ${usd(dl.processing.currentPerTxn||0)}`:"–");tile("Our offer",dl.processing.rate!=null?`${dl.processing.rate}% + ${usd(dl.processing.perTxn||0)}`:"Not set");tile("Savings and residual","Needs volume");box.append(el("div","wide dlflag warn","Still needed for an estimate: "+pr.missing.join(", ")+"."))}else{
+    tile("They pay today",pr.currentMonthly==null?"–":usd(pr.currentMonthly)+"/mo");
+    tile("They'd pay with us",usd(pr.merchantMonthly)+"/mo"+(pr.effectiveRate!=null?` (${pr.effectiveRate}%)`:""));
+    tile("They save",pr.savingsMonthly==null?"–":`${usd(pr.savingsMonthly)}/mo · ${usd(pr.savingsMonthly*12)}/yr`,pr.savingsMonthly>0?"good":pr.savingsMonthly<0?"bad":"");
+    tile(`${procSettings().partner||"Partner"} net revenue`,usd(pr.netMonthly)+"/mo",pr.netMonthly<0?"bad":"");
+    tile(`TideLine share (${procSettings().sharePct||0}%)`,`${usd(pr.residualMonthly)}/mo · ${usd(pr.residualAnnual)}/yr`,"good");
+    tile("Processing cost (est.)",usd(pr.costMonthly)+"/mo");
+    if(pr.missing.length){const m=el("div","wide dlflag warn","Still needed for an accurate estimate: "+pr.missing.join(", ")+".");box.append(m)}
+    else if(pr.belowCost)box.append(el("div","wide dlflag bad","This pricing costs more than it brings in. Raise the rate or per-transaction fee."));
+    else box.append(el("div","wide city","Estimate only: interchange varies with their card mix. Replace with actual results each month under Deals › Financials."));}
+  }
   const fw=$("dsFlags");fw.replaceChildren();
   if(d.status==="won")fw.append(el("div","dlflag ok","Closed won. The close package is on file."));
   else if(d.status==="lost")fw.append(el("div","dlflag bad","Closed lost: "+(d.lostReason||"")));
@@ -2152,12 +2260,19 @@ $("dsNew").onclick=()=>openDeal(null);
 $("aNewDeal").onclick=()=>openDeal(null,acctId);
 $("dlBack").onclick=()=>{if(dlDirty&&!confirm("Leave without saving your changes?"))return;dlDirty=false;go("deals")};
 $("dlOpp").onchange=()=>{if(!$("dlName").value.trim()){const o=opps.find(x=>x.id===$("dlOpp").value);if(o)$("dlName").value=o.name+" deal"}dlDirty=true;refreshSummary();$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===$("dlOpp").value)?.stage]??10}%)`};
-$("dlPick").onchange=()=>{const p=products().find(x=>x.id===$("dlPick").value);$("dlPick").value="";if(!p)return;dl.lines.push({productId:p.id,name:p.name,billing:p.billing,qty:1,price:p.price,listPrice:p.price,discount:0});dlDirty=true;renderLines();refreshSummary()};
+$("dlPick").onchange=()=>{if($("dlPick").value==="__impl"){$("dlPick").value="";dl.lines.push({productId:"",name:"Implementation (setup, data migration, training)",billing:"once",qty:1,price:0,listPrice:0,discount:0});dlDirty=true;renderLines();refreshSummary();const rows=$("dlLines").querySelectorAll(".row:not(.hd)");const price=rows[rows.length-1]?.querySelectorAll("input")[2];price?.focus();price?.select();toast("Enter the implementation price");return}const p=products().find(x=>x.id===$("dlPick").value);$("dlPick").value="";if(!p)return;dl.lines.push({productId:p.id,name:p.name,billing:p.billing,qty:1,price:p.price,listPrice:p.price,discount:0});dlDirty=true;renderLines();refreshSummary()};
 $("dlAddCustom").onclick=()=>{dl.lines.push({productId:"",name:"",billing:"monthly",qty:1,price:0,listPrice:0,discount:0});dlDirty=true;renderLines();refreshSummary();const ins=$("dlLines").querySelectorAll(".row:not(.hd) input");ins[ins.length-4]?.focus()};
 $("dcStart").addEventListener("input",()=>{$("dlStart").value=$("dcStart").value});$("dlStart").addEventListener("input",()=>{$("dcStart").value=$("dlStart").value});
-["dlName","dlClose","dlProb","dlStart","dcStart","dlMonths","dlFree","dlSpecial","dlNotes","dcDate","dcName","dcTitle","dcEmail","dcBilling","dcHandoff"].forEach(id=>$(id).addEventListener("input",()=>{dlDirty=true;refreshSummary();if(id==="dlName")$("dlTitle").textContent=$("dlName").value||"New deal"}));
-["dlOwner","dlPay","dlBill","dlRenew","dcSigned","dcPay"].forEach(id=>$(id).addEventListener("change",()=>{dlDirty=true;refreshSummary()}));
+["ppVol","ppTx","ppAmex","ppRate","ppPer","ppMon","ppCurRate","ppCurTx","ppCurMon","ppIc","ppBatch","dlName","dlClose","dlProb","dlStart","dcStart","dlMonths","dlFree","dlSpecial","dlNotes","dcDate","dcName","dcTitle","dcEmail","dcBilling","dcHandoff"].forEach(id=>$(id).addEventListener("input",()=>{dlDirty=true;refreshSummary();if(id==="dlName")$("dlTitle").textContent=$("dlName").value||"New deal"}));
+["ppOn","ppHosted","dlOwner","dlPay","dlBill","dlRenew","dcSigned","dcPay"].forEach(id=>$(id).addEventListener("change",()=>{dlDirty=true;refreshSummary()}));
 window.addEventListener("beforeunload",e=>{if(view==="deal"&&dlDirty){e.preventDefault();e.returnValue=""}});
+// Implementation is always in the product dropdown: a catalog item if one exists, otherwise a one-time line to price.
+function isImpl(p){return /implementation/i.test(p.name)}
+// Make unsaved work obvious, with a Save button up top and Ctrl+S.
+function markDirty(){const editable=dl&&(dl.status==="draft"||dl.status==="changes"||dl.status==="approved");$("dlUnsaved").hidden=!dlDirty;$("dlSaveTop").hidden=!(dlDirty&&editable)}
+$("dlSaveTop").onclick=()=>dl.status==="approved"?dealStep("package"):saveDeal(true);
+document.addEventListener("keydown",e=>{if(view==="deal"&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();if(dlDirty)$("dlSaveTop").click()}});
+setInterval(()=>{if(view==="deal"&&dl)markDirty()},400);
 
 // Calendar: CRM appointments, tasks, and next steps, plus the member's own outside calendar if connected.
 let cxMode=null,cxAnchor=new Date(),cxScope="mine",cxShow={appt:true,task:true,next:true,ext:true},cxExt={connected:false,events:[],from:0,to:0,loading:false},cxDrag=null;
@@ -2652,7 +2767,7 @@ render();renderActs();renderItems();
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
   db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
-  if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
+  if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("residuals").onSnapshot(snap=>{residuals=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="financials"&&!document.activeElement?.closest?.(".dlsec"))renderDeals()},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
   if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
     vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
   },failed)}

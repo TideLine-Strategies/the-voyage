@@ -345,3 +345,19 @@ test("deal workflow: draft, guardrails, review by the other editor, close packag
   assert.equal((await call("a", "POST", `/api/deals/${created.id}/lost`, {})).status, 400, "lost needs a reason");
   assert.equal((await (await call("a", "POST", `/api/deals/${created.id}/lost`, { note: "Went with a competitor" })).json()).status, "lost");
 });
+
+test("residuals and processing settings are editor-only and validated", async () => {
+  const { call } = fixture();
+  const month = { month: "2026-09", oppId: "gym", volume: 1000, txns: 10, residual: 12.5, by: "MJ" };
+  assert.equal((await call("b", "PUT", "/api/document/residuals/gym-2026-09", month)).status, 403);
+  assert.equal((await call("b", "GET", "/api/collection/residuals")).status, 403);
+  assert.equal((await call("a", "PUT", "/api/document/residuals/gym-2026-09", { ...month, month: "2026-13" })).status, 400);
+  assert.equal((await call("a", "PUT", "/api/document/residuals/gym-2026-09", { ...month, residual: -1 })).status, 400);
+  assert.equal((await call("a", "PUT", "/api/document/residuals/gym-2026-09", month)).status, 200);
+  const saved = (await (await call("a", "GET", "/api/document/residuals/gym-2026-09")).json()).data;
+  assert.deepEqual([saved.residual, saved.by, saved.source], [12.5, "QS", "manual"]);
+  assert.equal((await call("a", "PUT", "/api/document/catalog/processing", { sharePct: 20, cardPct: "abc", extra: "dropped" })).status, 200);
+  const s = (await (await call("a", "GET", "/api/document/catalog/processing")).json()).data;
+  assert.deepEqual([s.sharePct, s.cardPct, s.extra], [20, 0, undefined]);
+  assert.equal((await call("b", "GET", "/api/document/catalog/processing")).status, 403);
+});

@@ -1,11 +1,11 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
-import { DEFAULT_RULES, EDITABLE, approvalFlags, calculateTotals, closeProblems, sanitizeDeal, submitProblems } from "./deals.js";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog"]);
+import { DEFAULT_RULES, EDITABLE, approvalFlags, calculateProcessing, calculateTotals, closeProblems, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
-const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog"]);
+const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -171,6 +171,16 @@ export function validateDocument(collection, id, data, actor, method) {
   }
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
+  if (collection === "catalog" && id === "processing") return sanitizeProcessingSettings(data);
+  // One month of actual processing results for one merchant, entered by hand until the partner portal feeds it.
+  if (collection === "residuals") {
+    const n = (v, max) => { const x = Number(v); if (!Number.isFinite(x) || x < 0 || x > max) throw new Error("Invalid residual amount"); return Math.round(x * 100) / 100; };
+    if (method === "PATCH") throw new Error("Invalid residual: replace the whole month");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(data.month || "")) throw new Error("Invalid residual month");
+    if (typeof data.oppId !== "string" || !ID_PATTERN.test(data.oppId)) throw new Error("Invalid residual account");
+    return { month: data.month, oppId: data.oppId, volume: n(data.volume ?? 0, 1e9), txns: Math.round(n(data.txns ?? 0, 1e7)), residual: n(data.residual ?? 0, 1e7),
+      source: data.source === "portal" ? "portal" : "manual", note: typeof data.note === "string" ? data.note.slice(0, 500) : "", by: actor.id, enteredTs: Date.now() };
+  }
   if (collection === "vendors" && (method !== "PATCH" || Object.hasOwn(data, "name"))) {
     if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 200) throw new Error("Invalid vendor name");
   }
@@ -371,7 +381,8 @@ async function handleDeals(request, env, actor, path) {
   const save = deal => env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES ('deals', ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
     .bind(deal.id, JSON.stringify(deal), now).run();
   const rules = { ...DEFAULT_RULES, ...(await getDocument(env.DB, "catalog", "rules").catch(() => null) || {}) };
-  const refresh = deal => { deal.totals = calculateTotals(deal); deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
+  const processing = await getDocument(env.DB, "catalog", "processing").catch(() => null) || {};
+  const refresh = deal => { deal.totals = { ...calculateTotals(deal), processing: calculateProcessing(deal.processing, processing) }; deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
   const event = (deal, what, note) => { deal.history = [...(deal.history || []), { ts: now, by: actor.id, action: what, ...(note ? { note: String(note).slice(0, 1000) } : {}) }].slice(-100); };
   const body = method === "GET" || method === "DELETE" || !request.body ? {} : await readJson(request);
   if (!id && method === "POST") {
@@ -714,7 +725,7 @@ export default {
       return response;
     }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },
