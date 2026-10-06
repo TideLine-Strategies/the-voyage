@@ -319,6 +319,16 @@ textarea{min-height:70px;resize:vertical}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 .view-badge[hidden]{display:none}
+.nav.nav-profile{display:flex;align-items:center;gap:10px;color:var(--text)}
+.nav-profile .pn{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.nav-profile .pn b{font-weight:600;font-size:14px}.nav-profile .pn small{color:var(--muted);font-size:12px}
+.nav-profile .view-badge{margin-top:4px;align-self:flex-start}
+.pcard{display:flex;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.av.pbig{width:56px;height:56px;font-size:20px}
+.pset{grid-template-columns:minmax(0,10rem) minmax(0,1fr)!important}
+.pset select{justify-self:start;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;color:var(--text);font-size:14px}
+.dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
+@media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
@@ -376,11 +386,12 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="cadence">Pillage</button>
     <button class="nav" data-view="order">Order</button>
-    <button class="nav" data-view="admin">Admin</button>
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
-    <div class="me"><label for="meSel" style="margin:0">Signed in as</label><select id="meSel" disabled></select><span class="view-badge" id="viewBadge" hidden>Guest · edit existing</span></div>
+    <div class="sep"></div>
+    <button class="nav nav-profile" data-view="profile" aria-label="Profile and settings"><span class="av OT" id="profAv">?</span><span class="pn"><b id="profName">Profile</b><small>Profile &amp; settings</small><span class="view-badge" id="viewBadge" hidden>Guest</span></span></button>
+    <select id="meSel" disabled hidden aria-hidden="true"></select>
     <div class="tag">One voyage, start to finish.</div>
   </nav>
 
@@ -437,7 +448,24 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <div class="tbl vtbl" id="vList"></div>
     </section>
 
+    <section id="view-profile" hidden>
+      <div class="head"><div><h1>Profile</h1><div class="sub">Your account, settings, and signed-in devices.</div></div></div>
+      <div class="pcard"><span class="av OT pbig" id="pAv">?</span><div><div class="nm" id="pName"></div><div class="city" id="pEmail"></div><div class="city" id="pRole"></div></div></div>
+      <div class="usec"><h2>Your work</h2><div class="hint">What's on your plate right now.</div><div id="pWork"></div></div>
+      <div class="usec"><h2>Settings</h2><div class="hint">Saved on this device.</div>
+        <div class="tbl"><div class="ubar pset"><span class="nm">Appearance</span><select id="pTheme" aria-label="Appearance"><option value="">Match this device</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div>
+      </div>
+      <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only Quan and Cody see this.</div>
+        <button class="btn primary" id="pAdmin">Open admin dashboard</button>
+      </div>
+      <div class="usec"><h2>Signed-in devices</h2><div class="hint">Each device stays signed in for up to 180 days. Sign out of any you don't recognize.</div>
+        <div id="pDevices"><div class="empty">Loading…</div></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="pOthers">Sign out other devices</button><button class="btn danger" id="pSignOut">Sign out of this device</button></div>
+      </div>
+    </section>
+
     <section id="view-admin" hidden>
+      <button class="back" id="adBack">‹ Back to Profile</button>
       <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
       <div class="ntabs" id="adTabs" role="tablist">
         <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="system">System</button>
@@ -720,7 +748,10 @@ function avatar(id){const a=el("span","av "+(["CK","QS"].includes(id)?id:"OT"),i
 function fillMe(){
   const s=$("meSel");s.replaceChildren();team.forEach(m=>s.append(new Option(m.name,m.id)));s.value=me;s.disabled=true;
   const fo=$("fOwner"),fv=fo.value;fo.replaceChildren();editors().forEach(m=>fo.append(new Option(m.name,m.id)));if(fv)fo.value=fv;
+  const av=$("profAv");av.textContent=me;av.className="av "+(["CK","QS"].includes(me)?me:"OT");$("profName").textContent=nameOf(me);
 }
+function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
+try{applyTheme(localStorage.getItem("voyage-theme")||"")}catch(_){}
 function showGuestAccess(){document.body.classList.add("guest");$("viewBadge").hidden=false}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
@@ -1442,7 +1473,7 @@ $("vDel").onclick=async()=>{
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
 
-const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",admin:"Admin",usage:"Admin"};
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",profile:"Profile",admin:"Admin",usage:"Admin"};
 let usage=null,usageBusy=false;
 async function loadUsage(){
   if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
@@ -1622,6 +1653,39 @@ function renderOverview(){
   const list=el("div","tbl");attention.sort((a,b)=>order[a[0]]-order[b[0]]).forEach(([sev,text,tab])=>{const r=el("button","arow");const d=el("span","adot "+sev);r.append(d,el("span",null,text),el("span","city","›"));r.onclick=()=>{adTab=tab;renderAdmin()};list.append(r)});
   if(attention.length)s.append(list);w.append(s);
 }
+let profile=null;
+async function loadProfile(){
+  renderProfile();
+  try{const r=await fetch("/api/me/profile",{credentials:"same-origin",cache:"no-store"});if(!r.ok)throw Error();profile=await r.json()}catch(_){profile=null}
+  renderProfile();
+}
+function renderProfile(){
+  const m=team.find(x=>x.id===me)||{name:nameOf(me)};
+  $("pAv").textContent=me;$("pAv").className="av pbig "+(["CK","QS"].includes(me)?me:"OT");
+  $("pName").textContent=m.name;$("pEmail").textContent=profile?.email||"";
+  $("pRole").textContent=guest?"Guest: can edit existing accounts, tasks, and notes. Cannot add or delete them.":"Editor: full access to The Voyage.";
+  $("pAdminSec").hidden=guest;
+  let theme="";try{theme=localStorage.getItem("voyage-theme")||""}catch(_){}
+  $("pTheme").value=theme;
+  const t=today(),mine=opps.filter(o=>(o.owner||"CK")===me),myItems=items.filter(i=>!i.done&&((i.owner||"CK")===me||(i.shared||[]).includes(me)));
+  const work=adTiles([[mine.length,"accounts you own"],[myItems.length,"open tasks and appointments"],[myItems.filter(i=>i.date&&i.date<t).length+mine.filter(o=>o.next&&o.next.date&&o.next.date<t).length,"overdue"],[mine.filter(o=>daysSince(o.lastTouch)>=30).length,"untouched 30+ days"]]);
+  $("pWork").replaceChildren(work);
+  const d=$("pDevices");
+  if(!profile){d.replaceChildren(el("div","empty","Loading…"));return}
+  d.replaceChildren(adTable("dtbl",["Device","Signed in","Stays signed in until"],profile.devices.map(x=>{const r=el("div","row");r.append(el("span","nm",x.current?"This device":"Another device"),cell(fmtDay(x.created_at)),cell(fmtDay(x.expires_at)));return r})));
+  $("pOthers").disabled=profile.devices.filter(x=>!x.current).length===0;
+}
+$("pTheme").onchange=()=>{const v=$("pTheme").value;try{v?localStorage.setItem("voyage-theme",v):localStorage.removeItem("voyage-theme")}catch(_){}applyTheme(v);track("action","Changed appearance")};
+$("pAdmin").onclick=()=>go("admin");
+$("adBack").onclick=()=>go("profile");
+async function profileSignOut(others){
+  if(!confirm(others?"Sign out every other device? This one stays signed in.":"Sign out of this device? You will need a new invitation link to get back in on it."))return;
+  try{const r=await fetch("/api/me/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({scope:others?"others":"this"})});if(!r.ok)throw Error();
+    if(others){toast("Signed out other devices");track("action","Signed out other devices");loadProfile()}else location.replace("/")}
+  catch(_){toast("That didn't work. Try again.")}
+}
+$("pOthers").onclick=()=>profileSignOut(true);
+$("pSignOut").onclick=()=>profileSignOut(false);
 function renderAdmin(){
   [...$("adTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===adTab));
   Object.entries(AD_PANELS).forEach(([t,id])=>$(id).hidden=t!==adTab);
@@ -1633,10 +1697,10 @@ const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
-  view=v;track("view");const navV=v==="account"?acctFrom:v;
+  view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-admin").hidden=v!=="admin";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="admin"&&!guest)loadAdmin();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));

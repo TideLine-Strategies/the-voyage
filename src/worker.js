@@ -90,7 +90,7 @@ async function handleInvite(request, env, token) {
 // Guests can change existing CRM records and use their private chat space.
 export function canWrite(actor, path, method) {
   if (actor.role === "edit") return true;
-  if (path[1] === "presence" || path[1] === "muninn" || path[1] === "usage") return true;
+  if (path[1] === "presence" || path[1] === "muninn" || path[1] === "usage" || path[1] === "me") return true;
   if (path[1] === "document" && path[2] === "reads") return path[3] === actor.id;
   if (path[1] === "document" && CRM_COLLECTIONS.has(path[2])) return method === "PATCH";
   if (CHAT_COLLECTIONS.has(path[2])) {
@@ -281,6 +281,34 @@ async function handleUsage(request, env, actor) {
   }
 }
 
+function currentSessionHash(request) {
+  const token = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
+  return token ? tokenHash(token) : Promise.resolve("");
+}
+
+// Every member's own account: details, signed-in devices, and signing out.
+async function handleProfile(request, env, actor, path) {
+  const current = await currentSessionHash(request);
+  if (path[2] === "profile" && request.method === "GET") {
+    const member = await env.DB.prepare("SELECT id, name, email, role FROM members WHERE id = ?").bind(actor.id).first();
+    const { results } = await env.DB.prepare("SELECT created_at, expires_at, token_hash = ? AS current FROM sessions WHERE member_id = ? AND expires_at > ? ORDER BY created_at DESC")
+      .bind(current, actor.id, Date.now()).all();
+    return reply({ ...member, devices: results });
+  }
+  if (path[2] === "signout" && request.method === "POST") {
+    const { scope } = await readJson(request);
+    const sql = {
+      others: "DELETE FROM sessions WHERE member_id = ? AND token_hash != ?",
+      this: "DELETE FROM sessions WHERE member_id = ? AND token_hash = ?",
+      all: "DELETE FROM sessions WHERE member_id = ? AND ? IS NOT NULL",
+    }[scope];
+    if (!sql) return error("Expected scope: this, others, or all", 400);
+    const result = await env.DB.prepare(sql).bind(actor.id, current).run();
+    return reply({ ok: true, signedOut: result.meta.changes });
+  }
+  return error("Not found", 404);
+}
+
 // Editor-only admin view: access, sign-ins, invitations, and storage. Never returns token hashes.
 async function handleAdmin(request, env, actor, path) {
   if (actor.role !== "edit") return error("Not available to guests", 403);
@@ -322,6 +350,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
+  if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
     return reply({ context: await muninnContext(env.DB, actor) });
   }

@@ -168,3 +168,20 @@ test("admin: editors see access, invitations, and storage without secrets; guest
   assert.equal((await out.json()).signedOut, 1);
   assert.equal((await call("b", "GET", "/api/me")).status, 403);
 });
+
+test("profile: every member sees their own account and devices and can sign out", async () => {
+  const { call, sqlite } = fixture();
+  const profile = await (await call("b", "GET", "/api/me/profile")).json();
+  assert.equal(profile.id, "MJ");
+  assert.equal(profile.email, "mary@example.com");
+  assert.equal(profile.devices.length, 1);
+  assert.equal(profile.devices[0].current, 1);
+  assert.doesNotMatch(JSON.stringify(profile), /token_hash/);
+  sqlite.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES ('other-device', 'MJ', ?, ?)").run(Date.now() + 86400000, Date.now());
+  assert.equal((await call("b", "POST", "/api/me/signout", { scope: "bogus" })).status, 400);
+  assert.equal((await (await call("b", "POST", "/api/me/signout", { scope: "others" })).json()).signedOut, 1);
+  assert.equal((await call("b", "GET", "/api/me")).status, 200);
+  assert.equal((await (await call("b", "POST", "/api/me/signout", { scope: "this" })).json()).signedOut, 1);
+  assert.equal((await call("b", "GET", "/api/me")).status, 403);
+  assert.equal((await call("a", "GET", "/api/me")).status, 200, "other members stay signed in");
+});
