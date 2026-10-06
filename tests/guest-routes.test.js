@@ -414,6 +414,7 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   assert.equal(task1.type, "Cold call");
   assert.match(task1.notes, /Call Sample Gym/);
   assert.match(task1.notes, /Hi, this is Quan, Founder/);
+  assert.match(task1.notes, /^Call Sample Gym/);
   assert.deepEqual([task1.seq.step, task1.seq.of], [1, 3]);
   assert.equal((await call("b", "PATCH", `/api/document/activities/${gym.taskId}`, { done: true, doneTs: Date.now(), outcome: "voicemail" })).status, 200, "a guest completing the task still advances it");
   const afterDone = (await (await call("a", "GET", `/api/document/enrollments/${gym.id}`)).json()).data;
@@ -437,7 +438,11 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   await call("a", "PATCH", "/api/document/opps/dojo", { stage: 1 });
   assert.equal((await (await call("a", "GET", `/api/document/enrollments/${dojo.id}`)).json()).data.stopReason, "Moved to Discovery");
   const starters = await (await call("a", "POST", "/api/sequences/starters")).json();
-  assert.equal(starters.created.length, 2);
+  assert.equal(starters.created.length, 9);
+  assert.equal((await (await call("a", "POST", "/api/sequences/starters")).json()).created.length, 0, "adding again creates no duplicates");
+  const lib = (await (await call("a", "GET", "/api/sequences/library")).json()).library;
+  assert.equal(lib.length, 9);
+  assert.ok(lib.every(s => s.steps.every(step => step.script.length > 40)), "every library step is fully written");
 });
 
 test("contacts: every task and meeting names who it was with, from the same account", async () => {
@@ -478,4 +483,15 @@ test("bare POSTs with an empty body (as Cloudflare sends them) work for sequence
     headers: { cookie: `voyage_session=${"a".repeat(64)}`, origin: "https://voyage.example", "content-type": "application/json" }, body: JSON.stringify({ name: "X" }) }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } })).text()).id;
   assert.notEqual((await bare(`/api/deals/${dealId}/submit`)).status, 500);
   assert.equal((await bare(`/api/deals/${dealId}/submit`)).status, 400, "reports what's missing instead of Invalid JSON");
+});
+
+test("{{contact}} becomes the contact's first name (or \"there\")", async () => {
+  const { call, seed } = fixture();
+  seed("opps", "gym", { name: "Gym", stage: 0, owner: "QS" });
+  seed("opps", "solo", { name: "Solo", stage: 0, owner: "QS" });
+  seed("contacts", "c1", { oppId: "gym", name: "Gina Marie Torres", role: "Owner", primary: true });
+  await call("a", "PUT", "/api/document/sequences/hi", { name: "Hi", steps: [{ day: 0, type: "Email", title: "Hello", script: "Hi {{contact}}, welcome." }] });
+  await call("a", "POST", "/api/sequences/hi/enroll", { oppIds: ["gym", "solo"] });
+  const notes = (await (await call("a", "GET", "/api/collection/activities")).json()).docs.map(d => d.data.notes).sort();
+  assert.deepEqual(notes, ["Hello\n\nHi Gina, welcome.", "Hello\n\nHi there, welcome."]);
 });

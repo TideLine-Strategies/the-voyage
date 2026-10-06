@@ -70,3 +70,9 @@ Files are stored in D1 in 512 KB chunks (`migrations/0006_deal_files.sql`), so n
 ## Contacts
 
 Each account has **Contacts** (name, title, role, email, phone, main contact, notes). Every task and meeting must name the contact it was with: the task form has a contact picker with **+ Add a new contact**, and saving or marking a task or meeting done is refused without one, in the app and by the Worker (`contactId` must exist and belong to the same account). Older tasks without a contact can still be edited, but need a contact before they can be completed. Sequence steps use the account's main contact automatically. Editors can add and delete contacts; guests can update existing ones. Contacts are searchable and included in Muninn's context.
+
+## Sequence library and call prep
+
+**Pillage › Sequences** includes a library of ready-made sequences (cold outreach, warm lead follow-up, after discovery, re-engage, card processing savings review, new client first 90 days, check-in and upsell, renewal, and referral ask). Every step has a complete call talk track (opener, questions, objection replies, voicemail), email, letter, or message, with merge fields including `{{contact}}` (the contact's first name). Add one or all; added copies can be edited. Library content is in `src/sequence-library.js` and must stay free of customer names, prices, and partner names.
+
+**Call prep** (on each due task in Pillage and on each account) shows where the account stands from the CRM (stage, last touch and outcome, contact, last meeting note, next step, open deal, lead source), the goal and questions for the current stage or growth ideas for clients, what's on studio owners' minds this month, common objections with replies, and buttons to ask Muninn for a brief or look up news about the account.

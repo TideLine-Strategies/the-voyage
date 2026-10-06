@@ -532,15 +532,17 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const putDoc = (env, collection, id, data) => env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
   .bind(collection, id, JSON.stringify(data), Date.now()).run();
 const dropDoc = (env, collection, id) => env.DB.prepare("DELETE FROM documents WHERE collection = ? AND id = ?").bind(collection, id).run();
-async function templateVars(env, oppId, ownerId) {
+async function templateVars(env, oppId, ownerId, contactId) {
   const opp = await getDocument(env.DB, "opps", oppId) || {};
   const owner = await memberForId(ownerId, env.DB), profile = await getDocument(env.DB, "profiles", ownerId) || {};
-  return { account: opp.name || "", city: opp.city || "", stage: STAGE_NAMES[opp.stage] || "", my_name: owner?.name || "", my_title: profile.title || "", my_phone: profile.phone || "" };
+  const contact = contactId ? await getDocument(env.DB, "contacts", contactId) : null;
+  return { contact: (contact?.name || "").trim().split(/\s+/)[0] || "there", account: opp.name || "", city: opp.city || "", stage: STAGE_NAMES[opp.stage] || "", my_name: owner?.name || "", my_title: profile.title || "", my_phone: profile.phone || "" };
 }
 async function scheduleStep(env, sequence, enrollment, index, date) {
   const taskId = crypto.randomUUID();
-  const task = stepTask({ ...sequence }, enrollment, index, date, await templateVars(env, enrollment.oppId, enrollment.owner), Date.now());
-  task.contactId = enrollment.contactId || await primaryContactId(env, enrollment.oppId);
+  const contactId = enrollment.contactId || await primaryContactId(env, enrollment.oppId);
+  const task = stepTask({ ...sequence }, enrollment, index, date, await templateVars(env, enrollment.oppId, enrollment.owner, contactId), Date.now());
+  task.contactId = contactId;
   await putDoc(env, "activities", taskId, task);
   enrollment.stepIndex = index; enrollment.taskId = taskId; enrollment.nextDue = date;
 }
@@ -553,11 +555,23 @@ async function removeOpenTask(env, enrollment) {
 async function handleSequences(request, env, actor, path) {
   const method = request.method, now = Date.now();
   const body = method === "POST" ? await readOptionalJson(request) : {};
+  if (path[1] === "sequences" && path[2] === "library" && method === "GET") {
+    return reply({ library: STARTER_SEQUENCES.map(s => ({ key: s.key, ...sanitizeSequence(s) })) });
+  }
+  // Add one library sequence (by key) or all of them; anything already added (same library key or name) is skipped.
   if (path[1] === "sequences" && path[2] === "starters" && method === "POST") {
-    const created = [];
-    for (const starter of STARTER_SEQUENCES) { const id = crypto.randomUUID(); await putDoc(env, "sequences", id, { ...sanitizeSequence(starter), createdTs: now, by: actor.id }); created.push(id); }
-    await audit(env, actor.id, "Created", "sequences", null, "Starter sequences");
-    return reply({ created }, 201);
+    const { results } = await env.DB.prepare("SELECT data_json FROM documents WHERE collection = 'sequences'").all();
+    const existing = results.map(row => JSON.parse(row.data_json));
+    const created = [], skipped = [];
+    for (const starter of STARTER_SEQUENCES.filter(s => !body.key || s.key === body.key)) {
+      if (existing.some(s => s.libraryKey === starter.key || s.name === starter.name)) { skipped.push(starter.key); continue; }
+      const id = crypto.randomUUID();
+      await putDoc(env, "sequences", id, { ...sanitizeSequence(starter), libraryKey: starter.key, createdTs: now, by: actor.id });
+      created.push(id);
+    }
+    if (body.key && !created.length && !skipped.length) return error("Unknown library sequence", 404);
+    if (created.length) await audit(env, actor.id, "Created", "sequences", null, `Library: ${created.length} sequence(s)`);
+    return reply({ created, skipped }, created.length ? 201 : 200);
   }
   if (path[1] === "sequences" && path[3] === "enroll" && method === "POST") {
     const sequence = await getDocument(env.DB, "sequences", path[2]);

@@ -23,7 +23,18 @@ test("merge fields, dates, and gaps between steps", () => {
 test("starter sequences are valid and contain no customer or pricing details", () => {
   for (const starter of STARTER_SEQUENCES) {
     const s = sanitizeSequence(starter);
-    assert.ok(s.steps.length >= 4);
+    assert.ok(s.steps.length >= 3, `${starter.key} has enough steps`);
     assert.doesNotMatch(JSON.stringify(starter), /\$\d/, "no prices in starter templates");
   }
+});
+
+test("library: keys are unique, steps are in order and fully scripted, and contacts are greeted by first name", () => {
+  const keys = STARTER_SEQUENCES.map(s => s.key);
+  assert.equal(new Set(keys).size, keys.length);
+  for (const s of STARTER_SEQUENCES) {
+    const clean = sanitizeSequence(s);
+    assert.deepEqual(clean.steps.map(x => x.day), s.steps.map(x => x.day), `${s.key} steps are already in day order`);
+    assert.ok(clean.steps.every(x => x.script.length > 40 && x.script.length <= 4000), `${s.key} scripts are complete and within limits`);
+  }
+  assert.equal(fillTemplate("Hi {{contact}},", { contact: "Pat" }), "Hi Pat,");
 });

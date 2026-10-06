@@ -376,6 +376,9 @@ textarea{min-height:70px;resize:vertical}
 .ctctbl .row{grid-template-columns:minmax(0,1.3fr) 7rem minmax(0,1.3fr) 8rem 6rem}.ctctbl .row a{color:var(--blue);text-decoration:none;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 select.need{border-color:var(--red)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)}
 @media (max-width:860px){.ctctbl .row{grid-template-columns:minmax(0,1fr) auto}.ctctbl .row>:nth-child(n+2):not(:last-child){display:none}}
+.prep{background:var(--card);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:14px}.prep ul{margin:4px 0 0;padding-left:18px}.prep li{margin:3px 0}.prepsec{margin-bottom:10px}.prepsec .pphead{margin:6px 0 4px}
+.prepsum{cursor:pointer;font-size:16px;font-weight:600;padding:4px 0}#aPrepBox .prep{margin-top:6px}
+.libprev{margin-top:6px;font-size:13px}.libprev summary{cursor:pointer;color:var(--blue)}
 /* Pillage */
 dialog.wide{width:min(860px,calc(100% - 24px))}
 .sqrules{display:flex;gap:18px;flex-wrap:wrap;margin:-4px 0 6px}.sqrules .chk{margin:0}
@@ -778,6 +781,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
               <div id="aLocDetail"></div>
             </div>
           </div>
+          <div class="sec" id="aPrepSec"><details id="aPrepBox"><summary class="prepsum">Call prep: what to know and say</summary><div id="aPrep"></div></details></div>
           <div class="sec" id="aContactsSec"><div class="sech"><h2>Contacts</h2><button class="btn" id="aAddContact">+ Add contact</button></div><div id="aContacts"></div></div>
           <div class="sec" id="aDealsSec"><div class="sech"><h2>Deals</h2><button class="btn" id="aNewDeal">+ New deal</button></div><div id="aDeals"></div></div>
           <div class="sec"><div class="sech"><h2>Notes</h2></div><div class="notes" id="aNotes"></div></div>
@@ -2056,9 +2060,80 @@ function renderAccountContacts(){
 }
 $("aAddContact").onclick=()=>openContact(null,acctId);
 
+// Call prep: what to know and say before any touch. Built from the account's own CRM data plus a
+// stage playbook, what's on studio owners' minds this month, and likely objections with replies.
+const STAGE_PREP=[
+  {goal:"Book a 20-minute discovery call with the owner or decision maker.",ask:["What does your front desk spend the most time on each week?","How are makeups and late adds handled today, start to finish?","How many systems does your team use in a normal day?"],say:"Lead with time back for the team, not features. Ask for 20 minutes, with two specific times."},
+  {goal:"Understand how they run today and agree on what a great result looks like.",ask:["Walk me through a busy Monday at the front desk.","Where do things fall through the cracks?","If you could take one task off your team's plate this season, what would it be?","Who else would weigh in on a change like this?"],say:"Listen more than you talk. Write down their words for the recap email."},
+  {goal:"Confirm the problems are worth solving and that the right people agree.",ask:["Of what we discussed, what matters most to you?","What happens if nothing changes this year?","Who needs to be comfortable before you'd move forward?"],say:"Play back their priorities in their own words, then agree on next steps and dates."},
+  {goal:"Measure the opportunity so the value is concrete.",ask:["Roughly how many hours a week go to [their top pain]?","What does a missed makeup or late payment cost you?","Can we measure the team's time for two weeks to get a real baseline?"],say:"Only use numbers you've measured or they've told you."},
+  {goal:"Show the findings and get agreement on the recommendation.",ask:["Does this match what you see day to day?","What would make you confident moving forward?","What would the rollout need to look like for your team?"],say:"Present what's proven, what's estimated, and what's still open. Honesty builds trust here."},
+  {goal:"Get the proposal accepted and a start date on the calendar.",ask:["Is there anything in the proposal you'd change?","Is anything still holding you back?","What start week works for the team?"],say:"Restate the outcome they want, the investment, and the next step. Ask for the decision."},
+  {goal:"Close: signed agreement, start date, and a smooth handoff.",ask:["Who signs on your side?","Who should we work with day to day?","What does success look like at 90 days?"],say:"Make signing easy. Confirm the start week and the first two milestones."},
+];
+const SEASONAL=[
+  {t:"New Year enrollment",p:["January brings a wave of new sign-ups and trial classes. Ask how they handle the rush.","Winter session schedules and makeups after the holiday break.","Year-end receipts and tax paperwork for families."]},
+  {t:"Spring planning and competition season",p:["Spring session schedules and pricing are being set.","Competition and meet season adds travel, fees, and scheduling.","Recital or showcase costume orders and deposits."]},
+  {t:"Spring break and summer camp sign-ups",p:["Spring break schedule changes create a spike in makeups.","Summer camp registration opens; a smooth sign-up matters.","Hiring seasonal staff for summer."]},
+  {t:"Summer camp registration peak",p:["Camp sign-ups and payments peak now.","Recital and showcase prep takes over the front desk.","Staffing and coverage for summer programs."]},
+  {t:"Recitals, showcases, and fall early-bird",p:["Recital and end-of-year events stretch staff thin.","Early-bird fall re-enrollment is a revenue moment.","Switching to summer schedules."]},
+  {t:"Summer slowdown: best time to change systems",p:["Classes slow down, so this is the easiest time to change how things run.","Getting set up now means a smooth fall rush.","Camps are running; ask what's working and what isn't."]},
+  {t:"Fall prep",p:["Fall registration is being planned; getting ready now avoids the September scramble.","Still a good window to change systems before classes ramp up.","Back-to-school marketing and trial classes."]},
+  {t:"Back-to-school enrollment rush",p:["New families, trial classes, and registrations peak.","Billing setup and first payments for the fall session.","Staff onboarding for the new season."]},
+  {t:"Fall session start",p:["New families are settling in; makeups and schedule changes spike.","Collecting first payments and chasing balances.","Competition team tryouts and placements."]},
+  {t:"Busy fall and budget season",p:["Parents' nights out, Halloween events, and fundraisers.","Owners start thinking about next year's budget.","Good time to plan a January change."]},
+  {t:"Holiday shows and year-end planning",p:["Holiday shows and gift card promotions.","Planning next year's schedule and pricing.","Budget decisions for January."]},
+  {t:"Holiday break",p:["Holiday break means schedule changes and makeups.","Year-end receipts and paperwork.","Getting ready for the January enrollment wave."]},
+];
+const OBJECTION_PREP=[
+  ["\"We already have software.\"","Most studios we work with do. We usually start alongside it and remove the hand-offs between systems. Which part creates the most extra work?"],
+  ["\"It's not a good time.\"","Understood. When is your slower season? Many studios set things up in the summer so fall runs smoothly."],
+  ["\"It's too expensive.\"","Compared to what? Let's look at the hours your team spends on this each week; that's the real cost today."],
+  ["\"My staff won't want to learn something new.\"","We move one area at a time, and staff approve every change. Who on the team would be a good first pilot?"],
+  ["\"Send me some information.\"","Happy to. So I send the right thing: what's the one task you'd most like off the front desk?"],
+];
+function prepPanel(oppId,task){
+  const o=opps.find(x=>x.id===oppId),box=el("div","prep");if(!o){box.append(el("div","city","Link this to an account to get call prep."));return box}
+  const sec=(title)=>{const s=el("div","prepsec");s.append(el("div","pphead",title));box.append(s);return s};
+  const li=(parent,items)=>{const ul=el("ul");items.filter(Boolean).forEach(t=>ul.append(el("li",null,t)));parent.append(ul)};
+  const won=isWonAcct(o),c=contacts.find(x=>x.id===task?.contactId)||contactsFor(o.id)[0],t=today();
+  const lastNote=notes.filter(n=>n.oppId===o.id&&!n.draft).sort((a,b)=>(b.updatedTs||b.createdTs||0)-(a.updatedTs||a.createdTs||0))[0];
+  const lastDone=items.filter(i=>i.oppId===o.id&&i.done).sort((a,b)=>(b.doneTs||0)-(a.doneTs||0))[0];
+  const openDeal=guest?null:deals.find(d=>d.oppId===o.id&&OPEN.has(d.status));
+  const where=sec("Where they are");
+  li(where,[
+    `${won?"Client":STAGES[o.stage]}${o.rank!=null?" · rank "+o.rank:""}${o.lastTouch?` · last touch ${daysSince(o.lastTouch)} days ago`:" · never touched"}`,
+    c?`Talking to: ${c.name}${c.title?", "+c.title:""}${c.phone?" · "+c.phone:""}`:"No contact yet: find the owner's name before you call.",
+    lastDone?`Last touch: ${lastDone.type}${lastDone.outcome?" ("+(OUTCOME_LABEL[lastDone.outcome]||lastDone.outcome)+")":""}, ${fmtDate(iso(new Date(lastDone.doneTs||Date.now())))}`:"",
+    lastNote?`Last meeting note (${lastNote.type}): "${String(lastNote.text||"").slice(0,180)}${(lastNote.text||"").length>180?"…":""}"`:"",
+    o.next?.label?`Planned next step: ${o.next.label}${o.next.date?" on "+fmtDate(o.next.date):""}`:"",
+    openDeal?`Open deal: ${openDeal.name}, ${usd(openDeal.totals?.tcv)} (${STATUS_LABEL[openDeal.status]})`:"",
+    o.source?`Came from: ${o.source}${o.sourceNote?" ("+o.sourceNote+")":""}`:"",
+    o.bio?`About them: ${String(o.bio).slice(0,200)}${o.bio.length>200?"…":""}`:"",
+  ]);
+  if(won){
+    const owned=new Set(deals.filter(d=>d.oppId===o.id&&d.status==="won").flatMap(d=>d.lines.map(l=>l.productId)).filter(Boolean));
+    const gaps=products().filter(p=>p.active!==false&&!owned.has(p.id)&&p.billing!=="once").map(p=>p.name);
+    const wd=deals.filter(d=>d.oppId===o.id&&d.status==="won"&&d.terms?.startDate).sort((a,b)=>b.wonTs-a.wonTs)[0];
+    const end=wd?iso(addDays(new Date(wd.terms.startDate+"T12:00"),(wd.terms.months||12)*30.4)):null;
+    const g=sec("Grow this client");li(g,["Ask: \"What's working best? What still takes manual effort?\"",gaps.length?"They don't have yet: "+gaps.join(", "):"They have everything in the catalog; ask for a referral.",end?`Term ends around ${fmtDate(end)}${end<=iso(addDays(new Date(),60))?": start the renewal conversation now.":"."}`:""]);
+  }else{
+    const p=STAGE_PREP[o.stage]||STAGE_PREP[0],s=sec(`Goal for this ${STAGES[o.stage]} touch`);s.append(el("div",null,p.goal));li(s,p.ask.map(q=>"Ask: "+q));s.append(el("div","city",p.say));
+  }
+  const m=SEASONAL[new Date().getMonth()],sn=sec(`On studio owners' minds this month: ${m.t}`);li(sn,m.p);
+  const ob=sec("If you hear…");const ul=el("ul");OBJECTION_PREP.forEach(([q,a])=>{const x=el("li");x.append(el("b",null,q+" "),document.createTextNode(a));ul.append(x)});ob.append(ul);
+  const acts=el("div","dueacts"),mb=el("button","btn","Ask Muninn for a brief");mb.type="button";
+  mb.onclick=()=>{openChat(`Give me a short call brief for ${o.name}${o.city?" in "+o.city:""}${c?`, speaking with ${c.name}${c.title?" ("+c.title+")":""}`:""}: where things stand from the CRM, the two or three best things to discuss, the questions to ask, likely objections, and one specific next step to ask for. If you can see any recent public news about them, include it; if not, say so.`);track("action","Asked Muninn for a call brief")};
+  const nb=el("a","btn","Look up news");nb.href="https://www.google.com/search?tbm=nws&q="+encodeURIComponent(`"${o.name}"${o.city?" "+o.city:""}`);nb.target="_blank";nb.rel="noopener noreferrer";nb.style.textDecoration="none";nb.onclick=()=>track("action","Looked up account news");
+  const wb=o.website?el("a","btn","Their website"):null;if(wb){wb.href=o.website;wb.target="_blank";wb.rel="noopener noreferrer";wb.style.textDecoration="none"}
+  acts.append(mb,nb);if(wb)acts.append(wb);box.append(acts);
+  return box;
+}
+function renderAccountPrep(){if(view!=="account")return;const w=$("aPrep");if(!w)return;w.replaceChildren(prepPanel(acctId))}
+
 // Pillage: sequences (cadences), enrollments, and the daily outreach list. The server creates each
 // step's task, advances on completion, and stops on a booked meeting or stage change.
-let sequences=[],enrollments=[],plTab="today",sqEdit=null,sqSteps=[],plOpen=new Set();
+let sequences=[],enrollments=[],plTab="today",sqEdit=null,sqSteps=[],plOpen=new Set(),plPrep=new Set();
 const STEP_TYPES=["Cold call","Phone call","Email","VITO letter","Text","LinkedIn","In-person visit","Video"];
 const CALL_TYPES=new Set(["Cold call","Phone call"]),MSG_TYPES=new Set(["Email","Text","LinkedIn"]);
 const OUTCOME_LABEL={connected:"Connected",voicemail:"Left voicemail","no-answer":"No answer",sent:"Sent",done:"Done",skipped:"Skipped"};
@@ -2098,10 +2173,12 @@ function dueItem(i){
   else b("Done","primary",()=>completeStep(i,"done"));
   if(lines.length>1){const s=b(plOpen.has(i.id)?"Hide script":"Show script","",()=>{plOpen.has(i.id)?plOpen.delete(i.id):plOpen.add(i.id);renderPillage()})}
   if(i.seq){const e=enrollments.find(x=>x.id===i.seq.enrollmentId);if(e&&e.status==="active")b("Skip step","",async()=>{try{await seqApi(`/enrollments/${e.id}/skip`);toast("Skipped")}catch(err){toast(err.message)}})}
+  if(i.oppId)b(plPrep.has(i.id)?"Hide call prep":"Call prep","",()=>{plPrep.has(i.id)?plPrep.delete(i.id):plPrep.add(i.id);renderPillage()});
   if(i.oppId)b("Open account","",()=>openAccount(i.oppId,"cadence"));
   b("Edit","",()=>openT("task",i));
   c.append(acts);
   if(plOpen.has(i.id)){const s=el("div","duescript",lines.slice(1).join("\n"));c.append(s)}
+  if(plPrep.has(i.id))c.append(prepPanel(i.oppId,i));
   return c;
 }
 function plToday(w){
@@ -2132,8 +2209,23 @@ function plToday(w){
     const r=el("div","row");r.style.cssText="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto;cursor:default";r.append(el("span","nm",o.name),el("span","city",gaps.length?"Could add: "+gaps.join(", "):"Has everything in the catalog"),(()=>{const x=el("button","btn","Start upsell");x.onclick=()=>openEnroll("upsell",[o.id]);return x})());list.append(r)});us.append(list)}
   w.append(us);
 }
+// The ready-made library: every step already written. Added copies can be edited freely.
+let seqLibrary=null;
+async function loadLibrary(){if(seqLibrary)return;try{const r=await fetch("/api/sequences/library",{credentials:"same-origin"});seqLibrary=(await r.json()).library||[]}catch(_){seqLibrary=[]}if(view==="cadence"&&plTab==="sequences")renderPillage()}
+function libraryAdded(s){return sequences.some(x=>x.libraryKey===s.key||x.name===s.name)}
+function plLibrary(w){
+  if(!seqLibrary){w.append(el("div","empty","Loading the sequence library…"));loadLibrary();return}
+  const missing=seqLibrary.filter(s=>!libraryAdded(s)),sec=usageSection("Sequence library",`Ready-made sequences with every call, email, letter, and message already written. Add the ones you want, enroll accounts, and just work your Today list.${missing.length?"":" All added."}`);
+  if(missing.length>1){const all=el("button","btn primary","Add all "+missing.length);all.style.marginBottom="10px";all.onclick=async()=>{try{const r=await seqApi("/sequences/starters");toast(`Added ${r.created.length} sequences`);track("action","Added library sequences")}catch(err){toast(err.message)}};sec.append(all)}
+  ["prospect","upsell"].forEach(aud=>{const list=seqLibrary.filter(s=>s.audience===aud);sec.append(el("div","pphead",aud==="prospect"?"Prospecting":"Existing clients"));
+    list.forEach(s=>{const c=el("div","seqcard"),h=el("div","sech"),added=libraryAdded(s);h.append(el("h2",null,s.name));
+      const btn=el("button","btn"+(added?"":" primary"),added?"✓ Added":"Add");btn.disabled=added;btn.onclick=async()=>{btn.disabled=true;try{await seqApi("/sequences/starters",{key:s.key});toast("Added "+s.name);track("action","Added a library sequence")}catch(err){toast(err.message);btn.disabled=false}};h.append(btn);c.append(h,el("div","city",s.description));
+      const st=el("div","seqsteps");s.steps.forEach(x=>{const chip=el("span",null,`Day ${x.day} · ${x.type}`);chip.title=x.title;st.append(chip)});c.append(st);
+      const pv=el("details","libprev");pv.append(el("summary",null,"Preview the scripts"));s.steps.forEach(x=>{pv.append(el("div","pphead",`Day ${x.day} · ${x.type} · ${x.title}`),el("div","duescript",x.script))});c.append(pv);sec.append(c)})});
+  w.append(sec);
+}
 function plSequences(w){
-  if(!sequences.length){const e=el("div","empty");e.append(el("div",null,"No sequences yet. Start from two ready-made ones (new studio outreach, and existing client check-in and upsell), then edit them to match how you sell."));const b=el("button","btn primary","Add starter sequences");b.style.marginTop="10px";b.onclick=async()=>{try{await seqApi("/sequences/starters");toast("Starter sequences added");track("action","Added starter sequences")}catch(err){toast(err.message)}};e.append(b);w.append(e);return}
+  if(!sequences.length){plLibrary(w);return}
   ["prospect","upsell"].forEach(aud=>{
     const list=sequences.filter(s=>s.audience===aud).sort((a,b)=>a.name.localeCompare(b.name));if(!list.length)return;
     w.append(el("div","pphead",aud==="prospect"?"Prospecting":"Existing clients (upsell)"));
@@ -2143,6 +2235,7 @@ function plSequences(w){
       const st=el("div","seqsteps");s.steps.forEach(x=>st.append(el("span",null,`Day ${x.day} · ${x.type}`)));c.append(st);
       const a=el("div");a.style.cssText="display:flex;gap:8px";const e1=el("button","btn","Edit");e1.onclick=()=>openSeq(s);const e2=el("button","btn primary","Enroll accounts");e2.onclick=()=>openEnroll(s.audience,[],s.id);a.append(e1,e2);c.append(a);w.append(c)});
   });
+  plLibrary(w);
 }
 function plEnrolled(w){
   const bar=el("div","bhead"),sel=document.createElement("select");[["live","Active and paused"],["active","Active"],["paused","Paused"],["completed","Completed"],["stopped","Stopped"],["all","All"]].forEach(([v,l])=>sel.append(new Option(l,v)));sel.value=plEnrolled.f||"live";sel.onchange=()=>{plEnrolled.f=sel.value;renderPillage()};bar.append(sel);w.append(bar);
@@ -2962,7 +3055,7 @@ function go(v){
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts();renderAccountPrep()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
