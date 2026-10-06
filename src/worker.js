@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { calendarAddress, eventsFromIcs } from "./ical.js";
 const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
@@ -362,6 +363,45 @@ async function calendarFeed(env, file) {
   return new Response(body, { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
 }
 
+// A member's own outside calendar (Google, Outlook, Apple), shown only to them on the Calendar page.
+// The private address stays on the server; the browser only ever gets the provider name and events.
+async function handleExternalCalendar(request, env, actor) {
+  const provider = url => { const h = new URL(url).hostname; return h.includes("google") ? "Google Calendar" : h.includes("icloud") ? "Apple Calendar" : "Outlook"; };
+  try {
+    if (request.method === "PUT") {
+      const { url } = await readJson(request);
+      const address = calendarAddress(url);
+      if (!address) return error("Use the private iCal address from Google Calendar, Outlook, or Apple Calendar (it starts with https:// or webcal://).", 400);
+      await env.DB.prepare("INSERT INTO external_calendars (member_id, url, updated_at) VALUES (?, ?, ?) ON CONFLICT(member_id) DO UPDATE SET url = excluded.url, updated_at = excluded.updated_at")
+        .bind(actor.id, address, Date.now()).run();
+      await audit(env, actor.id, "Connected outside calendar", null, null, provider(address));
+      return reply({ connected: true, provider: provider(address) });
+    }
+    if (request.method === "DELETE") {
+      await env.DB.prepare("DELETE FROM external_calendars WHERE member_id = ?").bind(actor.id).run();
+      await audit(env, actor.id, "Disconnected outside calendar", null, null, null);
+      return reply({ connected: false });
+    }
+    if (request.method !== "GET") return error("Method not allowed", 405);
+    const row = await env.DB.prepare("SELECT url, updated_at FROM external_calendars WHERE member_id = ?").bind(actor.id).first();
+    if (!row) return reply({ connected: false, events: [] });
+    const params = new URL(request.url).searchParams;
+    const from = Number(params.get("from")) || Date.now() - 45 * 86400000;
+    const to = Math.min(Number(params.get("to")) || Date.now() + 120 * 86400000, from + 400 * 86400000);
+    const profile = await getDocument(env.DB, "profiles", actor.id).catch(() => null);
+    let text;
+    try {
+      const response = await fetch(row.url, { headers: { accept: "text/calendar" }, redirect: "follow", signal: AbortSignal.timeout(10000), cf: { cacheTtl: 300 } });
+      if (!response.ok) throw new Error(String(response.status));
+      text = await response.text();
+      if (text.length > 5_000_000 || !text.includes("BEGIN:VCALENDAR")) throw new Error("not a calendar");
+    } catch {
+      return reply({ connected: true, provider: provider(row.url), error: "Couldn't read your calendar right now. Check that the private address is still valid.", events: [] });
+    }
+    return reply({ connected: true, provider: provider(row.url), events: eventsFromIcs(text, { from, to, fallbackZone: profile?.timezone || "America/Chicago" }) });
+  } catch { return error("Calendar connections are not set up yet. Apply migration 0005.", 503); }
+}
+
 function currentSessionHash(request) {
   const token = (request.headers.get("cookie") || "").split(";").map(part => part.trim()).find(part => part.startsWith("voyage_session="))?.slice(15);
   return token ? tokenHash(token) : Promise.resolve("");
@@ -388,6 +428,7 @@ async function handleProfile(request, env, actor, path) {
     await audit(env, actor.id, "Signed out", null, null, { this: "This device", others: "Other devices", all: "All devices" }[scope]);
     return reply({ ok: true, signedOut: result.meta.changes });
   }
+  if (path[2] === "external-calendar") return handleExternalCalendar(request, env, actor);
   if (path[2] === "calendar") {
     try {
       if (request.method === "GET") {

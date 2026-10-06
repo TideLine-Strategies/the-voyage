@@ -319,6 +319,42 @@ textarea{min-height:70px;resize:vertical}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 .view-badge[hidden]{display:none}
+/* Calendar */
+.cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
+.cxseg{display:flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.cxseg button{background:var(--panel);border:0;padding:7px 14px;font-size:14px;color:var(--muted)}.cxseg button.on{background:var(--red-bg);color:var(--text);font-weight:600}
+.cxfilters{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-bottom:12px;font-size:13px}
+.cxfilters select{background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:6px 8px;font-size:13px;color:var(--text)}
+.cxk{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--text)}
+.cxk::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.cxk.appt,.ev.appt{--c:var(--green)}.cxk.task,.ev.task{--c:var(--violet)}.cxk.next,.ev.next{--c:var(--blue)}.cxk.ext,.ev.ext{--c:var(--muted)}
+.cxmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cxdow{font-size:12px;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);text-align:center}
+.cxday{min-height:112px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:0;cursor:pointer}
+.cxday:nth-child(7n+1){border-left:0}.cxday.out{background:var(--bg);opacity:.75}.cxday.over{outline:2px dashed var(--blue);outline-offset:-3px}
+.cxnum{font-size:12px;color:var(--muted);align-self:flex-start;border:0;background:none;padding:2px 6px;border-radius:999px}
+.cxday.today .cxnum{background:var(--red);color:#fff;font-weight:600}
+.ev{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--text);border-radius:5px;padding:2px 6px;font-size:12px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.ev.ext{border-left-style:dashed;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted)}
+.ev.done{opacity:.55;text-decoration:line-through}.ev.late{box-shadow:inset 0 0 0 1px var(--red)}.ev.clash::after{content:" ⚠"}
+.ev[draggable=true]{cursor:grab}.ev b{font-weight:600}
+.cxmore{font-size:12px;color:var(--muted);background:none;border:0;text-align:left;padding:0 6px}
+.cxweek{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cxwh,.cxwa,.cxwg{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr))}
+.cxwh div{font-size:12px;color:var(--muted);padding:8px 4px;text-align:center;border-left:1px solid var(--line)}.cxwh div.today{color:var(--red);font-weight:600}
+.cxwa{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.cxwa>div{border-left:1px solid var(--line);padding:3px;display:flex;flex-direction:column;gap:2px;min-height:28px;min-width:0}
+.cxwa>div:first-child,.cxwh div:first-child{border-left:0;font-size:11px;color:var(--muted);padding:6px 4px}
+.cxwg{position:relative;max-height:620px;overflow-y:auto}
+.cxhrs div{height:48px;font-size:11px;color:var(--muted);text-align:right;padding-right:6px;transform:translateY(-6px)}
+.cxcol{position:relative;border-left:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0 47px,var(--line) 47px 48px);cursor:pointer}
+.cxcol .ev{position:absolute;white-space:normal;padding:3px 5px}
+.cxnow{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:2}
+.cxag .cxagd{font-size:13px;font-weight:600;padding:14px 2px 6px;color:var(--muted)}.cxag .cxagd.today{color:var(--red)}
+.cxag .ev{white-space:normal;font-size:14px;padding:8px 10px;margin-bottom:4px;display:grid;grid-template-columns:5.5rem minmax(0,1fr);gap:10px}
+.cxag .ev small{display:block;color:var(--muted);font-size:12px}
+.xhelp{font-size:13px;border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:6px}.xhelp summary{cursor:pointer;font-weight:600}.xhelp ol{margin:6px 0 2px;padding-left:20px}
+@media (max-width:860px){.cxday{min-height:64px}.cxday .ev{font-size:0;padding:0;height:6px;border-left-width:0;background:var(--c)}.cxday .ev.ext{background:var(--muted)}.cxmore{font-size:10px}.cxwh,.cxwa,.cxwg{grid-template-columns:36px repeat(7,minmax(0,1fr))}.cxcol .ev{font-size:10px}}
 .gsearch{position:relative;padding:2px 4px 8px}
 .gsearch input{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text)}
 .gres{position:absolute;left:4px;top:calc(100% - 4px);z-index:30;width:min(440px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
@@ -348,7 +384,7 @@ textarea{min-height:70px;resize:vertical}
 .dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
 @media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
-body.guest :is(#newBtn,#acNew,#acImport,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
 body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!important}
 body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
@@ -401,6 +437,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="accounts">Accounts</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
+    <button class="nav" data-view="calendar">Calendar</button>
     <button class="nav" data-view="notes">Notes</button>
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="cadence">Pillage</button>
@@ -466,6 +503,24 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div class="cnt" id="vCount"></div>
       <div class="tbl vtbl" id="vList"></div>
+    </section>
+
+    <section id="view-calendar" hidden>
+      <div class="head"><div><h1>Calendar</h1><div class="sub" id="cxSub">Appointments, tasks, and next steps from The Voyage in one place.</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" id="cxConnect">Connect your calendar</button><button class="btn primary" id="cxNew">+ Book meeting</button></div></div>
+      <div class="cxbar">
+        <div class="cxnav"><button class="btn" id="cxToday" title="Today (T)">Today</button><button class="btn" id="cxPrev" aria-label="Previous" title="Previous (←)">‹</button><button class="btn" id="cxNext" aria-label="Next" title="Next (→)">›</button><h2 id="cxTitle"></h2></div>
+        <div class="cxseg" id="cxMode" role="tablist"><button data-m="month" title="Month (M)">Month</button><button data-m="week" title="Week (W)">Week</button><button data-m="agenda" title="Agenda (A)">Agenda</button></div>
+      </div>
+      <div class="cxfilters">
+        <select id="cxScope" aria-label="Whose items"><option value="mine">Mine and shared with me</option><option value="all">Everyone's</option></select>
+        <label class="cxk appt"><input type="checkbox" data-k="appt" checked>Appointments</label>
+        <label class="cxk task"><input type="checkbox" data-k="task" checked>Tasks</label>
+        <label class="cxk next"><input type="checkbox" data-k="next" checked>Next steps</label>
+        <label class="cxk ext" id="cxExtToggle" hidden><input type="checkbox" data-k="ext" checked><span id="cxExtName">My calendar</span></label>
+        <span class="city" id="cxNote"></span>
+      </div>
+      <div id="cxBody"></div>
     </section>
 
     <section id="view-profile" hidden>
@@ -656,6 +711,22 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="acts">
       <div><button class="btn danger" id="delBtn">Delete</button></div>
       <div><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save opp</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog id="xdlg" aria-labelledby="xdlgTitle">
+  <div class="dlg">
+    <h2 id="xdlgTitle">Connect your calendar</h2>
+    <p class="city" id="xStatus" style="margin:-4px 0 12px"></p>
+    <p style="font-size:14px;margin:0 0 10px">Show your own meetings next to your Voyage appointments, so you can spot conflicts before you book. Only you see them, and The Voyage never changes your calendar.</p>
+    <details class="xhelp" open><summary>Google Calendar</summary><ol><li>Open Google Calendar on a computer, then Settings (gear icon).</li><li>Under "Settings for my calendars", pick your calendar, then "Integrate calendar".</li><li>Copy "Secret address in iCal format".</li></ol></details>
+    <details class="xhelp"><summary>Outlook / Microsoft 365</summary><ol><li>In Outlook on the web, open Settings, then Calendar, then Shared calendars.</li><li>Under "Publish a calendar", choose your calendar and "Can view all details", then Publish.</li><li>Copy the ICS link.</li></ol></details>
+    <details class="xhelp"><summary>Apple Calendar (iCloud)</summary><ol><li>At icloud.com/calendar, click the share icon next to your calendar.</li><li>Turn on "Public Calendar" and copy the link (it starts with webcal://).</li></ol></details>
+    <label style="margin-top:10px">Private calendar address<input id="xUrl" type="url" autocomplete="off" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"></label>
+    <p class="city" style="margin:4px 0 0">Treat this address like a password. It's stored on The Voyage's server and never shown again.</p>
+    <div class="acts">
+      <div><button class="btn danger" id="xOff" hidden>Disconnect</button></div>
+      <div><button class="btn" id="xCancel">Cancel</button><button class="btn primary" id="xSave">Connect</button></div>
     </div>
   </div>
 </dialog>
@@ -881,7 +952,7 @@ function render(){
   const sb=$("stats");sb.replaceChildren();
   stats.forEach(([n,l,c,fn,tip])=>{const d=el("button","stat stat-btn");d.title=tip;d.setAttribute("aria-label",n+" "+l+". "+tip);const b=el("b",null,n);if(c&&n)b.style.color=c;d.append(b,el("span",null,l),el("i","stat-go","View ›"));d.onclick=fn;sb.append(d)});
   if(!$("drill").hidden&&drillKind)openDrill(drillKind,true);
-  renderBoard();renderAccount();renderAccounts();
+  renderBoard();renderAccount();renderAccounts();if(view==="calendar")renderCalendar();
 }
 
 function drawStagePick(){
@@ -1443,7 +1514,7 @@ async function removeLoc(o,l){
 }
 $("aLocSel").onchange=()=>{locSelId=$("aLocSel").value||null;const o=opps.find(x=>x.id===acctId);if(o)renderLocations(o)};
 $("aAddLoc").onclick=()=>{const o=opps.find(x=>x.id===acctId);if(!o)return;locSelId="new";renderLocations(o);setTimeout(()=>{const i=$("aLocDetail").querySelector("input");if(i)i.focus()},30)};
-function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
+function openAccount(id,from){acctId=id;acctFrom=from||"stages";$("acctBack").textContent="‹ Back to "+({accounts:"Accounts",stages:"Stages",dash:"Home",notes:"Notes",team:"Team chat",calendar:"Calendar"}[acctFrom]||"Accounts");go("account");window.scrollTo(0,0)}
 function renderAccount(){
   if(view!=="account")return;
   const o=opps.find(x=>x.id===acctId);
@@ -1534,7 +1605,7 @@ $("vDel").onclick=async()=>{
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
 
-const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",profile:"Profile",admin:"Admin",usage:"Admin"};
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",calendar:"Calendar",profile:"Profile",admin:"Admin",usage:"Admin"};
 let usage=null,usageBusy=false;
 async function loadUsage(){
   if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
@@ -1748,6 +1819,156 @@ async function importAccounts(file){
   logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
   toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
 }
+// Calendar: CRM appointments, tasks, and next steps, plus the member's own outside calendar if connected.
+let cxMode=null,cxAnchor=new Date(),cxScope="mine",cxShow={appt:true,task:true,next:true,ext:true},cxExt={connected:false,events:[],from:0,to:0,loading:false},cxDrag=null;
+try{const s=JSON.parse(localStorage.getItem("voyage-cal")||"{}");if(s.mode)cxMode=s.mode;if(s.scope)cxScope=s.scope;if(s.show)Object.assign(cxShow,s.show)}catch(_){}
+const cxSave=()=>{try{localStorage.setItem("voyage-cal",JSON.stringify({mode:cxMode,scope:cxScope,show:cxShow}))}catch(_){}};
+const dayKey=d=>iso(d),addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},startOfWeek=d=>addDays(new Date(d.getFullYear(),d.getMonth(),d.getDate()),-d.getDay());
+const fmtClock=min=>{const h=Math.floor(min/60),m=min%60;return `${(h%12)||12}${m?":"+String(m).padStart(2,"0"):""}${h<12?"am":"pm"}`};
+const mine=(owner,shared)=>cxScope==="all"||(owner||"CK")===me||(shared||[]).includes(me);
+function cxEvents(from,to){
+  const a=dayKey(from),b=dayKey(to),t=today(),out=[];
+  if(cxShow.appt||cxShow.task)items.forEach(i=>{
+    if(!i.date||i.date<a||i.date>b||!cxShow[i.kind]||!mine(i.owner,i.shared))return;
+    const tm=i.kind==="appt"?apptTime(i.time):null;
+    out.push({k:i.kind,id:"i"+i.id,date:i.date,min:tm?tm[0]*60+tm[1]:null,dur:60,title:i.type+(i.oppName?" · "+i.oppName:""),sub:[nameOf(i.owner||"CK"),i.notes].filter(Boolean).join(" · "),done:!!i.done,late:!i.done&&i.date<t,ref:i,open:()=>openT(i.kind,i),move:d=>write(()=>db.doc("activities/"+i.id).update({date:d}),"Moved to "+fmtDate(d))});
+  });
+  if(cxShow.next)opps.forEach(o=>{
+    if(!o.next||!o.next.date||o.next.date<a||o.next.date>b||!mine(o.owner))return;
+    const tm=apptTime(o.next.time);
+    out.push({k:"next",id:"n"+o.id,date:o.next.date,min:tm?tm[0]*60+tm[1]:null,dur:30,title:o.next.label+" · "+o.name,sub:"Next step · "+nameOf(o.owner||"CK"),late:o.next.date<t,ref:o,open:()=>openAccount(o.id,"calendar"),move:d=>write(()=>db.doc("opps/"+o.id).update({next:{...o.next,date:d}}),"Next step moved to "+fmtDate(d))});
+  });
+  if(cxShow.ext&&cxExt.connected)cxExt.events.forEach(e=>{
+    if(e.allDay){for(let d=new Date(e.date+"T00:00");dayKey(d)<=e.endDate;d=addDays(d,1)){const k=dayKey(d);if(k>=a&&k<=b)out.push({k:"ext",id:"x"+e.id+k,date:k,min:null,title:e.title,sub:cxExt.provider,busy:e.busy,ext:e})}return}
+    const s=new Date(e.start),k=dayKey(s);if(k<a||k>b)return;
+    out.push({k:"ext",id:"x"+e.id,date:k,min:s.getHours()*60+s.getMinutes(),dur:Math.max(15,Math.round((e.end-e.start)/60000)),title:e.title,sub:cxExt.provider,busy:e.busy,ext:e});
+  });
+  // Flag my timed meetings that overlap another busy item.
+  const timed=out.filter(e=>e.min!=null&&e.k!=="task"&&!e.done&&e.busy!==false);
+  timed.forEach(x=>{if(x.k==="ext")return;const clash=timed.find(y=>y!==x&&y.date===x.date&&y.min<x.min+x.dur&&x.min<y.min+(y.dur||60));if(clash)x.clash=clash.title});
+  return out.sort((x,y)=>x.date.localeCompare(y.date)||(x.min??-1)-(y.min??-1));
+}
+function cxChip(e,withTime){
+  const b=el("button","ev "+e.k+(e.done?" done":"")+(e.late?" late":"")+(e.clash?" clash":""));b.type="button";
+  if(withTime&&e.min!=null)b.append(el("b",null,fmtClock(e.min)+" "));b.append(document.createTextNode(e.title));
+  b.title=[e.min!=null?fmtClock(e.min):"All day",e.title,e.sub,e.clash&&"Overlaps: "+e.clash,e.late&&"Overdue"].filter(Boolean).join("\n");
+  b.onclick=ev=>{ev.stopPropagation();if(e.open)e.open();else toast(e.title+(e.min!=null?" at "+fmtClock(e.min):"")+" · "+e.sub)};
+  if(e.move){b.draggable=true;b.ondragstart=ev=>{cxDrag=e;ev.dataTransfer.effectAllowed="move";try{ev.dataTransfer.setData("text/plain",e.id)}catch(_){}}}
+  return b;
+}
+function cxDrop(cell,date){
+  cell.ondragover=ev=>{if(cxDrag){ev.preventDefault();cell.classList.add("over")}};
+  cell.ondragleave=()=>cell.classList.remove("over");
+  cell.ondrop=ev=>{ev.preventDefault();cell.classList.remove("over");const e=cxDrag;cxDrag=null;if(e&&e.date!==date){logAct(`Rescheduled ${e.title} to ${fmtDate(date)}`,e.ref?.oppId||(e.k==="next"?e.ref.id:""));e.move(date);track("action","Rescheduled on calendar")}};
+}
+function cxRange(){
+  if(cxMode==="month"){const first=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth(),1),s=startOfWeek(first);return [s,addDays(s,41)]}
+  if(cxMode==="week"){const s=startOfWeek(cxAnchor);return [s,addDays(s,6)]}
+  const s=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth(),cxAnchor.getDate());return [s,addDays(s,29)];
+}
+async function cxLoadExternal(force){
+  const [s,e]=cxRange(),from=addDays(s,-7).getTime(),to=addDays(e,7).getTime();
+  if(!force&&(cxExt.loading||(cxExt.checked&&(!cxExt.connected||(from>=cxExt.from&&to<=cxExt.to)))))return;
+  cxExt.loading=true;
+  try{const r=await fetch(`/api/me/external-calendar?from=${from-30*864e5}&to=${to+60*864e5}`,{credentials:"same-origin",cache:"no-store"});const j=await r.json();
+    if(!r.ok)throw Error(j.error);Object.assign(cxExt,{connected:j.connected,provider:j.provider,events:j.events||[],error:j.error||"",from:from-30*864e5,to:to+60*864e5,checked:true,unavailable:false})}
+  catch(err){Object.assign(cxExt,{connected:false,events:[],checked:true,unavailable:true,error:err.message||""})}
+  finally{cxExt.loading=false}
+  if(view==="calendar")renderCalendar();
+}
+function openCalendar(){if(!cxMode)cxMode=innerWidth<700?"agenda":"month";renderCalendar();cxLoadExternal()}
+function renderCalendar(){
+  if(!cxMode)cxMode="month";
+  const [s,e]=cxRange(),t=today(),body=$("cxBody"),evs=cxEvents(s,e);
+  [...$("cxMode").children].forEach(b=>b.classList.toggle("on",b.dataset.m===cxMode));
+  $("cxScope").value=cxScope;document.querySelectorAll(".cxfilters input[data-k]").forEach(c=>c.checked=cxShow[c.dataset.k]);
+  $("cxExtToggle").hidden=!cxExt.connected;$("cxExtName").textContent=cxExt.provider||"My calendar";
+  $("cxConnect").textContent=cxExt.connected?"Calendar connected":"Connect your calendar";
+  $("cxNote").textContent=cxExt.error||"";
+  $("cxTitle").textContent=cxMode==="month"?cxAnchor.toLocaleDateString(undefined,{month:"long",year:"numeric"}):cxMode==="week"?`${s.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${e.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}`:"Next 30 days from "+s.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  const clashes=evs.filter(x=>x.clash&&x.date>=t).length;
+  $("cxSub").textContent=clashes?`${clashes} upcoming meeting${clashes===1?" overlaps":"s overlap"} something else on your calendar (marked ⚠).`:"Appointments, tasks, and next steps from The Voyage in one place. Drag an item to another day to reschedule it.";
+  body.replaceChildren();
+  const byDay=new Map();evs.forEach(x=>byDay.set(x.date,[...(byDay.get(x.date)||[]),x]));
+  const newOn=d=>{if(!guest)openT("appt",null,null,{date:d})};
+  if(cxMode==="month"){
+    const g=el("div","cxmonth");["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>g.append(el("div","cxdow",d)));
+    for(let i=0;i<42;i++){
+      const d=addDays(s,i),k=dayKey(d),list=byDay.get(k)||[],c=el("div","cxday"+(d.getMonth()!==cxAnchor.getMonth()?" out":"")+(k===t?" today":""));
+      const n=el("button","cxnum",String(d.getDate()));n.type="button";n.title="Open this day";n.onclick=ev=>{ev.stopPropagation();cxAnchor=d;cxMode="agenda";cxDayOnly=k;renderCalendar()};c.append(n);
+      list.slice(0,3).forEach(x=>c.append(cxChip(x,true)));
+      if(list.length>3){const m=el("button","cxmore",`+${list.length-3} more`);m.type="button";m.onclick=ev=>{ev.stopPropagation();cxAnchor=d;cxMode="agenda";cxDayOnly=k;renderCalendar()};c.append(m)}
+      c.onclick=()=>newOn(k);c.title=guest?"":"Click to book a meeting on "+fmtDate(k);cxDrop(c,k);g.append(c);
+    }
+    body.append(g);
+  }else if(cxMode==="week"){
+    const w=el("div","cxweek"),hd=el("div","cxwh"),ad=el("div","cxwa"),gr=el("div","cxwg");
+    hd.append(el("div",null,""));ad.append(el("div",null,"All day"));
+    const days=[...Array(7)].map((_,i)=>addDays(s,i)),timed=evs.filter(x=>x.min!=null);
+    const startH=Math.min(7,...timed.map(x=>Math.floor(x.min/60))),endH=Math.max(20,...timed.map(x=>Math.ceil((x.min+(x.dur||60))/60)));
+    const hrs=el("div","cxhrs");for(let h=startH;h<endH;h++)hrs.append(el("div",null,fmtClock(h*60)));gr.append(hrs);
+    days.forEach(d=>{
+      const k=dayKey(d),list=byDay.get(k)||[];
+      hd.append(el("div",k===t?"today":null,d.toLocaleDateString(undefined,{weekday:"short",day:"numeric"})));
+      const a=el("div");list.filter(x=>x.min==null).forEach(x=>a.append(cxChip(x)));cxDrop(a,k);ad.append(a);
+      const col=el("div","cxcol");col.style.height=(endH-startH)*48+"px";
+      const tl=list.filter(x=>x.min!=null),lanes=[];
+      tl.forEach(x=>{let l=lanes.findIndex(end=>end<=x.min);if(l<0){l=lanes.length;lanes.push(0)}lanes[l]=x.min+(x.dur||60);x.lane=l});
+      tl.forEach(x=>{const b=cxChip(x,true);b.style.top=((x.min-startH*60)*48/60)+"px";b.style.height=Math.max(20,(x.dur||60)*48/60-2)+"px";const n=Math.max(1,lanes.length);b.style.left=`calc(${x.lane*100/n}% + 2px)`;b.style.width=`calc(${100/n}% - 4px)`;col.append(b)});
+      if(k===t){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(m>=startH*60&&m<=endH*60){const line=el("div","cxnow");line.style.top=((m-startH*60)*48/60)+"px";col.append(line)}}
+      col.onclick=ev=>{if(guest)return;const r=col.getBoundingClientRect(),m=Math.round(((ev.clientY-r.top)/48*60+startH*60)/30)*30;openT("appt",null,null,{date:k,time:fmtClock(m)})};
+      cxDrop(col,k);gr.append(col);
+    });
+    w.append(hd,ad,gr);body.append(w);
+    const nowEl=gr.querySelector(".cxnow");gr.scrollTop=nowEl?Math.max(0,parseFloat(nowEl.style.top)-120):(8-startH)*48;
+  }else{
+    const ag=el("div","cxag");let any=false;
+    for(let i=0;i<30;i++){
+      const d=addDays(s,i),k=dayKey(d);if(cxDayOnly&&k!==cxDayOnly)continue;
+      const list=byDay.get(k)||[];if(!list.length&&!cxDayOnly&&k!==t)continue;any=true;
+      const h=el("div","cxagd"+(k===t?" today":""),(k===t?"Today · ":"")+d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}));
+      if(!guest){const add=el("button","cxmore","+ Book");add.type="button";add.onclick=()=>newOn(k);h.append(" ",add)}
+      ag.append(h);
+      if(!list.length)ag.append(el("div","empty","Nothing scheduled."));
+      list.forEach(x=>{const b=cxChip(x);b.replaceChildren(el("span","city",x.min!=null?fmtClock(x.min):"All day"),(()=>{const t=el("span",null,x.title);t.append(el("small",null,[x.sub,x.clash&&"⚠ Overlaps "+x.clash,x.late&&"Overdue"].filter(Boolean).join(" · ")));return t})());ag.append(b)});
+    }
+    if(cxDayOnly){const back=el("button","cxmore","‹ Back to month");back.type="button";back.onclick=()=>{cxDayOnly=null;cxMode="month";renderCalendar()};ag.prepend(back)}
+    if(!any)ag.append(el("div","empty","Nothing scheduled in the next 30 days."));
+    body.append(ag);
+  }
+  cxLoadExternal();
+}
+let cxDayOnly=null;
+function cxShift(n){cxDayOnly=null;if(cxMode==="month")cxAnchor=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth()+n,1);else cxAnchor=addDays(cxAnchor,n*(cxMode==="week"?7:30));renderCalendar()}
+$("cxPrev").onclick=()=>cxShift(-1);$("cxNext").onclick=()=>cxShift(1);
+$("cxToday").onclick=()=>{cxAnchor=new Date();cxDayOnly=null;renderCalendar()};
+$("cxMode").onclick=e=>{const m=e.target.dataset.m;if(!m)return;cxMode=m;cxDayOnly=null;cxSave();renderCalendar();track("action","Switched calendar to "+m)};
+$("cxScope").onchange=()=>{cxScope=$("cxScope").value;cxSave();renderCalendar()};
+document.querySelectorAll(".cxfilters input[data-k]").forEach(c=>c.onchange=()=>{cxShow[c.dataset.k]=c.checked;cxSave();renderCalendar()});
+$("cxNew").onclick=()=>openT("appt",null,null,{date:cxDayOnly||(dayKey(cxAnchor)<today()?today():dayKey(cxAnchor))});
+document.addEventListener("keydown",e=>{
+  if(view!=="calendar"||e.ctrlKey||e.metaKey||e.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||"")||document.querySelector("dialog[open]"))return;
+  const k=e.key.toLowerCase();
+  if(k==="arrowleft")cxShift(-1);else if(k==="arrowright")cxShift(1);else if(k==="t")$("cxToday").click();
+  else if(["m","w","a"].includes(k)){cxMode={m:"month",w:"week",a:"agenda"}[k];cxDayOnly=null;cxSave();renderCalendar()}
+});
+$("cxConnect").onclick=()=>{
+  $("xStatus").textContent=cxExt.unavailable?(cxExt.error||"Calendar connections aren't available yet."):cxExt.connected?`Connected to ${cxExt.provider}. Paste a new address to replace it.`:"Not connected.";
+  $("xUrl").value="";$("xOff").hidden=!cxExt.connected;$("xdlg").showModal();setTimeout(()=>$("xUrl").focus(),30);
+};
+$("xCancel").onclick=()=>$("xdlg").close();
+$("xSave").onclick=async()=>{
+  const url=$("xUrl").value.trim();if(!url){$("xUrl").focus();return}
+  try{const r=await fetch("/api/me/external-calendar",{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({url})});const j=await r.json();if(!r.ok)throw Error(j.error);
+    $("xdlg").close();toast("Connected to "+j.provider);track("action","Connected outside calendar");cxShow.ext=true;await cxLoadExternal(true)}
+  catch(e){$("xStatus").textContent=e.message||"That didn't work. Try again."}
+};
+$("xOff").onclick=async()=>{
+  if(!confirm("Disconnect your calendar from The Voyage? Your calendar itself isn't changed."))return;
+  try{const r=await fetch("/api/me/external-calendar",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error();$("xdlg").close();Object.assign(cxExt,{connected:false,events:[],provider:""});toast("Calendar disconnected");renderCalendar()}
+  catch(_){toast("That didn't work. Try again.")}
+};
+
 // Audit log: written by the server on every change, sign-in, and sign-out.
 let auditRows=null,auditDays="30",auditWho="",auditWhat="";
 const AUDIT_KINDS={opps:"Account",activities:"Task or appointment",activity:"Activity log",notes:"Meeting note",channels:"Chat",messages:"Chat message",vendors:"Vendor",profiles:"Profile",members:"Member"};
@@ -1968,8 +2189,8 @@ function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));

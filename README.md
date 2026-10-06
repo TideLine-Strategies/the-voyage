@@ -35,3 +35,9 @@ Editors see an **Admin** page with Overview, Usage, Security, Data health, and S
 - **Audit log** (Admin › Audit log) is written by the Worker on every create, update, and delete, plus sign-ins and sign-outs. Labels come from record names; chat text is never stored. Kept 365 days.
 - `migrations/0005_audit_calendar.sql` creates the audit and calendar tables. Until it is applied, changes still work, nothing is audited, and calendar links report that setup is needed.
 - **Daily brief** on Home asks Muninn for today's priorities.
+
+## Calendar
+
+The **Calendar** page shows appointments, tasks, and account next steps in month, week, and agenda views (keyboard: ←/→, T, M, W, A). Drag an item to another day to reschedule it; click an empty day or time slot to book a meeting (editors). Timed meetings that overlap another busy item are marked ⚠.
+
+Each member can connect one outside calendar (Google, Outlook, or Apple) by pasting its private iCal address. The Worker fetches it server-side (`src/ical.js` parses time zones, all-day, repeating events, exceptions, and cancellations), shows the events only to that member, and never returns the address to the browser. Only https/webcal addresses on Google, Microsoft, and iCloud calendar hosts are accepted. The `external_calendars` table is in `migrations/0005_audit_calendar.sql`.

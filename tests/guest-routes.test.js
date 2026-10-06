@@ -278,3 +278,30 @@ test("appointment times", () => {
   assert.equal(parseTime("tomorrow"), null);
   assert.equal(parseTime(""), null);
 });
+
+test("outside calendar: a member connects their own, sees only their events, and the address stays private", async () => {
+  const { call, sqlite } = fixture();
+  migrate(sqlite, "0005_audit_calendar.sql");
+  const secret = "https://calendar.google.com/calendar/ical/mary%40example.com/private-abc123/basic.ics";
+  assert.equal((await call("b", "PUT", "/api/me/external-calendar", { url: "https://evil.example/cal.ics" })).status, 400);
+  const put = await (await call("b", "PUT", "/api/me/external-calendar", { url: secret.replace("https://", "webcal://") })).json();
+  assert.equal(put.provider, "Google Calendar");
+  const originalFetch = globalThis.fetch;
+  let fetched;
+  globalThis.fetch = async url => { fetched = url; return new Response("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:1\r\nDTSTART:20261007T150000Z\r\nDTEND:20261007T160000Z\r\nSUMMARY:Dentist\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"); };
+  try {
+    const response = await call("b", "GET", `/api/me/external-calendar?from=${Date.UTC(2026, 9, 1)}&to=${Date.UTC(2026, 10, 1)}`);
+    const text = await response.text();
+    assert.equal(fetched, secret);
+    assert.doesNotMatch(text, /private-abc123|calendar\.google\.com/);
+    const data = JSON.parse(text);
+    assert.deepEqual(data.events.map(e => e.title), ["Dentist"]);
+    assert.equal((await (await call("a", "GET", "/api/me/external-calendar")).json()).connected, false, "Quan doesn't see Mary's calendar");
+    globalThis.fetch = async () => new Response("nope", { status: 404 });
+    const broken = await (await call("b", "GET", "/api/me/external-calendar")).json();
+    assert.equal(broken.connected, true);
+    assert.match(broken.error, /Couldn't read/);
+  } finally { globalThis.fetch = originalFetch; }
+  assert.equal((await (await call("b", "DELETE", "/api/me/external-calendar")).json()).connected, false);
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM external_calendars").get().n, 0);
+});

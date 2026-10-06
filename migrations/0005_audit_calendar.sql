@@ -18,3 +18,12 @@ CREATE TABLE IF NOT EXISTS calendar_feeds (
   token_hash TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL
 );
+
+-- Each member can connect one outside calendar (a private iCal address from Google, Outlook, or
+-- Apple) so their own meetings appear on The Voyage calendar. Only that member can see the events,
+-- and the address itself is never sent back to the browser.
+CREATE TABLE IF NOT EXISTS external_calendars (
+  member_id TEXT PRIMARY KEY,
+  url TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
