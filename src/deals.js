@@ -73,7 +73,7 @@ export function calculateTotals(deal) {
 // revenue share are confidential: they are entered in the app (catalog/processing), never in code,
 // so every default here is zero.
 export const PROCESSING_DEFAULTS = {
-  partner: "", sharePct: 0, defaultInterchangePct: null,
+  sharePct: 0, defaultInterchangePct: null,
   cardPct: 0, cardAuth: 0, amexPct: 0, amexAuth: 0, batchFee: 0, midMonthly: 0, gatewayMonthly: 0, hostedPerTxn: 0, gatewayBilledToMerchant: false,
 };
 const pnum = (value, max) => value === "" || value == null ? null : num(value, 0, max, null);
@@ -88,7 +88,7 @@ export function sanitizeProcessing(input) {
   };
 }
 export function sanitizeProcessingSettings(input) {
-  const s = input && typeof input === "object" ? input : {}, out = { kind: "processing", partner: text(s.partner, 80) };
+  const s = input && typeof input === "object" ? input : {}, out = { kind: "processing" };
   for (const key of ["sharePct", "cardPct", "cardAuth", "amexPct", "amexAuth", "batchFee", "midMonthly", "gatewayMonthly", "hostedPerTxn"]) out[key] = num(s[key], 0, key === "sharePct" ? 100 : 10000);
   out.defaultInterchangePct = pnum(s.defaultInterchangePct, 10);
   out.gatewayBilledToMerchant = Boolean(s.gatewayBilledToMerchant);

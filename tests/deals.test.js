@@ -45,7 +45,7 @@ test("close package requirements", () => {
 });
 
 // Illustrative numbers only; real partner rates live in the CRM database, never in this public repo.
-const settings = sanitizeProcessingSettings({ partner: "Example Processor", sharePct: 20, defaultInterchangePct: 2, cardPct: 0.1, cardAuth: 0.05, amexPct: 0.2, amexAuth: 0.1, batchFee: 0.2, midMonthly: 10, gatewayMonthly: 5, hostedPerTxn: 0.1 });
+const settings = sanitizeProcessingSettings({ sharePct: 20, defaultInterchangePct: 2, cardPct: 0.1, cardAuth: 0.05, amexPct: 0.2, amexAuth: 0.1, batchFee: 0.2, midMonthly: 10, gatewayMonthly: 5, hostedPerTxn: 0.1 });
 
 test("processing estimate: merchant cost, savings, partner net revenue, and our share", () => {
   const p = sanitizeProcessing({ enabled: true, volume: 100000, txns: 1000, amexShare: 10, rate: 2.5, perTxn: 0.1, currentRate: 3, currentPerTxn: 0.1, batches: 20 });

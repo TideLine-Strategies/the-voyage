@@ -363,7 +363,6 @@ textarea{min-height:70px;resize:vertical}
 @media (max-width:980px){.dlgrid{grid-template-columns:1fr}.dlside{position:static}}
 @media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:minmax(0,1fr) 5rem 28px}.dllines .row>:nth-child(n+2):not(:nth-child(6)):not(:last-child){display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
 .pphead{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
-#ppPartner{margin-left:6px}
 .ppres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 .ppres>div{background:var(--card);border-radius:10px;padding:10px 12px}.ppres span{display:block;font-size:12px;color:var(--muted)}.ppres b{font-size:18px;font-variant-numeric:tabular-nums}
 .ppres .good b{color:var(--green)}.ppres .bad b{color:var(--red)}.ppres .wide{grid-column:1/-1;font-size:13px}
@@ -494,7 +493,6 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
     <button class="nav" data-view="cadence">Pillage</button>
-    <button class="nav" data-view="order">Order</button>
     <div class="sep"></div>
     <button class="nav nav-oden" data-view="oden"><span class="rv-slot" data-size="26"></span>Muninn</button>
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
@@ -584,7 +582,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
             <label>Internal notes<textarea id="dlNotes" maxlength="3000" placeholder="Context for the reviewer"></textarea></label>
           </div>
           <div class="dlsec" id="dlProcSec"><h2><span>4</span>Payment processing</h2>
-            <label class="chk"><input type="checkbox" id="ppOn">This deal includes payment processing<span class="city" id="ppPartner"></span></label>
+            <label class="chk"><input type="checkbox" id="ppOn">This deal includes payment processing</label>
             <div id="ppBody" hidden>
               <div class="pphead">Their volume</div>
               <div class="grid3"><label>Monthly card volume ($)<input id="ppVol" type="number" min="0" step="100" inputmode="decimal"></label><label>Transactions per month<input id="ppTx" type="number" min="0" step="1"></label><label>Amex share of volume (%)<input id="ppAmex" type="number" min="0" max="100" step="1" value="0"></label></div>
@@ -1722,7 +1720,7 @@ $("vDel").onclick=async()=>{
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
 
-const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
 let usage=null,usageBusy=false;
 async function loadUsage(){
   if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
@@ -1957,7 +1955,7 @@ function dealTotals(d){
   return {oneTime:r(one),mrr:r(mrr),arr:r(mrr*12),tcv:r(tcv),listTcv:r(ltcv),discountPct:ltcv>0?Math.round((1-tcv/ltcv)*1000)/10:0,processing:calcProcessing(d.processing)};
 }
 // Processing estimate; mirrors calculateProcessing in src/deals.js. Partner rates come from the database.
-const PROC_DEFAULTS={partner:"",sharePct:0,defaultInterchangePct:null,cardPct:0,cardAuth:0,amexPct:0,amexAuth:0,batchFee:0,midMonthly:0,gatewayMonthly:0,hostedPerTxn:0,gatewayBilledToMerchant:false};
+const PROC_DEFAULTS={sharePct:0,defaultInterchangePct:null,cardPct:0,cardAuth:0,amexPct:0,amexAuth:0,batchFee:0,midMonthly:0,gatewayMonthly:0,hostedPerTxn:0,gatewayBilledToMerchant:false};
 const procSettings=()=>({...PROC_DEFAULTS,...(catalog.find(c=>c.id==="processing")||{})});
 function calcProcessing(p){
   if(!p?.enabled)return null;const s=procSettings(),missing=[],r=x=>Math.round(x*100)/100;
@@ -2069,10 +2067,10 @@ let residuals=[];
 function renderProcessingFinancials(w,won,open){
   const s=procSettings(),est=d=>d.totals?.processing&&!d.totals.processing.missing?.length?d.totals.processing:null,sum=(l,f)=>l.reduce((a,x)=>a+(f(x)||0),0);
   const wonP=won.filter(est),openP=open.filter(est),now=new Date(),thisMonth=iso(now).slice(0,7);
-  const sec=usageSection("Payment processing"+(s.partner?" ("+s.partner+")":""),"Estimated residuals from deals, and the actual results you record each month.");
+  const sec=usageSection("Payment processing","Estimated residuals from deals, and the actual results you record each month.");
   const t=adTiles([[usd(sum(wonP,d=>est(d).residualMonthly))+"/mo","estimated residual from won deals"],[usdK(sum(wonP,d=>d.processing.volume)),"monthly card volume, won merchants"],[usd(sum(openP,d=>est(d).residualMonthly*dealProb(d)/100))+"/mo","weighted residual in the pipeline"],[usdK(sum(wonP,d=>(est(d).savingsMonthly||0)*12)),"yearly savings for won merchants"]]);
   sec.append(t);
-  if(!s.sharePct)sec.append(el("div","dlflag warn","Set your revenue share and the partner's cost basis under Deals › Products & rules to turn on residual estimates."));
+  if(!s.sharePct)sec.append(el("div","dlflag warn","Set your revenue share and the processor's cost basis under Deals › Products & rules to turn on residual estimates."));
   const months=[...Array(6)].map((_,i)=>iso(new Date(now.getFullYear(),now.getMonth()-5+i,1)).slice(0,7));
   const byMonth=months.map(m=>sum(residuals.filter(r=>r.month===m),r=>r.residual)),mx=Math.max(1,...byMonth),fb=el("div","fbars");
   months.forEach((m,i)=>{const c=el("div");c.append(el("b",null,byMonth[i]?usd(byMonth[i]):""));const bar=document.createElement("i");bar.style.height=(byMonth[i]/mx*100)+"%";bar.style.background="var(--blue)";c.append(bar,el("span",null,new Date(m+"-01T00:00").toLocaleDateString(undefined,{month:"short"})));fb.append(c)});
@@ -2093,7 +2091,7 @@ function renderProcessingFinancials(w,won,open){
   const fill=()=>{const r=residuals.find(x=>x.oppId===ms.value&&x.month===mo.value);vol.value=r?.volume??"";tx.value=r?.txns??"";res.value=r?.residual??"";note.value=r?.note??""};ms.onchange=fill;mo.onchange=fill;fill();
   const sv=el("button","btn primary","Save month");sv.onclick=()=>{if(!ms.value||!mo.value||res.value===""){toast("Pick the merchant and month, and enter the residual");return}
     write(()=>db.doc(`residuals/${ms.value}_${mo.value}`).set({month:mo.value,oppId:ms.value,volume:Number(vol.value)||0,txns:Number(tx.value)||0,residual:Number(res.value)||0,note:note.value.trim(),source:"manual"}),"Month saved").then(()=>track("action","Recorded a processing month"))};
-  f.append(g,sv,el("div","city","Copy these from the partner's monthly residual report. Saving the same merchant and month again replaces it. When the partner portal is connected, it will fill these in automatically."));
+  f.append(g,sv,el("div","city","Copy these from the processor's monthly residual report. Saving the same merchant and month again replaces it. When the processor's portal is connected, it will fill these in automatically."));
   sec.append(f);w.append(sec);
 }
 function renderCatalog(w){
@@ -2118,17 +2116,17 @@ function renderCatalog(w){
   const sv=el("button","btn primary","Save guardrails");sv.onclick=()=>{const data={kind:"rules"};ins.forEach(i=>data[i.dataset.k]=Math.max(Number(i.min),Math.min(Number(i.max),Number(i.value)||0)));write(()=>db.doc("catalog/rules").set(data),"Guardrails saved")};
   g.append(grid,sv);rs.append(g,el("div","city","Special terms always need approval."));w.append(rs);
   // Processing partner terms: entered here, stored in the database, never in code.
-  const s=procSettings(),pp=usageSection("Payment processing partner","From your referral agreement: your revenue share and the partner's cost basis. Used to estimate residuals on each deal. Only Quan and Cody can see these.");
+  const s=procSettings(),pp=usageSection("Payment processing terms","From your referral agreement: your revenue share and the processor's cost basis. Used to estimate residuals on each deal. Only Quan and Cody can see these.");
   const box=el("div","dlsec"),fields=[];
   const field=(grid,label,key,step,type)=>{const l=el("label",null,label);const i=document.createElement("input");i.type=type||"number";if(!type){i.min=0;i.step=step||"0.01"}i.value=s[key]??"";i.dataset.k=key;l.append(i);grid.append(l);fields.push(i)};
   const head=t=>{const h=el("div","pphead",t);box.append(h)};
-  const g1=el("div","grid3");field(g1,"Partner name","partner",null,"text");field(g1,"Your share of their net revenue (%)","sharePct","0.1");field(g1,"Default interchange estimate (%)","defaultInterchangePct");box.append(g1);
-  head("Visa, Mastercard, Discover cost");const g2=el("div","grid3");add(g2,"Volume (%)","cardPct","0.001");add(g2,"Per authorization ($)","cardAuth");box.append(g2);
-  head("Amex cost");const g3=el("div","grid3");add(g3,"Volume (%)","amexPct","0.001");add(g3,"Per authorization ($)","amexAuth");box.append(g3);
-  head("Account and gateway cost");const g4=el("div","grid3");add(g4,"Per settled batch ($)","batchFee");add(g4,"Monthly per merchant account ($)","midMonthly");add(g4,"Gateway license, monthly ($)","gatewayMonthly");add(g4,"Hosted payments, per transaction ($)","hostedPerTxn");
+  const g1=el("div","grid3");field(g1,"Your share of the processor's net revenue (%)","sharePct","0.1");field(g1,"Default interchange estimate (%)","defaultInterchangePct");box.append(g1);
+  head("Visa, Mastercard, Discover cost");const g2=el("div","grid3");field(g2,"Volume (%)","cardPct","0.001");field(g2,"Per authorization ($)","cardAuth");box.append(g2);
+  head("Amex cost");const g3=el("div","grid3");field(g3,"Volume (%)","amexPct","0.001");field(g3,"Per authorization ($)","amexAuth");box.append(g3);
+  head("Account and gateway cost");const g4=el("div","grid3");field(g4,"Per settled batch ($)","batchFee");field(g4,"Monthly per merchant account ($)","midMonthly");field(g4,"Gateway license, monthly ($)","gatewayMonthly");field(g4,"Hosted payments, per transaction ($)","hostedPerTxn");
   const gl=el("label","chk");const gb=document.createElement("input");gb.type="checkbox";gb.checked=!!s.gatewayBilledToMerchant;gl.append(gb,"Gateway fees are billed to the merchant");gl.style.alignSelf="end";g4.append(gl);box.append(g4);
   const save=el("button","btn primary","Save processing terms");save.style.marginTop="8px";
-  save.onclick=()=>{const data={partner:"",gatewayBilledToMerchant:gb.checked};fields.forEach(i=>{data[i.dataset.k]=i.type==="text"?i.value.trim():i.value===""?null:Number(i.value)});write(()=>db.doc("catalog/processing").set(data),"Processing terms saved")};
+  save.onclick=()=>{const data={gatewayBilledToMerchant:gb.checked};fields.forEach(i=>{data[i.dataset.k]=i.type==="text"?i.value.trim():i.value===""?null:Number(i.value)});write(()=>db.doc("catalog/processing").set(data),"Processing terms saved")};
   box.append(save);pp.append(box);w.append(pp);
 }
 
@@ -2149,7 +2147,7 @@ function fillBuilder(){
   const t=d.terms;$("dlStart").value=t.startDate||"";$("dlMonths").value=t.months;$("dlFree").value=t.freeMonths;$("dlPay").value=t.paymentTerms;$("dlBill").value=t.billingFrequency;$("dlRenew").checked=!!t.autoRenew;$("dlSpecial").value=t.special||"";$("dlNotes").value=d.notes||"";
   $("dcStart").value=t.startDate||"";const c=d.close;$("dcSigned").checked=!!c.agreementSigned;$("dcDate").value=c.signedDate||"";$("dcName").value=c.signerName||"";$("dcTitle").value=c.signerTitle||"";$("dcEmail").value=c.signerEmail||"";$("dcBilling").value=c.billingEmail||"";$("dcPay").value=c.paymentMethod||"";$("dcHandoff").value=c.handoff||"";
   [...$("dlMain").querySelectorAll(".dlsec")].slice(0,4).forEach(s=>s.classList.toggle("locked",!editable));
-  const pp=d.processing||blankDeal().processing,ps=procSettings(),pv=v=>v??"";$("ppOn").checked=!!pp.enabled;$("ppBody").hidden=!pp.enabled;$("ppPartner").textContent=ps.partner?"(through "+ps.partner+")":"";
+  const pp=d.processing||blankDeal().processing,ps=procSettings(),pv=v=>v??"";$("ppOn").checked=!!pp.enabled;$("ppBody").hidden=!pp.enabled;
   $("ppVol").value=pv(pp.volume);$("ppTx").value=pv(pp.txns);$("ppAmex").value=pp.amexShare??0;$("ppRate").value=pv(pp.rate);$("ppPer").value=pv(pp.perTxn);$("ppMon").value=pp.monthlyFee??0;$("ppCurRate").value=pv(pp.currentRate);$("ppCurTx").value=pv(pp.currentPerTxn);$("ppCurMon").value=pp.currentMonthly??0;$("ppIc").value=pv(pp.interchangePct);$("ppIc").placeholder=ps.defaultInterchangePct!=null?"Default "+ps.defaultInterchangePct+"%":"From their statement";$("ppBatch").value=pp.batches||26;$("ppHosted").checked=pp.hosted!==false;
   $("dlCloseSec").classList.toggle("locked",!closeOk);
   $("dlCloseHint").textContent=d.status==="won"?`Closed won ${fmtDay(d.wonTs)} by ${nameOf(d.closedBy)}.`:closeOk?"Fill this in once the deal is approved and signed. It's what the team needs to start the customer.":"Unlocks once the deal is approved.";
@@ -2195,7 +2193,7 @@ function refreshSummary(){
     tile("They pay today",pr.currentMonthly==null?"–":usd(pr.currentMonthly)+"/mo");
     tile("They'd pay with us",usd(pr.merchantMonthly)+"/mo"+(pr.effectiveRate!=null?` (${pr.effectiveRate}%)`:""));
     tile("They save",pr.savingsMonthly==null?"–":`${usd(pr.savingsMonthly)}/mo · ${usd(pr.savingsMonthly*12)}/yr`,pr.savingsMonthly>0?"good":pr.savingsMonthly<0?"bad":"");
-    tile(`${procSettings().partner||"Partner"} net revenue`,usd(pr.netMonthly)+"/mo",pr.netMonthly<0?"bad":"");
+    tile("Processor net revenue",usd(pr.netMonthly)+"/mo",pr.netMonthly<0?"bad":"");
     tile(`TideLine share (${procSettings().sharePct||0}%)`,`${usd(pr.residualMonthly)}/mo · ${usd(pr.residualAnnual)}/yr`,"good");
     tile("Processing cost (est.)",usd(pr.costMonthly)+"/mo");
     if(pr.missing.length){const m=el("div","wide dlflag warn","Still needed for an accurate estimate: "+pr.missing.join(", ")+".");box.append(m)}
@@ -2638,7 +2636,6 @@ function renderAdmin(){
 }
 const SOON={
   cadence:["Pillage","Your follow-up rhythm per opp: touch schedules, drafted messages, and what's due when."],
-  order:["Order","Where opps land once they're won: orders placed, what was sold, and what's been delivered."],
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
