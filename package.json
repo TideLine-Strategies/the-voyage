@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/worker.js && node --check src/ical.js && node --check public/voyage-db.js && node --test tests/*.test.js",
+    "check": "node --check src/worker.js && node --check src/ical.js && node --check src/deals.js && node --check public/voyage-db.js && node --test tests/*.test.js",
     "deploy": "wrangler deploy --profile tideline",
     "migrate:remote": "wrangler d1 migrations apply the-voyage --remote --profile tideline"
   },

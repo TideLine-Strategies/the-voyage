@@ -41,3 +41,14 @@ Editors see an **Admin** page with Overview, Usage, Security, Data health, and S
 The **Calendar** page shows appointments, tasks, and account next steps in month, week, and agenda views (keyboard: ←/→, T, M, W, A). Drag an item to another day to reschedule it; click an empty day or time slot to book a meeting (editors). Timed meetings that overlap another busy item are marked ⚠.
 
 Each member can connect one outside calendar (Google, Outlook, or Apple) by pasting its private iCal address. The Worker fetches it server-side (`src/ical.js` parses time zones, all-day, repeating events, exceptions, and cancellations), shows the events only to that member, and never returns the address to the browser. Only https/webcal addresses on Google, Microsoft, and iCloud calendar hosts are accepted. The `external_calendars` table is in `migrations/0005_audit_calendar.sql`.
+
+## Deals and financials
+
+**Deals** (editors only) is a deal builder modeled on CPQ and deal-desk tools:
+
+1. **Build**: pick an account, add products from the catalog or custom lines (one-time, monthly, or yearly), set quantity, price, and discount, then terms (start, length, free months, payment terms, billing, auto-renew, special terms). A live summary shows monthly and yearly recurring revenue, one-time revenue, total contract value, and effective discount.
+2. **Guardrails**: deals above the discount limit, below the minimum term, with long payment terms, extra free months, or any special terms need approval from another editor. Deals inside the guardrails are approved on submit. Limits are set under Deals › Products & rules.
+3. **Close package**: signed agreement, date, signer, billing contact, start date, payment method, and onboarding handoff are required to submit a deal as closed won. Won deals mark their account; lost deals need a reason.
+4. **Financials**: booked revenue by quarter and month, new yearly recurring revenue, win rate, average deal and discount, weighted pipeline, a three-month forecast, and breakdowns by rep and lead source. Deals export to CSV under Admin › System.
+
+All status changes go through `/api/deals` (src/deals.js has the math and rules); the generic document API refuses deal writes, totals are recomputed on the server, and editors can't approve their own deals while another editor exists. Every step is in the deal history and the audit log. No migration is needed.

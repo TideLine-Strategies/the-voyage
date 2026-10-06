@@ -305,3 +305,43 @@ test("outside calendar: a member connects their own, sees only their events, and
   assert.equal((await (await call("b", "DELETE", "/api/me/external-calendar")).json()).connected, false);
   assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM external_calendars").get().n, 0);
 });
+
+test("deal workflow: draft, guardrails, review by the other editor, close package, won, reopen", async () => {
+  const { call, seed, sqlite } = fixture();
+  sqlite.prepare("INSERT INTO members (id,name,email,role) VALUES ('CK','Cody','c@example.com','edit') ON CONFLICT(id) DO NOTHING").run();
+  sqlite.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, 'CK', ?, ?)").run(createHash("sha256").update("d".repeat(64)).digest("hex"), Date.now() + 86400000, Date.now());
+  seed("opps", "gym", { name: "Sample Gym", stage: 5 });
+  const draft = { name: "Sample Gym annual", oppId: "gym", expectedClose: "2026-10-30",
+    lines: [{ name: "Platform", billing: "monthly", qty: 1, price: 100, listPrice: 100, discount: 25 }], terms: { months: 12 } };
+  assert.equal((await call("b", "POST", "/api/deals", draft)).status, 403, "guests can't build deals");
+  assert.equal((await call("b", "GET", "/api/collection/deals")).status, 403, "or see them");
+  const created = await (await call("a", "POST", "/api/deals", { ...draft, status: "won", totals: { tcv: 1 } })).json();
+  assert.equal(created.status, "draft");
+  assert.equal(created.totals.mrr, 75);
+  assert.equal(created.flags.length, 2);
+  assert.equal((await call("a", "PATCH", `/api/document/deals/${created.id}`, { status: "won" })).status, 403, "no shortcuts around the workflow");
+  assert.equal((await call("a", "POST", `/api/deals/${created.id}/won`)).status, 409);
+  const submitted = await (await call("a", "POST", `/api/deals/${created.id}/submit`)).json();
+  assert.equal(submitted.status, "pending");
+  assert.equal((await call("a", "PUT", `/api/deals/${created.id}`, draft)).status, 409, "locked while waiting for approval");
+  assert.equal((await call("a", "POST", `/api/deals/${created.id}/approve`)).status, 403, "can't approve your own deal");
+  assert.equal((await call("d", "POST", `/api/deals/${created.id}/changes`, {})).status, 400, "needs a note");
+  assert.equal((await (await call("d", "POST", `/api/deals/${created.id}/changes`, { note: "Max 15% please" })).json()).status, "changes");
+  const fixed = await (await call("a", "PUT", `/api/deals/${created.id}`, { ...draft, lines: [{ ...draft.lines[0], discount: 10 }] })).json();
+  assert.deepEqual(fixed.flags, []);
+  assert.equal((await (await call("a", "POST", `/api/deals/${created.id}/submit`)).json()).status, "approved", "within guardrails is auto-approved");
+  const incomplete = await call("a", "POST", `/api/deals/${created.id}/won`, { close: { agreementSigned: true } });
+  assert.equal(incomplete.status, 400);
+  assert.ok((await incomplete.json()).problems.length >= 4);
+  const won = await (await call("a", "POST", `/api/deals/${created.id}/won`, { terms: { startDate: "2026-11-01" }, close: { agreementSigned: true, signedDate: "2026-10-28", signerName: "Pat", signerEmail: "pat@gym.example", billingEmail: "ap@gym.example" } })).json();
+  assert.equal(won.status, "won");
+  assert.deepEqual(won.history.map(h => h.action), ["Created", "Submitted for approval", "Changes requested", "Submitted (within guardrails, auto-approved)", "Closed won"]);
+  const opp = JSON.parse(sqlite.prepare("SELECT data_json FROM documents WHERE collection='opps' AND id='gym'").get().data_json);
+  assert.equal(opp.closed, "won");
+  assert.equal(opp.wonDealId, created.id);
+  assert.equal((await call("a", "DELETE", `/api/deals/${created.id}`)).status, 409, "won deals can't be deleted");
+  assert.equal((await (await call("a", "POST", `/api/deals/${created.id}/reopen`, { note: "Customer changed seats" })).json()).status, "draft");
+  assert.equal(JSON.parse(sqlite.prepare("SELECT data_json FROM documents WHERE collection='opps' AND id='gym'").get().data_json).closed, undefined);
+  assert.equal((await call("a", "POST", `/api/deals/${created.id}/lost`, {})).status, 400, "lost needs a reason");
+  assert.equal((await (await call("a", "POST", `/api/deals/${created.id}/lost`, { note: "Went with a competitor" })).json()).status, "lost");
+});

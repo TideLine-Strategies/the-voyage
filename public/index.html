@@ -319,6 +319,48 @@ textarea{min-height:70px;resize:vertical}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .view-badge{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid currentColor;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 .view-badge[hidden]{display:none}
+/* Deals */
+.nav[data-view="deals"]{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#dsTabs span{display:inline-block;min-width:18px;margin-left:6px;font-size:11px;background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-weight:600}#dsTabs span[hidden]{display:none}
+.dlgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.dlsec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.dlsec h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.dlsec h2 span{width:22px;height:22px;border-radius:50%;background:var(--red-bg);color:var(--red-soft);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.dlsec.locked{opacity:.85}.dlsec.locked :is(input,select,textarea,button.lx){pointer-events:none}
+.dlsec .grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dllines .row{grid-template-columns:minmax(0,1.6fr) 7rem 4.5rem 6.5rem 4.5rem 6rem 28px;cursor:default;align-items:center}
+.dllines .row:hover{background:none}
+.dllines input,.dllines select{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:7px;padding:6px 7px;font-size:13px;color:var(--text);margin:0}
+.dllines .amt{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.dllines .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
+.dllines .list{font-size:11px;color:var(--muted)}
+.dladd{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.dladd select{background:var(--card);border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:14px;color:var(--text);min-width:220px}
+.dlside{position:sticky;top:20px}
+.dlsum{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.dlsum .k{font-size:12px;color:var(--muted)}.dlsum .big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;margin:2px 0 12px}
+.dlnums{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.dlnums span{display:block;font-size:12px;color:var(--muted)}.dlnums b{font-variant-numeric:tabular-nums}
+.dlflag{font-size:13px;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.dlflag.warn{background:color-mix(in srgb,var(--amber) 15%,transparent)}.dlflag.ok{background:var(--green-bg);color:var(--green)}.dlflag.bad{background:var(--red-bg)}
+.dlflag ul{margin:4px 0 0;padding-left:18px}
+.dlacts{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dlacts .btn{width:100%}
+#dlNote{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text);margin:4px 0 8px}
+.spill{font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--card);color:var(--muted);border:1px solid var(--line-2)}
+.spill.pending,.spill.changes{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);border-color:transparent}
+.spill.approved{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue);border-color:transparent}
+.spill.won{background:var(--green-bg);color:var(--green);border-color:transparent}.spill.lost{background:var(--red-bg);color:var(--red);border-color:transparent}
+.dtbl .row{grid-template-columns:minmax(0,1.7fr) 8rem 6rem 7rem 7rem 2.5rem}
+.dtbl .money,.ftbl .money{text-align:right;font-variant-numeric:tabular-nums}
+.dhist{font-size:13px;border-left:2px solid var(--line-2);padding:2px 0 10px 12px;position:relative}
+.dhist::before{content:"";position:absolute;left:-5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.dhist small{color:var(--muted)}.dhist div{white-space:pre-wrap;margin-top:2px}
+.ctbl .row{grid-template-columns:minmax(0,1.4fr) 8rem 7rem minmax(0,1.6fr) 5rem 4.5rem;cursor:default}.ctbl .row:hover{background:none}
+.ctbl input,.ctbl select{width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:7px;padding:6px 7px;font-size:13px;color:var(--text);margin:0}
+.fbars{display:flex;align-items:end;gap:10px;height:160px;padding:14px 16px 0}
+.fbars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:4px;font-size:11px;color:var(--muted);min-width:0}
+.fbars i{display:block;width:100%;max-width:46px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px}
+.fbars b{font-size:11px;color:var(--text);font-weight:600;white-space:nowrap}
+@media (max-width:980px){.dlgrid{grid-template-columns:1fr}.dlside{position:static}}
+@media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:minmax(0,1fr) 5rem 28px}.dllines .row>:nth-child(n+2):not(:nth-child(6)):not(:last-child){display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
 /* Calendar */
 .cxbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .cxnav{display:flex;align-items:center;gap:6px}.cxnav h2{font-size:18px;margin:0 0 0 8px;white-space:nowrap}
@@ -387,7 +429,7 @@ textarea{min-height:70px;resize:vertical}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
-body.guest .nav[data-view="vendors"],body.guest #view-vendors{display:none!important}
+body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
 body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
 .usec{margin-top:22px}.usec h2{font-size:16px;margin:0 0 4px}.usec .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
 .ucols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
@@ -441,6 +483,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="calendar">Calendar</button>
     <button class="nav" data-view="notes">Notes</button>
     <button class="nav" data-view="stages">Stages</button>
+    <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
     <button class="nav" data-view="cadence">Pillage</button>
     <button class="nav" data-view="order">Order</button>
     <div class="sep"></div>
@@ -504,6 +547,54 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div class="cnt" id="vCount"></div>
       <div class="tbl vtbl" id="vList"></div>
+    </section>
+
+    <section id="view-deals" hidden>
+      <div class="head"><div><h1>Deals</h1><div class="sub">Build deals, get approvals, and submit the close. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="dsNew">+ New deal</button></div>
+      <div class="ntabs" id="dsTabs" role="tablist"><button data-t="pipeline" class="on">Pipeline</button><button data-t="approvals">Approvals<span id="dsApprovalCount" hidden></span></button><button data-t="financials">Financials</button><button data-t="catalog">Products &amp; rules</button></div>
+      <div id="dsBody"></div>
+    </section>
+
+    <section id="view-deal" hidden>
+      <button class="back" id="dlBack">‹ Back to Deals</button>
+      <div class="head"><div><h1 id="dlTitle">New deal</h1><div class="sub" id="dlSub"></div></div><span class="spill" id="dlStatus"></span></div>
+      <div class="dlgrid">
+        <div class="dlmain" id="dlMain">
+          <div class="dlsec"><h2><span>1</span>Basics</h2>
+            <div class="grid2"><label>Deal name<input id="dlName" maxlength="120" autocomplete="off" placeholder="Sample Gym, annual platform"></label><label>Account<select id="dlOpp"></select></label></div>
+            <div class="grid3"><label>Owner<select id="dlOwner"></select></label><label>Expected close<input id="dlClose" type="date"></label><label>Likelihood to close (%)<input id="dlProb" type="number" min="0" max="100" placeholder="From stage"></label></div>
+          </div>
+          <div class="dlsec"><h2><span>2</span>Products and services</h2>
+            <div class="tbl dllines" id="dlLines"></div>
+            <div class="dladd"><select id="dlPick" aria-label="Add from catalog"></select><button class="btn" id="dlAddCustom">+ Custom line</button></div>
+          </div>
+          <div class="dlsec"><h2><span>3</span>Terms</h2>
+            <div class="grid3"><label>Start date<input id="dlStart" type="date"></label><label>Term (months)<input id="dlMonths" type="number" min="1" max="120" value="12"></label><label>Free months<input id="dlFree" type="number" min="0" max="24" value="0"></label></div>
+            <div class="grid3"><label>Payment terms<select id="dlPay"><option>Due on receipt</option><option>Net 15</option><option selected>Net 30</option><option>Net 45</option><option>Net 60</option></select></label><label>Billing<select id="dlBill"><option>Monthly</option><option>Quarterly</option><option>Annually</option><option>Upfront</option></select></label><label class="chk" style="align-self:end"><input type="checkbox" id="dlRenew">Renews automatically</label></div>
+            <label>Special terms<textarea id="dlSpecial" maxlength="2000" placeholder="Anything non-standard: cancellation rights, price locks, custom SLAs. Special terms always need approval."></textarea></label>
+            <label>Internal notes<textarea id="dlNotes" maxlength="3000" placeholder="Context for the reviewer"></textarea></label>
+          </div>
+          <div class="dlsec" id="dlCloseSec"><h2><span>4</span>Close package</h2>
+            <p class="city" id="dlCloseHint" style="margin:-4px 0 10px">Fill this in once the deal is approved and signed. It's what the team needs to start the customer.</p>
+            <label class="chk"><input type="checkbox" id="dcSigned">Signed agreement received</label>
+            <div class="grid3"><label>Date signed<input id="dcDate" type="date"></label><label>Signed by<input id="dcName" maxlength="120" autocomplete="off" placeholder="Pat Owner"></label><label>Their title<input id="dcTitle" maxlength="120" autocomplete="off" placeholder="Owner"></label></div>
+            <div class="grid3"><label>Signer email<input id="dcEmail" type="email" maxlength="200" autocomplete="off"></label><label>Billing contact email<input id="dcBilling" type="email" maxlength="200" autocomplete="off"></label><label>Contract start date<input id="dcStart" type="date"></label></div>
+            <div class="grid3"><label>Payment method<select id="dcPay"><option value="">Not set</option><option>Card</option><option>ACH</option><option>Check</option><option>Invoice</option></select></label></div>
+            <label>Handoff to onboarding<textarea id="dcHandoff" maxlength="3000" placeholder="Who to work with, what was promised, go-live goals"></textarea></label>
+          </div>
+          <div class="dlsec"><h2>History</h2><div id="dlHistory"></div></div>
+        </div>
+        <aside class="dlside">
+          <div class="dlsum">
+            <div class="k">Total contract value</div><div class="big" id="dsTcv">$0</div>
+            <div class="dlnums"><div><span>Monthly</span><b id="dsMrr">$0</b></div><div><span>Yearly</span><b id="dsArr">$0</b></div><div><span>One-time</span><b id="dsOne">$0</b></div><div><span>Discount</span><b id="dsDisc">0%</b></div></div>
+            <div id="dsFlags"></div>
+            <div id="dsProblems"></div>
+            <textarea id="dlNote" rows="2" placeholder="Note for the history (optional)" hidden></textarea>
+            <div class="dlacts" id="dlActs"></div>
+          </div>
+        </aside>
+      </div>
     </section>
 
     <section id="view-calendar" hidden>
@@ -624,6 +715,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
               <div id="aLocDetail"></div>
             </div>
           </div>
+          <div class="sec" id="aDealsSec"><div class="sech"><h2>Deals</h2><button class="btn" id="aNewDeal">+ New deal</button></div><div id="aDeals"></div></div>
           <div class="sec"><div class="sech"><h2>Notes</h2></div><div class="notes" id="aNotes"></div></div>
           <div class="sec"><div class="sech"><h2>Account activity</h2></div><div class="hist" id="aHist"></div></div>
         </div>
@@ -953,7 +1045,7 @@ function render(){
   const sb=$("stats");sb.replaceChildren();
   stats.forEach(([n,l,c,fn,tip])=>{const d=el("button","stat stat-btn");d.title=tip;d.setAttribute("aria-label",n+" "+l+". "+tip);const b=el("b",null,n);if(c&&n)b.style.color=c;d.append(b,el("span",null,l),el("i","stat-go","View ›"));d.onclick=fn;sb.append(d)});
   if(!$("drill").hidden&&drillKind)openDrill(drillKind,true);
-  renderBoard();renderAccount();renderAccounts();if(view==="calendar")renderCalendar();
+  renderBoard();renderAccount();renderAccounts();renderAccountDeals();if(view==="calendar")renderCalendar();
 }
 
 function drawStagePick(){
@@ -1606,7 +1698,7 @@ $("vDel").onclick=async()=>{
   await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
 };
 
-const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",calendar:"Calendar",profile:"Profile",admin:"Admin",usage:"Admin"};
+const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage (coming soon)",order:"Order (coming soon)",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
 let usage=null,usageBusy=false;
 async function loadUsage(){
   if(usageBusy)return;usageBusy=true;$("uBody").replaceChildren(el("div","empty","Loading usage…"));
@@ -1781,6 +1873,7 @@ const EXPORTS={
   "Tasks and appointments":()=>[["Kind","Type","Account","Date","Time","Owner","Done","Notes"],...items.map(i=>[i.kind==="appt"?"Appointment":"Task",i.type,i.oppName,i.date,i.time,nameOf(i.owner||"CK"),i.done?"Yes":"No",i.notes])],
   "Meeting notes":()=>[["Account","Meeting type","Date","Written by","Notes"],...notes.map(n=>[n.oppName,n.type,n.date,nameOf(n.by),n.text])],
   "Vendors":()=>[["Name","Company","What they do","Email","Phone","Website","Related account","Notes"],...vendors.map(v=>[v.name,v.company,v.kind,v.email,v.phone,v.website,opps.find(o=>o.id===v.oppId)?.name||"",v.notes])],
+  "Deals":()=>[["Deal","Account","Status","Owner","Monthly","Yearly","One-time","Contract value","Discount %","Term (months)","Start","Expected close","Won","Lost reason"],...deals.map(d=>[d.name,oppNameOf(d.oppId),STATUS_LABEL[d.status],nameOf(d.owner),d.totals?.mrr,d.totals?.arr,d.totals?.oneTime,d.totals?.tcv,d.totals?.discountPct,d.terms?.months,d.terms?.startDate,d.expectedClose,d.wonTs?new Date(d.wonTs).toLocaleDateString():"",d.lostReason])],
   "Activity log":()=>[["When","Who","What"],...acts.map(a=>[new Date(a.ts).toLocaleString(),nameOf(a.by),a.text])],
 };
 function exportCsv(kind){downloadCsv(`voyage-${kind.toLowerCase().replace(/\s+/g,"-")}-${today()}.csv`,EXPORTS[kind]());track("action","Exported "+kind.toLowerCase())}
@@ -1820,6 +1913,252 @@ async function importAccounts(file){
   logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
   toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
 }
+// Deals: builder, approvals, close package, and financials. The server recomputes totals and owns
+// every status change; the math here mirrors src/deals.js for the live preview.
+let deals=[],catalog=[],dsTab="pipeline",dsFilter="open",dsQuery="",dl=null,dlId=null,dlDirty=false;
+const DEAL_RULES_DEFAULT={maxDiscount:15,minTermMonths:12,maxNetDays:30,maxFreeMonths:1};
+const PAY_DAYS={"Due on receipt":0,"Net 15":15,"Net 30":30,"Net 45":45,"Net 60":60};
+const STAGE_PROB=[5,10,20,35,50,70,85];
+const STATUS_LABEL={draft:"Draft",pending:"Waiting for approval",changes:"Changes requested",approved:"Approved",won:"Closed won",lost:"Closed lost"};
+const OPEN=new Set(["draft","pending","changes","approved"]);
+const usd=n=>(n||0).toLocaleString(undefined,{style:"currency",currency:"USD",maximumFractionDigits:Math.round((n||0)*100)%100?2:0});
+const usdK=n=>Math.abs(n)>=1e6?"$"+(n/1e6).toFixed(1)+"M":Math.abs(n)>=1e4?"$"+Math.round(n/1e3)+"K":usd(n);
+const dealRules=()=>({...DEAL_RULES_DEFAULT,...(catalog.find(c=>c.id==="rules")||{})});
+const products=()=>catalog.filter(c=>c.id!=="rules"&&c.kind==="product");
+function dealTotals(d){
+  const months=d.terms?.months||12,billable=Math.max(0,months-(d.terms?.freeMonths||0));let one=0,mrr=0,lone=0,lmrr=0;
+  (d.lines||[]).forEach(l=>{const list=l.qty*(l.listPrice??l.price),net=l.qty*l.price*(1-(l.discount||0)/100);if(l.billing==="once"){one+=net;lone+=list}else{const f=l.billing==="annual"?1/12:1;mrr+=net*f;lmrr+=list*f}});
+  const tcv=one+mrr*billable,ltcv=lone+lmrr*months,r=x=>Math.round(x*100)/100;
+  return {oneTime:r(one),mrr:r(mrr),arr:r(mrr*12),tcv:r(tcv),listTcv:r(ltcv),discountPct:ltcv>0?Math.round((1-tcv/ltcv)*1000)/10:0};
+}
+function dealFlags(d,t){
+  const r=dealRules(),f=[];
+  if(t.discountPct>r.maxDiscount)f.push(`Total discount ${t.discountPct}% is above the ${r.maxDiscount}% limit`);
+  d.lines.forEach(l=>{if(l.discount>r.maxDiscount)f.push(`${l.name} is discounted ${l.discount}%`)});
+  if(d.terms.months<r.minTermMonths)f.push(`${d.terms.months}-month term is shorter than ${r.minTermMonths} months`);
+  if(PAY_DAYS[d.terms.paymentTerms]>r.maxNetDays)f.push(`${d.terms.paymentTerms} payment terms are longer than Net ${r.maxNetDays}`);
+  if(d.terms.freeMonths>r.maxFreeMonths)f.push(`${d.terms.freeMonths} free months is more than ${r.maxFreeMonths}`);
+  if(d.terms.special)f.push("Has special terms");
+  return f;
+}
+const dealProb=d=>d.status==="won"?100:d.status==="lost"?0:d.probability!=null?d.probability:(STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10);
+const oppNameOf=id=>opps.find(o=>o.id===id)?.name||"No account";
+const canReview=d=>d.status==="pending"&&(d.submittedBy!==me||!editors().some(m=>m.id!==me));
+function statusPill(s){return el("span","spill "+s,STATUS_LABEL[s]||s)}
+async function dealApi(method,path,body){
+  const r=await fetch("/api/deals"+path,{method,credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.error||"That didn't work");e.problems=j.problems;throw e}return j;
+}
+function updateDealBadge(){const n=deals.filter(canReview).length;$("dealBadge").hidden=!n;$("dealBadge").textContent=n;$("dsApprovalCount").hidden=!n;$("dsApprovalCount").textContent=n}
+
+function renderDeals(){
+  [...$("dsTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===dsTab));
+  const w=$("dsBody");w.replaceChildren();
+  if(dsTab==="pipeline")renderDealPipeline(w);else if(dsTab==="approvals")renderDealApprovals(w);else if(dsTab==="financials")renderFinancials(w);else renderCatalog(w);
+}
+function dealRow(d){
+  const r=el("button","row"),n=el("div");n.append(el("div","nm",d.name||"Untitled deal"),el("div","co",oppNameOf(d.oppId)+(d.flags?.length&&OPEN.has(d.status)?" · ⚠ needs approval":"")));
+  r.append(n,statusPill(d.status),el("span","city money",usd(d.totals?.mrr)+"/mo"),el("span","money",usd(d.totals?.tcv)),el("span","city",d.status==="won"?"Won "+fmtDay(d.wonTs):d.expectedClose?fmtDate(d.expectedClose):"No close date"),avatar(d.owner||"CK"));
+  r.onclick=()=>openDeal(d.id);return r;
+}
+function renderDealPipeline(w){
+  const open=deals.filter(d=>OPEN.has(d.status)),q=new Date(),qStart=new Date(q.getFullYear(),Math.floor(q.getMonth()/3)*3,1).getTime();
+  w.append(adTiles([[usdK(open.reduce((a,d)=>a+(d.totals?.tcv||0),0)),"open pipeline"],[usdK(open.reduce((a,d)=>a+(d.totals?.tcv||0)*dealProb(d)/100,0)),"weighted by likelihood"],[deals.filter(d=>d.status==="pending").length,"waiting for approval"],[usdK(deals.filter(d=>d.status==="won"&&d.wonTs>=qStart).reduce((a,d)=>a+(d.totals?.tcv||0),0)),"won this quarter"]]));
+  const bar=el("div","bhead");bar.style.marginTop="16px";
+  const s=document.createElement("select");[["open","Open deals"],["all","All deals"],["pending","Waiting for approval"],["approved","Approved, ready to close"],["won","Closed won"],["lost","Closed lost"]].forEach(([v,l])=>s.append(new Option(l,v)));s.value=dsFilter;s.onchange=()=>{dsFilter=s.value;renderDeals()};
+  const i=document.createElement("input");i.type="search";i.placeholder="Find a deal or account";i.value=dsQuery;i.oninput=()=>{dsQuery=i.value;const pos=i.selectionStart;renderDeals();const ni=$("dsBody").querySelector("input[type=search]");ni.focus();ni.setSelectionRange(pos,pos)};
+  bar.append(i,s);w.append(bar);
+  const ql=dsQuery.trim().toLowerCase();
+  const list=deals.filter(d=>(dsFilter==="all"||(dsFilter==="open"?OPEN.has(d.status):d.status===dsFilter))&&(!ql||(d.name+" "+oppNameOf(d.oppId)).toLowerCase().includes(ql)))
+    .sort((a,b)=>(a.expectedClose||"9").localeCompare(b.expectedClose||"9")||(b.updatedTs||0)-(a.updatedTs||0));
+  w.append(adTable("dtbl",["Deal","Status","Monthly","Contract value","Close",""],list.map(dealRow)));
+  if(!list.length)w.lastChild.append(emptyRow(deals.length?"No deals match.":"No deals yet. Use + New deal, or open an account and add one there."));
+}
+function renderDealApprovals(w){
+  const pend=deals.filter(d=>d.status==="pending").sort((a,b)=>(a.submittedTs||0)-(b.submittedTs||0));
+  w.append(el("div","hint","Deals outside the guardrails wait here until another editor approves them or asks for changes."));w.lastChild.style.cssText="color:var(--muted);font-size:13px;margin-bottom:12px";
+  if(!pend.length){w.append(el("div","empty","Nothing is waiting for approval."));return}
+  pend.forEach(d=>{
+    const c=el("div","dlsec"),h=el("div","sech");h.append(el("h2",null,d.name),statusPill(d.status));c.append(h);
+    c.append(el("div","city",`${oppNameOf(d.oppId)} · ${usd(d.totals.tcv)} total · ${usd(d.totals.mrr)}/mo · ${d.terms.months} months · submitted by ${nameOf(d.submittedBy)} ${fmtDay(d.submittedTs)}`));
+    const f=el("div","dlflag warn");const ul=el("ul");d.flags.forEach(x=>ul.append(el("li",null,x)));f.append(el("b",null,"Why it needs approval"),ul);f.style.marginTop="10px";c.append(f);
+    if(d.terms.special){const sp=el("div","city");sp.style.whiteSpace="pre-wrap";sp.textContent="Special terms: "+d.terms.special;c.append(sp)}
+    const a=el("div");a.style.cssText="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap";
+    const open=el("button","btn","Open deal");open.onclick=()=>openDeal(d.id);a.append(open);
+    if(canReview(d)){
+      const ok=el("button","btn primary","Approve");ok.onclick=()=>quickReview(d,"approve");
+      const no=el("button","btn","Request changes");no.onclick=()=>quickReview(d,"changes");a.append(ok,no);
+    }else a.append(el("span","city","Waiting for "+(editors().filter(m=>m.id!==d.submittedBy).map(m=>m.name).join(" or ")||"another editor")+" to review"));
+    c.append(a);w.append(c);
+  });
+}
+async function quickReview(d,action){
+  const note=action==="changes"?prompt("What needs to change?"):prompt("Optional note for the history:","");
+  if(note===null||(action==="changes"&&!note.trim()))return;
+  try{await dealApi("POST",`/${d.id}/${action}`,{note});toast(action==="approve"?"Approved":"Sent back for changes");track("action",action==="approve"?"Approved a deal":"Requested deal changes")}catch(e){toast(e.message)}
+}
+function renderFinancials(w){
+  const now=new Date(),y0=new Date(now.getFullYear(),0,1).getTime(),q0=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1).getTime(),yearAgo=Date.now()-365*864e5;
+  const won=deals.filter(d=>d.status==="won"),lost=deals.filter(d=>d.status==="lost"),open=deals.filter(d=>OPEN.has(d.status));
+  const sum=(list,f)=>list.reduce((a,d)=>a+f(d),0),tcv=d=>d.totals?.tcv||0;
+  const recentWon=won.filter(d=>d.wonTs>yearAgo),recentLost=lost.filter(d=>d.lostTs>yearAgo);
+  const winRate=recentWon.length+recentLost.length?Math.round(recentWon.length/(recentWon.length+recentLost.length)*100)+"%":"–";
+  w.append(adTiles([[usdK(sum(won.filter(d=>d.wonTs>=q0),tcv)),"booked this quarter"],[usdK(sum(won.filter(d=>d.wonTs>=y0),d=>d.totals?.arr||0)),"new yearly recurring revenue this year"],[winRate,"win rate, last 12 months"],[won.length?usdK(sum(won,tcv)/won.length):"–","average won deal"]]));
+  const t2=adTiles([[usdK(sum(open,tcv)),"open pipeline"],[usdK(sum(open,d=>tcv(d)*dealProb(d)/100)),"weighted pipeline"],[won.length?(sum(won,d=>d.totals?.discountPct||0)/won.length).toFixed(1)+"%":"–","average discount on won deals"],[usdK(sum(won,d=>d.totals?.mrr||0)),"monthly recurring revenue won"]]);t2.style.marginTop="10px";w.append(t2);
+  const ms=usageSection("Booked by month","Contract value of deals closed won, last 6 months.");
+  const months=[...Array(6)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
+  const vals=months.map((m,i)=>{const end=new Date(m.getFullYear(),m.getMonth()+1,1).getTime();return sum(won.filter(d=>d.wonTs>=m.getTime()&&d.wonTs<end),tcv)});
+  const mx=Math.max(1,...vals),fb=el("div","fbars");months.forEach((m,i)=>{const c=el("div");c.append(el("b",null,vals[i]?usdK(vals[i]):""));const bar=document.createElement("i");bar.style.height=(vals[i]/mx*100)+"%";c.append(bar,el("span",null,m.toLocaleDateString(undefined,{month:"short"})));fb.append(c)});
+  const box=el("div","tbl");box.append(fb);box.style.paddingBottom="10px";ms.append(box);w.append(ms);
+  const fc=usageSection("Forecast","Open deals by expected close month, weighted by how likely each is to close.");
+  const fm=[...Array(3)].map((_,i)=>new Date(now.getFullYear(),now.getMonth()+i,1));
+  fc.append(adTable("ftbl",["Month","Deals","Weighted","If all close"],fm.map(m=>{const k=iso(m).slice(0,7),list=open.filter(d=>(d.expectedClose||"").startsWith(k));const r=el("div","row");r.append(el("span","nm",m.toLocaleDateString(undefined,{month:"long",year:"numeric"})),cell(String(list.length)),el("span","money",usd(sum(list,d=>tcv(d)*dealProb(d)/100))),el("span","money city",usd(sum(list,tcv))));return r})));
+  const late=open.filter(d=>d.expectedClose&&d.expectedClose<today());if(late.length)fc.append(el("div","dlflag warn",`${late.length} open deal${late.length===1?" has":"s have"} an expected close date in the past.`));
+  w.append(fc);
+  const rs=usageSection("By rep","");rs.lastChild.remove();
+  rs.append(adTable("ftbl",["Rep","Won","Won value","Open pipeline","Weighted"],editors().map(m=>{const mw=won.filter(d=>d.owner===m.id),mo=open.filter(d=>d.owner===m.id);const r=el("div","row");r.append(el("span","nm",m.name),cell(String(mw.length)),el("span","money",usd(sum(mw,tcv))),el("span","money",usd(sum(mo,tcv))),el("span","money city",usd(sum(mo,d=>tcv(d)*dealProb(d)/100))));return r})));w.append(rs);
+  const ss=usageSection("By lead source","Which sources turn into revenue.");
+  const src=[...new Set(won.concat(open).map(d=>opps.find(o=>o.id===d.oppId)?.source||"Not set"))];
+  ss.append(adTable("ftbl",["Lead source","Won","Won value","Open pipeline"],src.map(s=>{const f=d=>(opps.find(o=>o.id===d.oppId)?.source||"Not set")===s,sw=won.filter(f);const r=el("div","row");r.append(el("span","nm",s),cell(String(sw.length)),el("span","money",usd(sum(sw,tcv))),el("span","money",usd(sum(open.filter(f),tcv))));return r})));
+  if(!src.length)ss.append(el("div","empty","No deals yet."));w.append(ss);
+  if(recentLost.length){const ls=usageSection("Why deals were lost","Last 12 months.");ls.append(adTable("htbl",["Deal","Reason"],recentLost.map(d=>{const r=el("button","row");r.append(el("span","nm",d.name),cell(d.lostReason||""));r.onclick=()=>openDeal(d.id);return r})));w.append(ls)}
+}
+function renderCatalog(w){
+  const ps=usageSection("Products and services","What you sell, with list prices. Reps pick from this list in the deal builder; prices below list count as a discount.");
+  const rows=products().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    const r=el("div","row"),inp=(v,type)=>{const i=document.createElement("input");i.type=type||"text";i.value=v??"";return i};
+    const n=inp(p.name),bill=document.createElement("select");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,l])=>bill.append(new Option(l,v)));bill.value=p.billing;
+    const pr=inp(p.price,"number");pr.min=0;pr.step="0.01";const ds=inp(p.description);
+    const act=el("label","chk");const cb=document.createElement("input");cb.type="checkbox";cb.checked=p.active!==false;act.append(cb,"Active");act.style.margin="0";
+    const del=el("button","btn danger","Remove");
+    const saveP=()=>write(()=>db.doc("catalog/"+p.id).set({kind:"product",name:n.value.trim()||"Product",billing:bill.value,price:Math.max(0,Number(pr.value)||0),description:ds.value.trim(),active:cb.checked}),"Product saved");
+    [n,pr,ds].forEach(x=>x.onchange=saveP);bill.onchange=saveP;cb.onchange=saveP;
+    del.onclick=()=>{if(confirm("Remove "+p.name+" from the catalog? Existing deals keep their lines."))write(()=>db.doc("catalog/"+p.id).delete(),"Product removed")};
+    r.append(n,bill,pr,ds,act,del);return r;
+  });
+  ps.append(adTable("ctbl",["Name","Billing","List price","Description","",""],rows));
+  const add=el("button","btn","+ Add product");add.style.marginTop="10px";add.onclick=()=>write(()=>db.collection("catalog").add({kind:"product",name:"New product",billing:"monthly",price:0,description:"",active:true}),"Product added");ps.append(add);w.append(ps);
+  const r=dealRules(),rs=usageSection("Approval guardrails","Deals outside these limits need another editor to approve before they can close.");
+  const g=el("div","dlsec"),grid=el("div","grid2");
+  const fld=(label,key,min,max)=>{const l=el("label",null,label);const i=document.createElement("input");i.type="number";i.min=min;i.max=max;i.value=r[key];i.dataset.k=key;l.append(i);grid.append(l);return i};
+  const ins=[fld("Highest discount without approval (%)","maxDiscount",0,100),fld("Shortest term without approval (months)","minTermMonths",1,120),fld("Longest payment terms without approval (days)","maxNetDays",0,60),fld("Most free months without approval","maxFreeMonths",0,24)];
+  const sv=el("button","btn primary","Save guardrails");sv.onclick=()=>{const data={kind:"rules"};ins.forEach(i=>data[i.dataset.k]=Math.max(Number(i.min),Math.min(Number(i.max),Number(i.value)||0)));write(()=>db.doc("catalog/rules").set(data),"Guardrails saved")};
+  g.append(grid,sv);rs.append(g,el("div","city","Special terms always need approval."));w.append(rs);
+}
+
+// The builder.
+function blankDeal(oppId){const o=opps.find(x=>x.id===oppId);return {name:o?o.name+" deal":"",oppId:oppId||"",owner:o?.owner||me,expectedClose:o?.next?.date||"",probability:null,lines:[],terms:{startDate:"",months:12,freeMonths:0,paymentTerms:"Net 30",billingFrequency:"Monthly",autoRenew:true,special:""},close:{agreementSigned:false,signedDate:"",signerName:"",signerTitle:"",signerEmail:"",billingEmail:"",paymentMethod:"",handoff:""},notes:"",status:"draft",history:[]}}
+function openDeal(id,oppId){
+  if(view==="deal"&&dlDirty&&!confirm("Leave this deal without saving your changes?"))return;
+  const d=id&&deals.find(x=>x.id===id);dlId=d?d.id:null;dl=JSON.parse(JSON.stringify(d||blankDeal(oppId)));dlDirty=false;
+  go("deal");window.scrollTo(0,0);fillBuilder();
+}
+function fillBuilder(){
+  const d=dl,editable=d.status==="draft"||d.status==="changes",closeOk=editable||d.status==="approved";
+  $("dlTitle").textContent=d.name||"New deal";$("dlStatus").replaceWith(Object.assign(statusPill(d.status),{id:"dlStatus"}));
+  $("dlSub").textContent=dlId?`${oppNameOf(d.oppId)} · last saved ${fmtDay(d.updatedTs||Date.now())}`:"Fill in the steps, then submit. Deals inside the guardrails are approved automatically.";
+  const os=$("dlOpp");os.replaceChildren(new Option("Pick an account",""));[...opps].sort((a,b)=>a.name.localeCompare(b.name)).forEach(o=>os.append(new Option(o.name,o.id)));os.value=d.oppId;
+  const ow=$("dlOwner");ow.replaceChildren();editors().forEach(m=>ow.append(new Option(m.name,m.id)));ow.value=d.owner||me;
+  $("dlName").value=d.name;$("dlClose").value=d.expectedClose||"";$("dlProb").value=d.probability??"";$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===d.oppId)?.stage]??10}%)`;
+  const t=d.terms;$("dlStart").value=t.startDate||"";$("dlMonths").value=t.months;$("dlFree").value=t.freeMonths;$("dlPay").value=t.paymentTerms;$("dlBill").value=t.billingFrequency;$("dlRenew").checked=!!t.autoRenew;$("dlSpecial").value=t.special||"";$("dlNotes").value=d.notes||"";
+  $("dcStart").value=t.startDate||"";const c=d.close;$("dcSigned").checked=!!c.agreementSigned;$("dcDate").value=c.signedDate||"";$("dcName").value=c.signerName||"";$("dcTitle").value=c.signerTitle||"";$("dcEmail").value=c.signerEmail||"";$("dcBilling").value=c.billingEmail||"";$("dcPay").value=c.paymentMethod||"";$("dcHandoff").value=c.handoff||"";
+  [...$("dlMain").querySelectorAll(".dlsec")].slice(0,3).forEach(s=>s.classList.toggle("locked",!editable));
+  $("dlCloseSec").classList.toggle("locked",!closeOk);
+  $("dlCloseHint").textContent=d.status==="won"?`Closed won ${fmtDay(d.wonTs)} by ${nameOf(d.closedBy)}.`:closeOk?"Fill this in once the deal is approved and signed. It's what the team needs to start the customer.":"Unlocks once the deal is approved.";
+  const pk=$("dlPick");pk.replaceChildren(new Option("+ Add a product or service…",""));products().filter(p=>p.active!==false).forEach(p=>pk.append(new Option(`${p.name} · ${usd(p.price)}${p.billing==="monthly"?"/mo":p.billing==="annual"?"/yr":" one-time"}`,p.id)));
+  pk.disabled=!editable;$("dlAddCustom").disabled=!editable;
+  renderLines();renderHistory();refreshSummary();
+}
+function renderLines(){
+  const editable=dl.status==="draft"||dl.status==="changes",w=$("dlLines");w.replaceChildren();
+  const hd=el("div","row hd");["Product or service","Billing","Qty","Price","Disc. %","Amount",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
+  if(!dl.lines.length){w.append(emptyRow(products().length?"Add a product or service below.":"Add a custom line below, or set up products under Deals › Products & rules."));return}
+  dl.lines.forEach((l,ix)=>{
+    const r=el("div","row"),mk=(v,type,on)=>{const i=document.createElement("input");i.type=type;i.value=v;i.disabled=!editable;i.oninput=()=>{on(i.value);dlDirty=true;updateLineAmount(r,l);refreshSummary()};return i};
+    const nm=el("div");nm.append(mk(l.name,"text",v=>l.name=v));if(l.listPrice&&l.price<l.listPrice)nm.append(el("div","list","List "+usd(l.listPrice)));
+    const b=document.createElement("select");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,t])=>b.append(new Option(t,v)));b.value=l.billing;b.disabled=!editable;b.onchange=()=>{l.billing=b.value;dlDirty=true;updateLineAmount(r,l);refreshSummary()};
+    const q=mk(l.qty,"number",v=>l.qty=Math.max(0,Number(v)||0));q.min=0;
+    const p=mk(l.price,"number",v=>l.price=Math.max(0,Number(v)||0));p.min=0;p.step="0.01";
+    const ds=mk(l.discount||0,"number",v=>l.discount=Math.min(100,Math.max(0,Number(v)||0)));ds.min=0;ds.max=100;
+    const x=el("button","lx","×");x.title="Remove line";x.disabled=!editable;x.onclick=()=>{dl.lines.splice(ix,1);dlDirty=true;renderLines();refreshSummary()};
+    r.append(nm,b,q,p,ds,el("span","amt",""),x);updateLineAmount(r,l);w.append(r);
+  });
+}
+function updateLineAmount(r,l){const a=l.qty*l.price*(1-(l.discount||0)/100);r.querySelector(".amt").textContent=usd(a)+(l.billing==="monthly"?"/mo":l.billing==="annual"?"/yr":"")}
+function readBuilder(){
+  const d=dl;d.name=$("dlName").value.trim();d.oppId=$("dlOpp").value;d.owner=$("dlOwner").value;d.expectedClose=$("dlClose").value;d.probability=$("dlProb").value===""?null:Math.min(100,Math.max(0,Number($("dlProb").value)));
+  d.terms={startDate:$("dlStart").value,months:Math.min(120,Math.max(1,Number($("dlMonths").value)||12)),freeMonths:Math.min(24,Math.max(0,Number($("dlFree").value)||0)),paymentTerms:$("dlPay").value,billingFrequency:$("dlBill").value,autoRenew:$("dlRenew").checked,special:$("dlSpecial").value.trim()};
+  d.notes=$("dlNotes").value.trim();
+  d.close={agreementSigned:$("dcSigned").checked,signedDate:$("dcDate").value,signerName:$("dcName").value.trim(),signerTitle:$("dcTitle").value.trim(),signerEmail:$("dcEmail").value.trim(),billingEmail:$("dcBilling").value.trim(),paymentMethod:$("dcPay").value,handoff:$("dcHandoff").value.trim()};
+}
+function refreshSummary(){
+  readBuilder();const d=dl,t=dealTotals(d),flags=dealFlags(d,t);
+  $("dsTcv").textContent=usd(t.tcv);$("dsMrr").textContent=usd(t.mrr);$("dsArr").textContent=usd(t.arr);$("dsOne").textContent=usd(t.oneTime);$("dsDisc").textContent=t.discountPct+"%";
+  const fw=$("dsFlags");fw.replaceChildren();
+  if(d.status==="won")fw.append(el("div","dlflag ok","Closed won. The close package is on file."));
+  else if(d.status==="lost")fw.append(el("div","dlflag bad","Closed lost: "+(d.lostReason||"")));
+  else if(flags.length){const f=el("div","dlflag warn"),ul=el("ul");flags.forEach(x=>ul.append(el("li",null,x)));f.append(el("b",null,d.status==="approved"?"Approved with exceptions":"Needs approval"),ul);fw.append(f)}
+  else if(d.lines.length)fw.append(el("div","dlflag ok","Within guardrails. Submitting approves it automatically."));
+  renderActions(t,flags);
+}
+function renderActions(t,flags){
+  const d=dl,a=$("dlActs"),note=$("dlNote");a.replaceChildren();$("dsProblems").replaceChildren();note.hidden=true;
+  const btn=(label,cls,fn)=>{const b=el("button","btn "+cls,label);b.onclick=fn;a.append(b);return b};
+  const editable=d.status==="draft"||d.status==="changes";
+  if(editable){
+    btn(flags.length?"Submit for approval":"Submit","primary",()=>dealStep("submit"));
+    btn(dlId?"Save draft":"Save as draft","",()=>saveDeal(true));
+    if(dlId){note.hidden=false;btn("Mark as lost","",()=>dealStep("lost"));btn("Delete draft","danger",deleteDeal)}
+  }else if(d.status==="pending"){
+    note.hidden=false;
+    if(canReview(d)){btn("Approve","primary",()=>dealStep("approve"));btn("Request changes","",()=>dealStep("changes"))}
+    else a.append(el("div","city","Waiting for "+(editors().filter(m=>m.id!==d.submittedBy).map(m=>m.name).join(" or ")||"another editor")+" to review."));
+    btn("Pull back to edit","",()=>dealStep("reopen"));btn("Mark as lost","",()=>dealStep("lost"));
+  }else if(d.status==="approved"){
+    note.hidden=false;btn("Submit close (won)","primary",()=>dealStep("won"));btn("Save close package","",()=>dealStep("package"));btn("Reopen to edit","",()=>dealStep("reopen"));btn("Mark as lost","",()=>dealStep("lost"));
+  }else{
+    note.hidden=false;btn("Reopen","",()=>dealStep("reopen"));if(d.status==="lost")btn("Delete","danger",deleteDeal);
+  }
+  if(d.status==="changes"){const last=[...(d.history||[])].reverse().find(h=>h.action==="Changes requested");if(last)$("dsProblems").append(el("div","dlflag bad",`${nameOf(last.by)} asked for changes: ${last.note||""}`))}
+}
+function showProblems(e){const w=$("dsProblems");w.replaceChildren();const f=el("div","dlflag bad");f.append(el("b",null,e.message));if(e.problems?.length){const ul=el("ul");e.problems.forEach(p=>ul.append(el("li",null,p)));f.append(ul)}w.append(f);w.scrollIntoView({block:"nearest"})}
+async function saveDeal(announce){
+  readBuilder();
+  try{const res=dlId?await dealApi("PUT","/"+dlId,dl):await dealApi("POST","",dl);dlId=res.id;dl=res;dlDirty=false;if(announce){toast("Saved");track("action","Saved a deal")}fillBuilder();return true}
+  catch(e){showProblems(e);return false}
+}
+async function dealStep(action){
+  const note=$("dlNote").value.trim();
+  if(action==="lost"&&!note){toast("Add the reason it was lost in the note box first");$("dlNote").hidden=false;$("dlNote").focus();return}
+  if(action==="changes"&&!note){toast("Say what needs to change in the note box");$("dlNote").focus();return}
+  if((dl.status==="draft"||dl.status==="changes")&&!(await saveDeal(false)))return;
+  if(dl.status==="approved")readBuilder();
+  try{const res=await dealApi("POST",`/${dlId}/${action}`,{note,close:dl.close,terms:{startDate:dl.terms.startDate}});dl=res;dlDirty=false;$("dlNote").value="";fillBuilder();
+    toast({submit:res.status==="approved"?"Submitted and approved":"Submitted for approval",approve:"Approved",changes:"Sent back for changes",won:"Closed won! 🎉",lost:"Marked as lost",reopen:"Reopened",package:"Close package saved"}[action]);
+    if(action==="won")logAct(`Closed won ${dl.name} (${usd(dl.totals.tcv)})`,dl.oppId);
+    track("action",{submit:"Submitted a deal",approve:"Approved a deal",changes:"Requested deal changes",won:"Closed a deal won",lost:"Closed a deal lost",reopen:"Reopened a deal",package:"Saved a close package"}[action])}
+  catch(e){showProblems(e)}
+}
+async function deleteDeal(){if(!confirm("Delete this deal? This can't be undone."))return;try{await dealApi("DELETE","/"+dlId);dlDirty=false;toast("Deal deleted");go("deals")}catch(e){showProblems(e)}}
+function renderHistory(){const w=$("dlHistory");w.replaceChildren();const h=[...(dl.history||[])].reverse();if(!h.length){w.append(el("div","city","Nothing yet."));return}h.forEach(x=>{const r=el("div","dhist");r.append(el("small",null,`${new Date(x.ts).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} · ${nameOf(x.by)}`),el("div",null,x.action+(x.note?": "+x.note:"")));w.append(r)})}
+function renderAccountDeals(){
+  if(guest||view!=="account")return;const w=$("aDeals");if(!w)return;w.replaceChildren();
+  const list=deals.filter(d=>d.oppId===acctId);
+  if(!list.length){w.append(el("div","empty","No deals yet. Build one when you're ready to price it."));return}
+  w.append(adTable("dtbl",["Deal","Status","Monthly","Contract value","Close",""],list.map(dealRow)));
+}
+$("dsTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;dsTab=t;renderDeals();track("action","Opened Deals "+t)};
+$("dsNew").onclick=()=>openDeal(null);
+$("aNewDeal").onclick=()=>openDeal(null,acctId);
+$("dlBack").onclick=()=>{if(dlDirty&&!confirm("Leave without saving your changes?"))return;dlDirty=false;go("deals")};
+$("dlOpp").onchange=()=>{if(!$("dlName").value.trim()){const o=opps.find(x=>x.id===$("dlOpp").value);if(o)$("dlName").value=o.name+" deal"}dlDirty=true;refreshSummary();$("dlProb").placeholder=`From stage (${STAGE_PROB[opps.find(o=>o.id===$("dlOpp").value)?.stage]??10}%)`};
+$("dlPick").onchange=()=>{const p=products().find(x=>x.id===$("dlPick").value);$("dlPick").value="";if(!p)return;dl.lines.push({productId:p.id,name:p.name,billing:p.billing,qty:1,price:p.price,listPrice:p.price,discount:0});dlDirty=true;renderLines();refreshSummary()};
+$("dlAddCustom").onclick=()=>{dl.lines.push({productId:"",name:"",billing:"monthly",qty:1,price:0,listPrice:0,discount:0});dlDirty=true;renderLines();refreshSummary();const ins=$("dlLines").querySelectorAll(".row:not(.hd) input");ins[ins.length-4]?.focus()};
+$("dcStart").addEventListener("input",()=>{$("dlStart").value=$("dcStart").value});$("dlStart").addEventListener("input",()=>{$("dcStart").value=$("dlStart").value});
+["dlName","dlClose","dlProb","dlStart","dcStart","dlMonths","dlFree","dlSpecial","dlNotes","dcDate","dcName","dcTitle","dcEmail","dcBilling","dcHandoff"].forEach(id=>$(id).addEventListener("input",()=>{dlDirty=true;refreshSummary();if(id==="dlName")$("dlTitle").textContent=$("dlName").value||"New deal"}));
+["dlOwner","dlPay","dlBill","dlRenew","dcSigned","dcPay"].forEach(id=>$(id).addEventListener("change",()=>{dlDirty=true;refreshSummary()}));
+window.addEventListener("beforeunload",e=>{if(view==="deal"&&dlDirty){e.preventDefault();e.returnValue=""}});
+
 // Calendar: CRM appointments, tasks, and next steps, plus the member's own outside calendar if connected.
 let cxMode=null,cxAnchor=new Date(),cxScope="mine",cxShow={appt:true,task:true,next:true,ext:true},cxExt={connected:false,events:[],from:0,to:0,loading:false},cxDrag=null;
 try{const s=JSON.parse(localStorage.getItem("voyage-cal")||"{}");if(s.mode)cxMode=s.mode;if(s.scope)cxScope=s.scope;if(s.show)Object.assign(cxShow,s.show)}catch(_){}
@@ -2188,10 +2527,10 @@ const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
-  view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v;
+  view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
-  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account")renderAccount();if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
+  if(v==="account"){renderAccount();renderAccountDeals()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -2313,6 +2652,7 @@ render();renderActs();renderItems();
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
   db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
+  if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
   if(!guest){pending.add("vendors");db.collection("vendors").onSnapshot(snap=>{
     vendors=snap.docs.map(d=>({id:d.id,...d.data()}));renderVendors();loaded("vendors");
   },failed)}

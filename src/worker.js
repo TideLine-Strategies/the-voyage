@@ -1,10 +1,11 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles"]);
+import { DEFAULT_RULES, EDITABLE, approvalFlags, calculateTotals, closeProblems, sanitizeDeal, submitProblems } from "./deals.js";
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
-const EDITOR_COLLECTIONS = new Set(["vendors"]);
+const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -363,6 +364,102 @@ async function calendarFeed(env, file) {
   return new Response(body, { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
 }
 
+// Deal builder: drafts, approvals, and the close package. Status changes only happen here, never
+// through the generic document API, and totals are always recomputed on the server.
+async function handleDeals(request, env, actor, path) {
+  const now = Date.now(), method = request.method, id = path[2], action = path[3];
+  const save = deal => env.DB.prepare("INSERT INTO documents (collection, id, data_json, updated_at) VALUES ('deals', ?, ?, ?) ON CONFLICT(collection, id) DO UPDATE SET data_json = excluded.data_json, revision = revision + 1, updated_at = excluded.updated_at")
+    .bind(deal.id, JSON.stringify(deal), now).run();
+  const rules = { ...DEFAULT_RULES, ...(await getDocument(env.DB, "catalog", "rules").catch(() => null) || {}) };
+  const refresh = deal => { deal.totals = calculateTotals(deal); deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
+  const event = (deal, what, note) => { deal.history = [...(deal.history || []), { ts: now, by: actor.id, action: what, ...(note ? { note: String(note).slice(0, 1000) } : {}) }].slice(-100); };
+  const body = method === "GET" || method === "DELETE" || !request.body ? {} : await readJson(request);
+  if (!id && method === "POST") {
+    const deal = refresh({ ...sanitizeDeal(body), id: crypto.randomUUID(), status: "draft", createdTs: now, createdBy: actor.id });
+    deal.owner ||= actor.id;
+    event(deal, "Created");
+    await save(deal);
+    await audit(env, actor.id, "Created", "deals", deal.id, deal.name || "Untitled deal");
+    return reply(deal, 201);
+  }
+  if (!id || !ID_PATTERN.test(id)) return error("Not found", 404);
+  const current = await getDocument(env.DB, "deals", id);
+  if (!current) return error("Deal not found", 404);
+  const deal = { ...current };
+  const wrongStatus = allowed => !allowed.includes(deal.status) && error(`This deal is ${deal.status === "pending" ? "waiting for approval" : deal.status === "changes" ? "waiting for changes" : deal.status}. Reopen it first.`, 409);
+  if (!action && method === "PUT") {
+    if (!EDITABLE.has(deal.status)) return error("Only drafts can be edited. Reopen the deal first.", 409);
+    Object.assign(deal, sanitizeDeal(body));
+    deal.owner ||= actor.id;
+    refresh(deal);
+    await save(deal);
+    await audit(env, actor.id, "Saved", "deals", id, deal.name);
+    return reply(deal);
+  }
+  if (!action && method === "DELETE") {
+    if (!EDITABLE.has(deal.status) && deal.status !== "lost") return error("Only drafts and lost deals can be deleted", 409);
+    await env.DB.prepare("DELETE FROM documents WHERE collection = 'deals' AND id = ?").bind(id).run();
+    await audit(env, actor.id, "Deleted", "deals", id, deal.name);
+    return reply({ ok: true });
+  }
+  if (method !== "POST" || !action) return error("Method not allowed", 405);
+  const editors = (await teamMembers(env.DB)).filter(member => member.role === "edit");
+  const note = typeof body.note === "string" ? body.note.trim() : "";
+  if (action === "submit") {
+    const blocked = wrongStatus(["draft", "changes"]); if (blocked) return blocked;
+    refresh(deal);
+    const problems = submitProblems(deal, deal.totals);
+    if (problems.length) return reply({ error: "Finish the deal before submitting", problems }, 400);
+    deal.submittedBy = actor.id; deal.submittedTs = now;
+    deal.status = deal.flags.length ? "pending" : "approved";
+    event(deal, deal.flags.length ? "Submitted for approval" : "Submitted (within guardrails, auto-approved)", note);
+  } else if (action === "approve" || action === "changes") {
+    const blocked = wrongStatus(["pending"]); if (blocked) return blocked;
+    if (deal.submittedBy === actor.id && editors.some(member => member.id !== actor.id)) return error("Another editor needs to review a deal you submitted", 403);
+    if (action === "changes" && !note) return error("Say what needs to change", 400);
+    deal.status = action === "approve" ? "approved" : "changes";
+    deal.reviewedBy = actor.id; deal.reviewedTs = now;
+    event(deal, action === "approve" ? "Approved" : "Changes requested", note);
+  } else if (action === "package") {
+    const blocked = wrongStatus(["approved"]); if (blocked) return blocked;
+    deal.close = sanitizeDeal({ ...deal, close: body.close }).close;
+    if (body.terms?.startDate !== undefined) deal.terms = { ...deal.terms, startDate: sanitizeDeal({ terms: { ...deal.terms, startDate: body.terms.startDate } }).terms.startDate };
+    event(deal, "Updated close package");
+  } else if (action === "won") {
+    const blocked = wrongStatus(["approved"]); if (blocked) return blocked;
+    if (body.close) deal.close = sanitizeDeal({ ...deal, close: body.close }).close;
+    if (body.terms?.startDate !== undefined) deal.terms = { ...deal.terms, startDate: sanitizeDeal({ terms: { ...deal.terms, startDate: body.terms.startDate } }).terms.startDate };
+    const problems = closeProblems(deal);
+    if (problems.length) return reply({ error: "Complete the close package", problems }, 400);
+    deal.status = "won"; deal.wonTs = now; deal.closedBy = actor.id;
+    event(deal, "Closed won", note);
+    const opp = deal.oppId && await getDocument(env.DB, "opps", deal.oppId);
+    if (opp) await env.DB.prepare("UPDATE documents SET data_json = ?, revision = revision + 1, updated_at = ? WHERE collection = 'opps' AND id = ?")
+      .bind(JSON.stringify({ ...opp, closed: "won", wonDealId: id, wonTs: now, lastTouch: new Date(now).toISOString().slice(0, 10) }), now, deal.oppId).run();
+  } else if (action === "lost") {
+    const blocked = wrongStatus(["draft", "changes", "pending", "approved"]); if (blocked) return blocked;
+    if (!note) return error("Add the reason it was lost", 400);
+    deal.status = "lost"; deal.lostTs = now; deal.lostReason = note.slice(0, 500);
+    event(deal, "Closed lost", note);
+  } else if (action === "reopen") {
+    const blocked = wrongStatus(["pending", "approved", "won", "lost"]); if (blocked) return blocked;
+    if (deal.status === "won") {
+      const opp = deal.oppId && await getDocument(env.DB, "opps", deal.oppId);
+      if (opp && opp.wonDealId === id) {
+        const { closed, wonDealId, wonTs, ...rest } = opp;
+        await env.DB.prepare("UPDATE documents SET data_json = ?, revision = revision + 1, updated_at = ? WHERE collection = 'opps' AND id = ?").bind(JSON.stringify(rest), now, deal.oppId).run();
+      }
+    }
+    deal.status = "draft";
+    for (const key of ["wonTs", "lostTs", "lostReason", "reviewedBy", "reviewedTs"]) delete deal[key];
+    event(deal, "Reopened", note);
+  } else return error("Unknown action", 404);
+  deal.updatedTs = now;
+  await save(deal);
+  await audit(env, actor.id, { submit: "Submitted", approve: "Approved", changes: "Requested changes", package: "Updated close package", won: "Closed won", lost: "Closed lost", reopen: "Reopened" }[action], "deals", id, deal.name);
+  return reply(deal);
+}
+
 // A member's own outside calendar (Google, Outlook, Apple), shown only to them on the Calendar page.
 // The private address stays on the server; the browser only ever gets the provider name and events.
 async function handleExternalCalendar(request, env, actor) {
@@ -499,6 +596,8 @@ async function handleApi(request, env, actor, path) {
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
   if (EDITOR_COLLECTIONS.has(path[2]) && (path[1] === "collection" || path[1] === "document") && actor.role !== "edit") return error("Not available to guests", 403);
   if (path[2] === "profiles" && method !== "GET" && (path[1] !== "document" || path[3] !== actor.id)) return error("You can only edit your own profile", 403);
+  if (path[2] === "deals" && method !== "GET" && (path[1] === "document" || path[1] === "collection")) return error("Use the deal builder to change deals", 403);
+  if (path[1] === "deals") return actor.role === "edit" ? handleDeals(request, env, actor, path) : error("Not available to guests", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
