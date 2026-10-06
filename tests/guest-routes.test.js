@@ -460,3 +460,22 @@ test("contacts: every task and meeting names who it was with, from the same acco
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });
+
+test("bare POSTs with an empty body (as Cloudflare sends them) work for sequence and deal actions", async () => {
+  const { sqlite } = fixture();
+  const bare = (path) => worker.fetch(new Request(`https://voyage.example${path}`, {
+    method: "POST", headers: { cookie: `voyage_session=${"a".repeat(64)}`, origin: "https://voyage.example" }, body: new Uint8Array(0) }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } });
+  const starters = await bare("/api/sequences/starters");
+  assert.equal(starters.status, 201, await starters.clone().text());
+  sqlite.prepare("INSERT INTO documents (collection,id,data_json,updated_at) VALUES ('opps','gym',?,?)").run(JSON.stringify({ name: "Gym", stage: 0 }), Date.now());
+  const seqId = sqlite.prepare("SELECT id FROM documents WHERE collection = 'sequences' LIMIT 1").get().id;
+  const enroll = await worker.fetch(new Request(`https://voyage.example/api/sequences/${seqId}/enroll`, { method: "POST",
+    headers: { cookie: `voyage_session=${"a".repeat(64)}`, origin: "https://voyage.example", "content-type": "application/json" }, body: JSON.stringify({ oppIds: ["gym"] }) }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } });
+  assert.equal((await enroll.json()).enrolled, 1);
+  const enrollmentId = sqlite.prepare("SELECT id FROM documents WHERE collection = 'enrollments' LIMIT 1").get().id;
+  for (const action of ["pause", "resume", "skip", "stop"]) assert.equal((await bare(`/api/enrollments/${enrollmentId}/${action}`)).status, 200, action);
+  const dealId = JSON.parse(await (await worker.fetch(new Request("https://voyage.example/api/deals", { method: "POST",
+    headers: { cookie: `voyage_session=${"a".repeat(64)}`, origin: "https://voyage.example", "content-type": "application/json" }, body: JSON.stringify({ name: "X" }) }), { DB: { prepare: sql => fixtureDb(sqlite, sql) } })).text()).id;
+  assert.notEqual((await bare(`/api/deals/${dealId}/submit`)).status, 500);
+  assert.equal((await bare(`/api/deals/${dealId}/submit`)).status, 400, "reports what's missing instead of Invalid JSON");
+});

@@ -2065,7 +2065,7 @@ const OUTCOME_LABEL={connected:"Connected",voicemail:"Left voicemail","no-answer
 let plGoals={calls:20,emails:15,other:5,meetings:3};try{Object.assign(plGoals,JSON.parse(localStorage.getItem("voyage-goals")||"{}"))}catch(_){}
 const isWonAcct=o=>o.closed==="won"||deals.some(d=>d.oppId===o.id&&d.status==="won");
 const liveEnroll=(oppId,aud)=>enrollments.find(e=>e.oppId===oppId&&["active","paused"].includes(e.status)&&(!aud||e.audience===aud));
-async function seqApi(path,body){const r=await fetch("/api"+path,{method:"POST",credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||"That didn't work");db.refresh?.();return j}
+async function seqApi(path,body){const r=await fetch("/api"+path,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(body||{})});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||"That didn't work");db.refresh?.();return j}
 function renderPillage(){
   [...$("plTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===plTab));
   const w=$("plBody");w.replaceChildren();

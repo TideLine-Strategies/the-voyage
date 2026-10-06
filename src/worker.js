@@ -114,6 +114,17 @@ function error(message, status) {
   return reply({ error: message }, status);
 }
 
+// For endpoints where a body is optional: an absent or empty body (as Cloudflare sends for a bare POST) is {}.
+async function readOptionalJson(request) {
+  if (!request.body) return {};
+  const text = await request.text();
+  if (!text.trim()) return {};
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error("Invalid JSON"); }
+  if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected a JSON object");
+  return data;
+}
+
 async function readJson(request) {
   if (!request.body) throw new Error("Missing JSON body");
   const reader = request.body.getReader();
@@ -388,7 +399,7 @@ async function handleDeals(request, env, actor, path) {
   const refresh = deal => { deal.totals = { ...calculateTotals(deal), processing: calculateProcessing(deal.processing, processing) }; deal.flags = approvalFlags(deal, deal.totals, rules); deal.updatedTs = now; return deal; };
   const event = (deal, what, note) => { deal.history = [...(deal.history || []), { ts: now, by: actor.id, action: what, ...(note ? { note: String(note).slice(0, 1000) } : {}) }].slice(-100); };
   if (id && action === "files") return handleDealFiles(request, env, actor, id, path[4]);
-  const body = method === "GET" || method === "DELETE" || !request.body ? {} : await readJson(request);
+  const body = method === "GET" || method === "DELETE" ? {} : await readOptionalJson(request);
   if (!id && method === "POST") {
     const deal = refresh({ ...sanitizeDeal(body), id: crypto.randomUUID(), status: "draft", createdTs: now, createdBy: actor.id });
     deal.owner ||= actor.id;
@@ -541,7 +552,7 @@ async function removeOpenTask(env, enrollment) {
 }
 async function handleSequences(request, env, actor, path) {
   const method = request.method, now = Date.now();
-  const body = method === "POST" && request.body ? await readJson(request) : {};
+  const body = method === "POST" ? await readOptionalJson(request) : {};
   if (path[1] === "sequences" && path[2] === "starters" && method === "POST") {
     const created = [];
     for (const starter of STARTER_SEQUENCES) { const id = crypto.randomUUID(); await putDoc(env, "sequences", id, { ...sanitizeSequence(starter), createdTs: now, by: actor.id }); created.push(id); }
