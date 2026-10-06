@@ -2,12 +2,12 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
 import { STARTER_SEQUENCES, nextStepDate, sanitizeSequence, stepTask, OUTCOMES } from "./sequences.js";
 import { DEFAULT_RULES, EDITABLE, MAX_FILE_BYTES, approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals", "sequences", "enrollments"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals", "sequences", "enrollments", "contacts"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
 const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals", "sequences", "enrollments"]);
-const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes"]);
+const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "contacts"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
 
@@ -173,6 +173,7 @@ export function validateDocument(collection, id, data, actor, method) {
   if (collection === "activity" && method !== "PATCH") data.by = actor.id;
   if (collection === "notes" && method !== "PATCH") data.by = actor.id;
   if (collection === "catalog" && id === "processing") return sanitizeProcessingSettings(data);
+  if (collection === "contacts") return sanitizeContact(data, method);
   if (collection === "sequences") { if (method === "PATCH") throw new Error("Invalid sequence: save the whole sequence"); return sanitizeSequence(data); }
   // One month of actual processing results for one merchant, entered by hand until the partner portal feeds it.
   if (collection === "residuals") {
@@ -223,7 +224,7 @@ async function muninnContext(db, actor) {
   for (const [collection, title, limit, budget] of [
     ["opps", "ACCOUNTS", 250, 40000], ["activities", "TASKS AND APPOINTMENTS", 250, 12000],
     ["notes", "MEETING NOTES", 80, 5000], ["messages", "TEAM CHAT", 80, 4000],
-    ["activity", "RECENT ACTIVITY", 100, 5000],
+    ["activity", "RECENT ACTIVITY", 100, 5000], ["contacts", "CONTACTS", 300, 6000],
     ...(actor.role === "edit" ? [["vendors", "VENDORS AND PARTNERS", 200, 8000]] : []),
   ]) {
     const { results } = await db.prepare("SELECT data_json FROM documents WHERE collection = ? ORDER BY updated_at DESC LIMIT ?")
@@ -475,6 +476,45 @@ async function handleDeals(request, env, actor, path) {
   return reply(deal);
 }
 
+// Contacts: the people at each account. Every task and meeting names who it was with.
+const CONTACT_ROLES = new Set(["Owner", "Decision maker", "Manager", "Front desk", "Billing", "Coach", "Other"]);
+export function sanitizeContact(data, method) {
+  const t = (v, max) => typeof v === "string" ? v.trim().slice(0, max) : "";
+  if (method === "PATCH") {
+    const out = {};
+    for (const [key, max] of [["name", 120], ["title", 120], ["email", 200], ["phone", 40], ["notes", 1000]]) if (Object.hasOwn(data, key)) out[key] = t(data[key], max);
+    if (Object.hasOwn(data, "role")) out.role = CONTACT_ROLES.has(data.role) ? data.role : "Other";
+    if (Object.hasOwn(data, "primary")) out.primary = Boolean(data.primary);
+    if (Object.hasOwn(out, "name") && !out.name) throw new Error("Invalid contact: a name is required");
+    return out;
+  }
+  const out = { oppId: t(data.oppId, 100), name: t(data.name, 120), title: t(data.title, 120), email: t(data.email, 200), phone: t(data.phone, 40),
+    role: CONTACT_ROLES.has(data.role) ? data.role : "Other", primary: Boolean(data.primary), notes: t(data.notes, 1000), createdTs: Number(data.createdTs) || Date.now() };
+  if (!out.name) throw new Error("Invalid contact: a name is required");
+  if (!ID_PATTERN.test(out.oppId)) throw new Error("Invalid contact: pick the account");
+  if (out.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out.email)) throw new Error("Invalid contact: check the email address");
+  return out;
+}
+// Saving a task or meeting, or marking one done, requires a contact from the same account.
+async function activityContactProblem(request, env, path, method) {
+  const body = await request.clone().json().catch(() => null);
+  if (!body || typeof body !== "object") return null;
+  const existing = path[3] ? await getDocument(env.DB, "activities", path[3]).catch(() => null) : null;
+  const merged = { ...(existing || {}), ...body };
+  const needed = method !== "PATCH" || (body.done === true && !existing?.done) || Object.hasOwn(body, "contactId");
+  if (!needed) return null;
+  if (!merged.contactId) return "Pick who this was with: choose a contact or add a new one";
+  const contact = await getDocument(env.DB, "contacts", String(merged.contactId)).catch(() => null);
+  if (!contact) return "That contact no longer exists";
+  if (merged.oppId && contact.oppId !== merged.oppId) return "That contact belongs to a different account";
+  return null;
+}
+async function primaryContactId(env, oppId) {
+  const { results } = await env.DB.prepare("SELECT id, data_json FROM documents WHERE collection = 'contacts'").all();
+  const list = results.map(row => ({ id: row.id, ...JSON.parse(row.data_json) })).filter(c => c.oppId === oppId);
+  return (list.find(c => c.primary) || list.find(c => c.role === "Owner" || c.role === "Decision maker") || list[0])?.id || "";
+}
+
 // Sequences: enroll accounts, and move each enrollment forward one task at a time.
 const STAGE_NAMES = ["Prospecting", "Discovery", "Alignment", "Assessment", "Validation", "Proposal", "Business review"];
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -488,7 +528,9 @@ async function templateVars(env, oppId, ownerId) {
 }
 async function scheduleStep(env, sequence, enrollment, index, date) {
   const taskId = crypto.randomUUID();
-  await putDoc(env, "activities", taskId, stepTask({ ...sequence }, enrollment, index, date, await templateVars(env, enrollment.oppId, enrollment.owner), Date.now()));
+  const task = stepTask({ ...sequence }, enrollment, index, date, await templateVars(env, enrollment.oppId, enrollment.owner), Date.now());
+  task.contactId = enrollment.contactId || await primaryContactId(env, enrollment.oppId);
+  await putDoc(env, "activities", taskId, task);
   enrollment.stepIndex = index; enrollment.taskId = taskId; enrollment.nextDue = date;
 }
 async function removeOpenTask(env, enrollment) {
@@ -810,6 +852,10 @@ async function handleApi(request, env, actor, path) {
   if (path[1] === "sequences" || path[1] === "enrollments") return actor.role === "edit" ? handleSequences(request, env, actor, path) : error("Not available to guests", 403);
   if (path[1] === "deals") return actor.role === "edit" ? handleDeals(request, env, actor, path) : error("Not available to guests", 403);
   if (method !== "GET" && !canWrite(actor, path, method)) return error("Guest action not allowed", 403);
+  if (path[2] === "activities" && (path[1] === "document" || path[1] === "collection") && ["POST", "PUT", "PATCH"].includes(method)) {
+    const problem = await activityContactProblem(request, env, path, method);
+    if (problem) return error(problem, 400);
+  }
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
@@ -928,7 +974,7 @@ export default {
       return response;
     }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence|Invalid contact)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

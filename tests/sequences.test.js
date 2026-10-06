@@ -24,6 +24,6 @@ test("starter sequences are valid and contain no customer or pricing details", (
   for (const starter of STARTER_SEQUENCES) {
     const s = sanitizeSequence(starter);
     assert.ok(s.steps.length >= 4);
-    assert.doesNotMatch(JSON.stringify(starter), /$d/, "no prices in starter templates");
+    assert.doesNotMatch(JSON.stringify(starter), /\$\d/, "no prices in starter templates");
   }
 });

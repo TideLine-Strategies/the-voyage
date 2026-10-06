@@ -60,7 +60,8 @@ test("guest sees the full CRM and Muninn context but only the guest chat", async
 test("guest changes existing CRM records but cannot create, delete, or change location membership", async () => {
   const { call, seed, sqlite } = fixture();
   seed("opps", "account", { name: "Gym", stage: 1, locations: [{ id: "loc1", city: "Austin" }] });
-  seed("activities", "task", { kind: "task", done: false });
+  seed("contacts", "c1", { oppId: "account", name: "Pat Owner", role: "Owner" });
+  seed("activities", "task", { kind: "task", done: false, contactId: "c1" });
   assert.equal((await call("b", "PATCH", "/api/document/opps/account", { stage: 2 })).status, 200);
   assert.equal((await call("b", "PATCH", "/api/document/activities/task", { done: true })).status, 200);
   assert.equal((await call("b", "PATCH", "/api/document/opps/account", { locations: [{ id: "loc1", city: "Dallas" }] })).status, 200);
@@ -394,6 +395,8 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   const { call, seed, sqlite } = fixture();
   seed("opps", "gym", { name: "Sample Gym", city: "Elgin", stage: 0, owner: "QS" });
   seed("opps", "dojo", { name: "Dojo", stage: 0, owner: "QS" });
+  seed("contacts", "gym-owner", { oppId: "gym", name: "Gina Owner", role: "Owner" });
+  seed("contacts", "dojo-owner", { oppId: "dojo", name: "Dan Owner", role: "Owner", primary: true });
   await call("a", "PUT", "/api/document/profiles/QS", { title: "Founder", phone: "555-0100" });
   assert.equal((await call("a", "PUT", "/api/document/sequences/seq", { name: "Outreach", steps: [
     { id: "call", day: 0, type: "Cold call", title: "Call {{account}}", script: "Hi, this is {{my_name}}, {{my_title}}" },
@@ -420,7 +423,7 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   const expected = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   assert.equal(task2.date, expected, "next step keeps the 2-day gap from when it was done");
   assert.match(task2.notes, /Email Sample Gym in Elgin/);
-  await call("a", "POST", "/api/collection/activities", { kind: "appt", type: "Discovery", oppId: "gym", date: "2026-10-20" });
+  await call("a", "POST", "/api/collection/activities", { kind: "appt", type: "Discovery", oppId: "gym", date: "2026-10-20", contactId: "gym-owner" });
   const stopped = (await (await call("a", "GET", `/api/document/enrollments/${gym.id}`)).json()).data;
   assert.deepEqual([stopped.status, stopped.stopReason, stopped.success], ["stopped", "Meeting booked", true]);
   assert.equal((await (await call("a", "GET", `/api/document/activities/${afterDone.taskId}`)).json()).exists, false, "its open task is cleared");
@@ -435,4 +438,25 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   assert.equal((await (await call("a", "GET", `/api/document/enrollments/${dojo.id}`)).json()).data.stopReason, "Moved to Discovery");
   const starters = await (await call("a", "POST", "/api/sequences/starters")).json();
   assert.equal(starters.created.length, 2);
+});
+
+test("contacts: every task and meeting names who it was with, from the same account", async () => {
+  const { call, seed } = fixture();
+  seed("opps", "gym", { name: "Gym", stage: 0 });
+  seed("opps", "other", { name: "Other", stage: 0 });
+  seed("activities", "old", { kind: "task", type: "Email", oppId: "gym", done: false });
+  assert.equal((await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: " " })).status, 400, "name required");
+  assert.equal((await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: "Pat", email: "nope" })).status, 400, "email checked");
+  const pat = (await (await call("a", "POST", "/api/collection/contacts", { oppId: "gym", name: "Pat Owner", title: "Owner", role: "Owner", email: "pat@gym.example" })).json()).id;
+  const otherC = (await (await call("a", "POST", "/api/collection/contacts", { oppId: "other", name: "Olive" })).json()).id;
+  assert.equal((await call("b", "POST", "/api/collection/contacts", { oppId: "gym", name: "Guest add" })).status, 403, "guests can't create contacts");
+  assert.equal((await call("b", "PATCH", `/api/document/contacts/${pat}`, { phone: "555-0100" })).status, 200, "guests can update existing contacts");
+  const task = { kind: "task", type: "Cold call", oppId: "gym", date: "2026-10-07" };
+  assert.match(await (await call("a", "POST", "/api/collection/activities", task)).text(), /Pick who this was with/);
+  assert.match(await (await call("a", "POST", "/api/collection/activities", { ...task, contactId: otherC })).text(), /different account/);
+  assert.match(await (await call("a", "POST", "/api/collection/activities", { ...task, contactId: "ghost" })).text(), /no longer exists/);
+  assert.equal((await call("a", "POST", "/api/collection/activities", { ...task, contactId: pat })).status, 201);
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { notes: "Edited" })).status, 200, "older tasks can still be edited");
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
+  assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });

@@ -373,6 +373,9 @@ textarea{min-height:70px;resize:vertical}
 .docrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.docrow:last-child{border-bottom:0}.docrow a{color:var(--blue);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.docrow .lx{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer}
 .docdrop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.docdrop select{background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--text)}
 #dcReq{font-weight:600;text-transform:none;letter-spacing:0;margin-left:6px}#dcReq.ok{color:var(--green)}#dcReq.no{color:var(--red)}
+.ctctbl .row{grid-template-columns:minmax(0,1.3fr) 7rem minmax(0,1.3fr) 8rem 6rem}.ctctbl .row a{color:var(--blue);text-decoration:none;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+select.need{border-color:var(--red)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)}
+@media (max-width:860px){.ctctbl .row{grid-template-columns:minmax(0,1fr) auto}.ctctbl .row>:nth-child(n+2):not(:last-child){display:none}}
 /* Pillage */
 dialog.wide{width:min(860px,calc(100% - 24px))}
 .sqrules{display:flex;gap:18px;flex-wrap:wrap;margin:-4px 0 6px}.sqrules .chk{margin:0}
@@ -465,7 +468,7 @@ dialog.wide{width:min(860px,calc(100% - 24px))}
 .dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
 @media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
-body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
+body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#aAddContact,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
 body.guest .nav[data-view="cadence"],body.guest #view-cadence,body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
 body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
@@ -775,6 +778,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
               <div id="aLocDetail"></div>
             </div>
           </div>
+          <div class="sec" id="aContactsSec"><div class="sech"><h2>Contacts</h2><button class="btn" id="aAddContact">+ Add contact</button></div><div id="aContacts"></div></div>
           <div class="sec" id="aDealsSec"><div class="sech"><h2>Deals</h2><button class="btn" id="aNewDeal">+ New deal</button></div><div id="aDeals"></div></div>
           <div class="sec"><div class="sech"><h2>Notes</h2></div><div class="notes" id="aNotes"></div></div>
           <div class="sec"><div class="sech"><h2>Account activity</h2></div><div class="hist" id="aHist"></div></div>
@@ -865,6 +869,17 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <div><button class="btn danger" id="delBtn">Delete</button></div>
       <div><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save opp</button></div>
     </div>
+  </div>
+</dialog>
+<dialog id="cdlg" aria-labelledby="cdTitle">
+  <div class="dlg">
+    <h2 id="cdTitle">New contact</h2>
+    <p class="city" id="cdAcct" style="margin:-6px 0 12px"></p>
+    <div class="grid2"><label>Name<input id="cdName" maxlength="120" autocomplete="off" placeholder="Pat Owner"></label><label>Title<input id="cdTitle2" maxlength="120" autocomplete="off" placeholder="Owner"></label></div>
+    <div class="grid2"><label>Role<select id="cdRole"><option>Owner</option><option>Decision maker</option><option>Manager</option><option>Front desk</option><option>Billing</option><option>Coach</option><option selected>Other</option></select></label><label class="chk" style="align-self:end"><input type="checkbox" id="cdPrimary">Main contact for this account</label></div>
+    <div class="grid2"><label>Email<input id="cdEmail" type="email" maxlength="200" autocomplete="off"></label><label>Phone<input id="cdPhone" type="tel" maxlength="40" autocomplete="off"></label></div>
+    <label>Notes<textarea id="cdNotes" maxlength="1000" placeholder="Best time to reach, what they care about"></textarea></label>
+    <div class="acts"><div><button class="btn danger" id="cdDel">Delete</button></div><div><button class="btn" id="cdCancel">Cancel</button><button class="btn primary" id="cdSave">Save contact</button></div></div>
   </div>
 </dialog>
 <dialog id="sqdlg" aria-labelledby="sqTitle" class="wide">
@@ -962,6 +977,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="lb" style="margin-bottom:4px">Type</div>
     <div class="typepick" id="tType"></div>
     <div class="grid2"><label>Opp<select id="tOpp"></select></label><label>Owner<select id="tOwner"></select></label></div>
+    <label>Contact: who it was with<select id="tContact" required></select></label>
     <div class="grid2">
       <label>Date<input id="tDate" type="date"></label>
       <label id="tTimeWrap">Time<input id="tTime" placeholder="10:30" autocomplete="off"></label>
@@ -1129,7 +1145,7 @@ function render(){
   const sb=$("stats");sb.replaceChildren();
   stats.forEach(([n,l,c,fn,tip])=>{const d=el("button","stat stat-btn");d.title=tip;d.setAttribute("aria-label",n+" "+l+". "+tip);const b=el("b",null,n);if(c&&n)b.style.color=c;d.append(b,el("span",null,l),el("i","stat-go","View ›"));d.onclick=fn;sb.append(d)});
   if(!$("drill").hidden&&drillKind)openDrill(drillKind,true);
-  renderBoard();renderAccount();renderAccounts();renderAccountDeals();if(view==="calendar")renderCalendar();if(view==="cadence"&&!document.activeElement?.closest?.("#plBody input"))renderPillage();
+  renderBoard();renderAccount();renderAccounts();renderAccountDeals();renderAccountContacts();if(view==="calendar")renderCalendar();if(view==="cadence"&&!document.activeElement?.closest?.("#plBody input"))renderPillage();
 }
 
 function drawStagePick(){
@@ -1182,7 +1198,7 @@ function itemRow(i,showOpp){
       const b=el("button","item-b");
       const top=el("div");top.append(el("span","chip k-"+k,i.type));if(showOpp)top.append(el("span","nm",i.oppName||"No opp"));
       const wh=el("div","when"+(!i.done&&i.date&&i.date<t?" late":""),fmtDate(i.date)+(i.time?" at "+i.time:""));
-      b.append(top,wh);if(i.notes)b.append(el("div","nt",i.notes));
+      b.append(top,wh);const cn=contactName(i.contactId)||i.contactName;b.append(el("div",cn?"nt":"nt warnx",cn?"With "+cn:"No contact yet"));if(i.notes)b.append(el("div","nt",i.notes));
       b.onclick=()=>openT(k,i);
       const sr=el("div","side-r");const avs=el("div","avs");
       [i.owner||"CK",...(i.shared||[]).filter(x=>x!==(i.owner||"CK"))].forEach(x=>avs.append(avatar(x)));
@@ -1205,9 +1221,11 @@ function openT(kind,i,presetOpp,preset){
   $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
   $("tDoneLbl").textContent=kind==="task"?"Done":"Completed";
+  fillContactSelect(i?.contactId);
   $("tDel").hidden=!i;$("tNotesBtn").hidden=!(i&&kind==="appt"&&i.oppId);$("tIcs").hidden=!(i&&kind==="appt"&&i.date);$("tdlg").showModal();
 }
 async function toggleDone(i,done){
+  if(done&&!i.contactId){toast("Pick who this was with before marking it done");renderItems();openT(i.kind,i);setTimeout(()=>{$("tContact").classList.add("need");$("tContact").focus()},60);return}
   const upd={done,doneTs:done?Date.now():null};
   const o=opps.find(x=>x.id===i.oppId);
   if(o&&done){if(live)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});else o.lastTouch=today()}
@@ -1221,10 +1239,11 @@ $("addTask").onclick=()=>openT("task");
 $("addAppt").onclick=()=>openT("appt");
 $("tCancel").onclick=()=>$("tdlg").close();
 $("tSave").onclick=async()=>{
+  if(!$("tContact").value||$("tContact").value==="__new"){$("tContact").classList.add("need");$("tContact").focus();toast("Pick who this was with, or add a new contact");return}
   const types=tKind==="task"?TASK_TYPES:APPT_TYPES;
   const o=opps.find(x=>x.id===$("tOpp").value);
   const done=$("tDone").checked;
-  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:tKind==="appt"?$("tTime").value.trim():"",notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[]};
+  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:tKind==="appt"?$("tTime").value.trim():"",notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
   const was=tEdit;$("tdlg").close();
   const what=data.type+(tKind==="appt"?" meeting":"")+(data.oppName?" with "+data.oppName:"");
   logAct(was?(!was.done&&done?"Completed ":"Updated ")+what:(tKind==="task"?"Added task: ":"Booked ")+what+(data.date?" for "+fmtDate(data.date):""),data.oppId);
@@ -1998,6 +2017,45 @@ async function importAccounts(file){
   logAct(`Imported ${done} accounts from a spreadsheet`,"");track("action","Imported accounts");
   toast(done===add.length?`Imported ${done} accounts`:`Imported ${done} of ${add.length}. Some failed; try those again.`);
 }
+// Contacts: people at each account. Every task and meeting must name one (enforced by the server too).
+let contacts=[],cdEdit=null,cdAfter=null;
+const contactName=id=>contacts.find(c=>c.id===id)?.name||"";
+const contactsFor=oppId=>contacts.filter(c=>!oppId||c.oppId===oppId).sort((a,b)=>(b.primary-a.primary)||a.name.localeCompare(b.name));
+function fillContactSelect(selected){
+  const oppId=$("tOpp").value,s=$("tContact"),list=contactsFor(oppId);s.replaceChildren(new Option(list.length?"Pick a contact…":"No contacts yet for this account",""));
+  list.forEach(c=>s.append(new Option(c.name+(c.title?" · "+c.title:c.role&&c.role!=="Other"?" · "+c.role:"")+(oppId?"":" ("+oppNameOf(c.oppId)+")")+(c.primary?" ★":""),c.id)));
+  if(!guest&&oppId)s.append(new Option("+ Add a new contact…","__new"));
+  s.value=list.some(c=>c.id===selected)?selected:(list.length===1?list[0].id:"");s.classList.remove("need");
+}
+$("tOpp").addEventListener("change",()=>fillContactSelect($("tContact").value));
+$("tContact").onchange=()=>{if($("tContact").value!=="__new"){$("tContact").classList.remove("need");return}$("tContact").value="";openContact(null,$("tOpp").value,c=>fillContactSelect(c.id))};
+function openContact(c,oppId,after){
+  cdEdit=c||null;cdAfter=after||null;const acct=c?.oppId||oppId;$("cdTitle").textContent=c?"Edit contact":"New contact";$("cdAcct").textContent="Account: "+oppNameOf(acct);$("cdAcct").dataset.opp=acct;
+  $("cdName").value=c?.name||"";$("cdTitle2").value=c?.title||"";$("cdRole").value=c?.role||"Other";$("cdPrimary").checked=c?!!c.primary:!contactsFor(acct).length;$("cdEmail").value=c?.email||"";$("cdPhone").value=c?.phone||"";$("cdNotes").value=c?.notes||"";
+  $("cdDel").hidden=!c||guest;$("cdlg").showModal();setTimeout(()=>$("cdName").focus(),30);
+}
+$("cdCancel").onclick=()=>$("cdlg").close();
+$("cdSave").onclick=async()=>{
+  const name=$("cdName").value.trim();if(!name){toast("Add the contact's name");$("cdName").focus();return}
+  const oppId=$("cdAcct").dataset.opp,data={oppId,name,title:$("cdTitle2").value.trim(),role:$("cdRole").value,primary:$("cdPrimary").checked,email:$("cdEmail").value.trim(),phone:$("cdPhone").value.trim(),notes:$("cdNotes").value.trim()};
+  try{
+    let id=cdEdit?.id;
+    if(cdEdit){const {oppId:_,...rest}=data;await db.doc("contacts/"+id).update(rest)}else{const ref=await db.collection("contacts").add({...data,createdTs:Date.now()});id=ref.id}
+    if(data.primary)await Promise.all(contacts.filter(c=>c.oppId===oppId&&c.id!==id&&c.primary).map(c=>db.doc("contacts/"+c.id).update({primary:false})));
+    const saved={id,...(cdEdit||{}),...data};contacts=[...contacts.filter(c=>c.id!==id),saved];
+    $("cdlg").close();toast(cdEdit?"Contact saved":"Contact added");track("action",cdEdit?"Edited a contact":"Added a contact");renderAccountContacts();if(cdAfter)cdAfter(saved);
+  }catch(e){toast(e.message||"That didn't save")}
+};
+$("cdDel").onclick=async()=>{const c=cdEdit;if(!c)return;const used=items.filter(i=>i.contactId===c.id).length;if(!confirm(`Delete ${c.name}?`+(used?`\n${used} task${used===1?"":"s"} and meeting${used===1?"":"s"} name them; those keep the name but will need a new contact to be saved again.`:"")))return;$("cdlg").close();await write(()=>db.doc("contacts/"+c.id).delete(),"Contact deleted");contacts=contacts.filter(x=>x.id!==c.id);renderAccountContacts()};
+function renderAccountContacts(){
+  if(view!=="account")return;const w=$("aContacts");if(!w)return;w.replaceChildren();const list=contactsFor(acctId);
+  if(!list.length){w.append(el("div","empty",guest?"No contacts yet.":"No contacts yet. Add the owner or decision maker first; tasks and meetings need a contact."));return}
+  w.append(adTable("ctctbl",["Name","Role","Email","Phone",""],list.map(c=>{const r=el("button","row"),n=el("div");n.append(el("div","nm",c.name+(c.primary?" ★":"")),el("div","co",c.title||""));
+    const link=(t,h)=>{if(!t)return el("span","city","");const a=el("a",null,t);a.href=h;a.onclick=e=>e.stopPropagation();return a};
+    r.append(n,el("span","city",c.role||""),link(c.email,"mailto:"+c.email),link(c.phone,"tel:"+(c.phone||"").replace(/[^\d+]/g,"")),el("span","city",items.filter(i=>i.contactId===c.id).length+" touches"));r.onclick=()=>openContact(c);return r})));
+}
+$("aAddContact").onclick=()=>openContact(null,acctId);
+
 // Pillage: sequences (cadences), enrollments, and the daily outreach list. The server creates each
 // step's task, advances on completion, and stops on a booked meeting or stage change.
 let sequences=[],enrollments=[],plTab="today",sqEdit=null,sqSteps=[],plOpen=new Set();
@@ -2020,6 +2078,7 @@ function mailtoFor(i){
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 async function completeStep(i,outcome){
+  if(!i.contactId){toast("Pick who you reached, then log the outcome");openT(i.kind,i);setTimeout(()=>{$("tContact").classList.add("need");$("tContact").focus()},60);return}
   const o=opps.find(x=>x.id===i.oppId);
   if(o)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});
   logAct(`${OUTCOME_LABEL[outcome]||"Done"}: ${i.type}${i.oppName?" with "+i.oppName:""}`,i.oppId);
@@ -2029,7 +2088,7 @@ async function completeStep(i,outcome){
 function dueItem(i){
   const t=today(),late=i.date<t,c=el("div","dueitem"+(late?" late":"")),top=el("div","duetop");
   const lines=String(i.notes||"").split("\n").filter(Boolean),title=lines[0]||i.type;
-  top.append(el("span","duetype",i.type));const n=el("div","nm");n.append(el("div",null,i.oppName||"No account"),el("div","city",title));top.append(n);
+  top.append(el("span","duetype",i.type));const n=el("div","nm"),cn=contactName(i.contactId)||i.contactName;n.append(el("div",null,(i.oppName||"No account")+(cn?" · "+cn:"")),el("div","city",title+(cn?"":" · no contact yet")));top.append(n);
   if(i.seq)top.append(el("span","dueseq",`${i.seq.name} · step ${i.seq.step} of ${i.seq.of}`));
   top.append(el("span","city"+(late?" warnx":""),late?"Due "+fmtDate(i.date):"Today"));c.append(top);
   const acts=el("div","dueacts"),b=(label,cls,fn)=>{const x=el("button","btn "+cls,label);x.type="button";x.onclick=fn;acts.append(x);return x};
@@ -2820,6 +2879,7 @@ function searchAll(q){
   const words=q.split(/\s+/),hit=(...f)=>{const s=f.filter(Boolean).join(" ").toLowerCase();return words.every(w=>s.includes(w))};
   const snip=text=>{text=String(text||"");const i=text.toLowerCase().indexOf(words[0]);return i<0?text.slice(0,80):(i>30?"…":"")+text.slice(Math.max(0,i-30),i+60)};
   const groups=[
+    ["Contacts",contacts.filter(c=>hit(c.name,c.title,c.email,c.phone,c.role,c.notes)).map(c=>({t:c.name+(c.title?" · "+c.title:""),s:oppNameOf(c.oppId)+(c.phone?" · "+c.phone:""),go:()=>{openAccount(c.oppId,"accounts");setTimeout(()=>openContact(c),50)}}))],
     ["Accounts",opps.filter(o=>hit(o.name,o.city,o.notes,o.bio,o.sourceNote,(o.locations||[]).map(l=>[l.label,l.city,l.contact,l.notes].join(" ")).join(" "))).map(o=>({t:o.name,s:[o.city,STAGES[o.stage]].filter(Boolean).join(" · "),go:()=>openAccount(o.id,"accounts")}))],
     ["Tasks and appointments",items.filter(i=>hit(i.type,i.oppName,i.notes)).map(i=>({t:i.type+(i.oppName?" with "+i.oppName:""),s:fmtDate(i.date)+(i.done?" · done":""),go:()=>openT(i.kind,i)}))],
     ["Meeting notes",notes.filter(n=>hit(n.oppName,n.type,n.text)).map(n=>({t:n.type+" notes: "+(n.oppName||""),s:snip(n.text),go:()=>openNotes(n.oppId,n.type)}))],
@@ -2902,7 +2962,7 @@ function go(v){
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
-  if(v==="account"){renderAccount();renderAccountDeals()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
+  if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -3023,6 +3083,7 @@ render();renderActs();renderItems();
     if(!firstMsgs){const fresh=msgs.filter(m=>!prevIds.has(m.id)&&m.by!==me);const n=fresh.sort((a,b)=>b.ts-a.ts)[0];if(n&&!(view==="team"&&tcCh===n.ch))toast(nameOf(n.by)+" in "+chName(n.ch)+": "+n.text.slice(0,60))}
     firstMsgs=false;renderTeam();loaded("messages");
   },failed);
+  db.collection("contacts").onSnapshot(snap=>{contacts=snap.docs.map(d=>({id:d.id,...d.data()}));renderAccountContacts()},()=>{});
   db.collection("profiles").onSnapshot(snap=>{profiles=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="profile")renderProfile()},()=>{});
   if(!guest){db.collection("sequences").onSnapshot(snap=>{sequences=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="cadence")renderPillage()},()=>{});db.collection("enrollments").onSnapshot(snap=>{enrollments=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="cadence"&&!document.activeElement?.closest?.("#plBody input"))renderPillage()},()=>{})}
   if(!guest){db.collection("deals").onSnapshot(snap=>{deals=snap.docs.map(d=>({id:d.id,...d.data()}));updateDealBadge();renderAccountDeals();if(view==="deals")renderDeals();if(view==="deal"&&dlId&&!dlDirty){const fresh=deals.find(x=>x.id===dlId);if(fresh&&fresh.updatedTs!==dl.updatedTs){dl=JSON.parse(JSON.stringify(fresh));fillBuilder()}}},()=>{});db.collection("residuals").onSnapshot(snap=>{residuals=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="financials"&&!document.activeElement?.closest?.(".dlsec"))renderDeals()},()=>{});db.collection("catalog").onSnapshot(snap=>{catalog=snap.docs.map(d=>({id:d.id,...d.data()}));if(view==="deals"&&dsTab==="catalog"&&!document.activeElement?.closest?.(".ctbl"))renderDeals()},()=>{})}
