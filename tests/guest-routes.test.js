@@ -438,10 +438,10 @@ test("sequences: enroll, advance on done, keep the gap, stop on a booked meeting
   await call("a", "PATCH", "/api/document/opps/dojo", { stage: 1 });
   assert.equal((await (await call("a", "GET", `/api/document/enrollments/${dojo.id}`)).json()).data.stopReason, "Moved to Discovery");
   const starters = await (await call("a", "POST", "/api/sequences/starters")).json();
-  assert.equal(starters.created.length, 9);
+  assert.equal(starters.created.length, 15);
   assert.equal((await (await call("a", "POST", "/api/sequences/starters")).json()).created.length, 0, "adding again creates no duplicates");
   const lib = (await (await call("a", "GET", "/api/sequences/library")).json()).library;
-  assert.equal(lib.length, 9);
+  assert.equal(lib.length, 15);
   assert.ok(lib.every(s => s.steps.every(step => step.script.length > 40)), "every library step is fully written");
 });
 
