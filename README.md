@@ -14,6 +14,18 @@ The D1 `members` table is the private roster. Active membership is checked on ev
 
 Create a private roster JSON array outside Git, with objects containing `id`, `name`, `email`, and `role`. Run `node scripts/make-invites.mjs https://voyage.tidelinestrats.com <private-roster.json> <private-invites.sql> <private-links.json> [member-email]`. The script writes one-time links and roster/invitation SQL to private files with restricted permissions; it refuses to overwrite existing files. After reviewing the SQL, apply it with `wrangler d1 execute the-voyage --remote --profile tideline --file <private-invites.sql>`. Send each link privately. Invitations last 30 days; signed-in sessions last 180 days unless the member is deactivated.
 
+The Claude-only Muninn assistant is not connected in this hosted version; the CRM, notes, activity, and team chat use D1. The two member identities are enforced in the Worker and the invite database.
+
+## Summarize meeting notes with your own agent
+
+The Worker has no AI service and holds no API key. Instead each person runs the agent they are already signed in to on their own computer: Claude Code for Cody, Codex for Quan. Plan logins are only used through those tools, never by the site.
+
+1. Sign in once: run `claude` (Claude Code) or `codex login` (Codex).
+2. In a note, add the notes or upload a transcript, then click **Copy prompt**.
+3. Run `node scripts/voyage-summarize.mjs`. It picks Claude Code first, then Codex; force one with `--agent claude` or `--agent codex` (or set `VOYAGE_AGENT`).
+4. Back in the note, click **Paste summary**, review it, add any action items as tasks, and save the note.
+
+The script only accepts a prompt copied from the app, runs the agent with tools off in an empty temporary folder, and puts the summary JSON back on the clipboard. It needs Node 18 or newer and no dependencies.
 ## Muninn with local Codex
 
 Muninn uses each member's signed-in Codex CLI through a local bridge; no OpenAI API key is configured on the Worker. Install Node.js and Codex CLI, run `codex login`, and start `node bridge/muninn-bridge.mjs` while using The Voyage. On macOS, `sh bridge/install-macos.sh` installs the bridge as a per-user LaunchAgent. The bridge listens on `127.0.0.1:38917`, runs Codex read-only, and accepts requests from the Voyage site origins. The Worker supplies current CRM context from D1, and each member's Muninn history is saved separately in D1. Muninn cannot edit CRM records or send messages.
