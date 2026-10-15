@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { memberForEmail, validateDocument } from "../src/worker.js";
+import worker, { canWrite, memberForEmail, validateDocument } from "../src/worker.js";
 
-test("only the two approved TideLine identities map to members", () => {
-  assert.equal(memberForEmail("Q.STEWART@TIDELINESTRATS.COM")?.id, "QS");
-  assert.equal(memberForEmail("c.knudsen@tidelinestrats.com")?.id, "CK");
-  assert.equal(memberForEmail("c.kundsen@tidelinestrats.com"), null);
-  assert.equal(memberForEmail("other@tidelinestrats.com"), null);
+test("membership resolves from the active SQL roster", async () => {
+  const db = muninnDb();
+  assert.equal((await memberForEmail("Q.STEWART@TIDELINESTRATS.COM", db))?.id, "QS");
+  assert.equal((await memberForEmail("guest@example.com", db))?.role, "guest");
+  assert.equal(await memberForEmail("other@example.com", db), null);
 });
 
 test("client cannot impersonate a chat author or edit a message body", () => {
@@ -43,13 +43,21 @@ function muninnDb() {
         bind(...values) { args = values; return this; },
         async first() {
           if (sql.includes("FROM sessions")) return { member_id: "QS" };
+          if (sql.includes("FROM members WHERE email")) return ({
+            "q.stewart@tidelinestrats.com": { id: "QS", name: "Quan", role: "edit" },
+            "guest@example.com": { id: "MJ", name: "Mary", role: "guest" },
+          })[String(args[0]).toLowerCase()] || null;
+          if (sql.includes("FROM members WHERE id")) return ({ QS: { id: "QS", name: "Quan", role: "edit" }, MJ: { id: "MJ", name: "Mary", role: "guest" } })[args[0]] || null;
           if (sql.includes("FROM documents")) {
             const data = docs.get(`${args[0]}/${args[1]}`);
             return data ? { data_json: JSON.stringify(data) } : null;
           }
           return null;
         },
-        async all() { return { results: [...docs.entries()].filter(([key]) => key.startsWith(`${args[0]}/`)).map(([, data]) => ({ data_json: JSON.stringify(data) })) }; },
+        async all() {
+          if (sql.includes("FROM members")) return { results: [{ id: "MJ", name: "Mary", role: "guest" }, { id: "QS", name: "Quan", role: "edit" }] };
+          return { results: [...docs.entries()].filter(([key]) => key.startsWith(`${args[0]}/`)).map(([key, data]) => ({ id: key.split("/")[1], data_json: JSON.stringify(data) })) };
+        },
         async run() {
           if (sql.startsWith("INSERT INTO documents")) docs.set(`assistant_threads/${args[0]}`, JSON.parse(args[1]));
           if (sql.startsWith("DELETE FROM documents")) docs.delete(`assistant_threads/${args[0]}`);
@@ -85,4 +93,29 @@ test("Muninn serves live SQL context and stores a member conversation without an
   assert.equal((await history.json()).turns.length, 2);
   await worker.fetch(muninnRequest("DELETE"), env);
   assert.equal(db.docs.has("assistant_threads/QS"), false);
+});
+
+test("guest policy allows edits to existing CRM records and separate chat", () => {
+  const guest = { id: "MJ", role: "guest" };
+  assert.equal(canWrite(guest, ["api", "collection", "opps"], "POST"), false);
+  assert.equal(canWrite(guest, ["api", "document", "opps", "a1"], "PATCH"), true);
+  assert.equal(canWrite(guest, ["api", "document", "opps", "a1"], "PUT"), false);
+  assert.equal(canWrite(guest, ["api", "document", "opps", "a1"], "DELETE"), false);
+  assert.equal(canWrite(guest, ["api", "document", "activities", "a1"], "PATCH"), true);
+  assert.equal(canWrite(guest, ["api", "document", "notes", "n1"], "PATCH"), true);
+  assert.equal(canWrite(guest, ["api", "collection", "messages"], "POST"), true);
+  assert.equal(canWrite(guest, ["api", "document", "reads", "QS"], "PATCH"), false);
+  assert.equal(canWrite(guest, ["api", "document", "reads", "MJ"], "PATCH"), true);
+  assert.equal(canWrite(guest, ["api", "presence"], "POST"), true);
+  assert.equal(canWrite(guest, ["api", "muninn"], "POST"), true);
+  assert.equal(canWrite({ id: "QS", role: "edit" }, ["api", "collection", "opps"], "POST"), true);
+});
+
+test("team roster comes from SQL without exposing email addresses", async () => {
+  const response = await worker.fetch(new Request("https://voyage.tidelinestrats.com/api/document/settings/team", {
+    headers: { cookie: `voyage_session=${"a".repeat(64)}` },
+  }), { DB: muninnDb() });
+  const { exists, data } = await response.json();
+  assert.equal(exists, true);
+  assert.deepEqual(data.members, [{ id: "MJ", name: "Mary", role: "guest" }, { id: "QS", name: "Quan", role: "edit" }]);
 });
