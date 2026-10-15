@@ -24,7 +24,7 @@ function setup(add = async () => {}) {
     STAGES: ['Lead'], APPT_TYPES: ['Discovery'], TASK_TYPES: ['Email'],
     team: [{ id: 'QS', name: 'Quan' }], me: 'QS', nameOf: x => x,
     fmtDate: x => x, today: () => '2026-10-15', notes: [], live: true,
-    db: { collection: () => ({ add }) }, logAct() {}, toast: x => messages.push(x),
+    db: { collection: () => ({ add }) }, logAct() {}, track() {}, toast: x => messages.push(x),
   });
   vm.runInContext(cardSource + '\n' + writeSource, ctx);
   return { ctx, messages };
