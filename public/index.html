@@ -861,7 +861,7 @@ function renderActs(){
   });
 }
 async function write(fn,okMsg){
-  try{await fn();toast(okMsg)}catch(e){toast(e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
+  try{await fn();toast(okMsg);return true}catch(e){toast(e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.");return false}
 }
 $("saveBtn").onclick=async()=>{
   const data=readForm();if(!data)return;
@@ -1042,7 +1042,7 @@ function noteCard(n,o,appts){
   as.onchange=()=>{const a=appts.find(x=>x.id===as.value);if(a&&a.date)di.value=a.date;mark()};
   al.append(as);g.append(dl,al);
   const tl=el("label",null,"Notes");const ta=document.createElement("textarea");ta.value=n.text||"";ta.placeholder="Who was there, what you learned, pain points, next steps. Dictate with Wispr Flow, paste a transcript, or upload one below.";tl.append(ta);
-  let summary=n.summary||null,sumCtl=null;
+  let summary=n.summary?structuredClone(n.summary):null;
   const tools=el("div","ntools");
   const up=el("button","btn","Upload transcript");up.type="button";
   const fi=document.createElement("input");fi.type="file";fi.accept=".txt,.md,.vtt,.srt,.text,text/plain";fi.hidden=true;
@@ -1055,28 +1055,14 @@ function noteCard(n,o,appts){
     if(new TextEncoder().encode(joined).length>NOTE_MAX_BYTES){toast("That transcript is too long for one note (limit about 50 KB). Trim it or split it.");return}
     ta.value=joined;mark();toast("Transcript added, now summarize it");
   };
-  const sb=el("button","btn primary",summary?"Re-summarize with Muninn":"Summarize with Muninn");sb.type="button";
-  const hint=el("small",null,"Muninn pulls out key points, action items, and next moves.");
-  sb.onclick=async()=>{
-    if(sumCtl){sumCtl.abort();return}
-    const txt=ta.value.trim();
-    if(txt.length<40){toast("Add more notes or a transcript first");return}
-    if(!sampleFn){toast(sampleReady?"Muninn is not connected to the live site yet.":"Muninn is still waking up. Try again in a second.");return}
-    sumCtl=new AbortController();sb.textContent="Stop";hint.textContent="Reading your notes…";
-    try{
-      const raw=await sampleFn.json(summaryPrompt(o,n,di.value,txt),{cache:false,signal:sumCtl.signal});
-      summary=normSummary(raw);mark();drawSum();hint.textContent="Summary ready. Save the note to keep it.";
-    }catch(e){
-      hint.textContent=e&&e.code==="cancelled"?"Stopped.":chatErr(e&&e.code);
-    }finally{sumCtl=null;sb.textContent=summary?"Re-summarize with Muninn":"Summarize with Muninn"}
-  };
+  const hint=el("small",null,"Copy prompt, run voyage-summarize in a terminal, then Paste summary.");
   // No AI service on the Worker: the person runs their own signed-in agent (Claude Code or Codex) via scripts/voyage-summarize.mjs
   const cp=el("button","btn","Copy prompt");cp.type="button";cp.title="Copy the instructions and notes for your own Claude Code or Codex";
   const ps=el("button","btn","Paste summary");ps.type="button";ps.title="Load the reply your agent put on the clipboard";
   const pbox=document.createElement("textarea");pbox.hidden=true;pbox.placeholder="Paste the agent's reply here";pbox.style.cssText="flex:1 0 100%;min-height:90px;margin:0";
   function useReply(t){
     try{summary=parseSummaryText(t)}catch(e){hint.textContent="That doesn't look like a Voyage summary. Copy the agent's full reply and try again.";return}
-    pbox.hidden=true;pbox.value="";mark();drawSum();sb.textContent="Re-summarize with Muninn";hint.textContent="Summary loaded. Save the note to keep it.";
+    pbox.hidden=true;pbox.value="";mark();drawSum();hint.textContent="Summary loaded. Save the note to keep it.";
   }
   cp.onclick=async()=>{
     const txt=ta.value.trim();
@@ -1089,9 +1075,7 @@ function noteCard(n,o,appts){
     if(t.trim())useReply(t);else{pbox.hidden=false;pbox.focus();hint.textContent="Paste the agent's reply into the box."}
   };
   pbox.onpaste=()=>setTimeout(()=>useReply(pbox.value),0);
-  sb.hidden=sampleReady&&!sampleFn;
-  if(sb.hidden)hint.textContent="Copy prompt, run voyage-summarize in a terminal, then Paste summary.";
-  tools.append(up,fi,sb,cp,ps,hint,pbox);
+  tools.append(up,fi,cp,ps,hint,pbox);
   const sbox=el("div");
   function drawSum(){
     sbox.replaceChildren();if(!summary)return;
@@ -1106,7 +1090,7 @@ function noteCard(n,o,appts){
         const r=el("div","arow");const l=el("div");l.append(el("span",null,a.text));
         l.append(el("small",null,(a.kind==="appt"?"Meeting: ":"Task: ")+a.type+" · "+nameOf(a.owner||me)+" · "+(a.due?fmtDate(a.due):"due today")));
         const b=el("button","btn",a.added?"Added ✓":(a.kind==="appt"?"+ Book meeting":"+ Add task"));b.type="button";b.disabled=!!a.added;
-        b.onclick=async()=>{b.disabled=true;await addActionItem(a,o);a.added=true;b.textContent="Added ✓";mark()};
+        b.onclick=async()=>{b.disabled=true;if(await addActionItem(a,o)){a.added=true;b.textContent="Added ✓";mark()}else b.disabled=false};
         r.append(l,b);p.append(r);
       });
     }
@@ -1168,8 +1152,8 @@ ${text.slice(0,150000)}`;
 async function addActionItem(a,o){
   const data={kind:a.kind,type:a.type,oppId:o.id,oppName:o.name,date:a.due||today(),time:"",notes:a.text,done:false,doneTs:null,createdTs:Date.now(),owner:a.owner||me,shared:[]};
   logAct(`${a.kind==="task"?"Added task":"Booked meeting"} from meeting notes: ${a.text.slice(0,70)} (${o.name})`,o.id);
-  if(!live){items.push({id:"l"+Date.now(),...data});renderItems();render();toast("Added for this session only");return}
-  await write(()=>db.collection("activities").add(data),a.kind==="task"?"Task added":"Meeting booked");
+  if(!live){items.push({id:"l"+Date.now(),...data});renderItems();render();toast("Added for this session only");return true}
+  return await write(()=>db.collection("activities").add(data),a.kind==="task"?"Task added":"Meeting booked");
 }
 async function saveNote(n,v,card){
   if(!v.text){toast("Write something before saving");return}

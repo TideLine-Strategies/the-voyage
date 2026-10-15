@@ -18,7 +18,7 @@ test("extractJson handles fences and surrounding chatter", () => {
   assert.throws(() => extractJson(""), /no JSON/);
 });
 
-test("agent commands turn tools off and read the prompt from stdin", () => {
+test("agent commands disable Claude tools, sandbox Codex, and read stdin", () => {
   const claude = agentCommand("claude", "unused");
   assert.deepEqual(claude.args.slice(0, 1), ["-p"]);
   assert.equal(claude.args[claude.args.indexOf("--tools") + 1], "");

@@ -27,7 +27,7 @@ The Worker has no AI service and holds no API key. Instead each person runs the 
 3. Run `node scripts/voyage-summarize.mjs`. It picks Claude Code first, then Codex; force one with `--agent claude` or `--agent codex` (or set `VOYAGE_AGENT`).
 4. Back in the note, click **Paste summary**, review it, add any action items as tasks, and save the note.
 
-The script only accepts a prompt copied from the app, runs the agent with tools off in an empty temporary folder, and puts the summary JSON back on the clipboard. It needs Node 18 or newer and no dependencies.
+The script checks for the app’s prompt marker, runs the agent in an empty temporary folder, and puts the summary JSON back on the clipboard. Claude Code runs with tools disabled. Codex runs in its read-only sandbox with the user’s existing configuration; this does not disable tools or prevent reading files outside the temporary folder. The prompt asks the agent not to use tools or read files, but that instruction is not an isolation boundary. The script needs Node 18 or newer and no dependencies.
 ## Muninn with local Codex
 
 Muninn uses the signed-in Codex CLI on **each member's own computer**. Install the current Node.js and Codex CLI, run `codex login`, then run `node bridge/muninn-bridge.mjs` while using The Voyage. On macOS, `sh bridge/install-macos.sh` installs the bridge as a per-user LaunchAgent. Quan's Codex account is never exposed to Cody. Cody needs his own Codex sign-in and local connector.
