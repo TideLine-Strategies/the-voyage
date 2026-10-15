@@ -1229,7 +1229,6 @@ function openT(kind,i,presetOpp,preset){
   sel.value=i?.oppId||presetOpp||"";
   const os=$("tOwner");os.replaceChildren();editors().forEach(m=>os.append(new Option(m.name,m.id)));os.value=i?.owner||me;
   $("tDate").value=i?.date||preset.date||today();$("tTime").value=i?.time||preset.time||"";
-  $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
   $("tDoneLbl").textContent=kind==="task"?"Done":"Completed";
   fillContactSelect(i?.contactId);
@@ -1254,7 +1253,7 @@ $("tSave").onclick=async()=>{
   const types=tKind==="task"?TASK_TYPES:APPT_TYPES;
   const o=opps.find(x=>x.id===$("tOpp").value);
   const done=$("tDone").checked;
-  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:tKind==="appt"?$("tTime").value.trim():"",notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
+  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:$("tTime").value.trim(),notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
   const was=tEdit;$("tdlg").close();
   const what=data.type+(tKind==="appt"?" meeting":"")+(data.oppName?" with "+data.oppName:"");
   logAct(was?(!was.done&&done?"Completed ":"Updated ")+what:(tKind==="task"?"Added task: ":"Booked ")+what+(data.date?" for "+fmtDate(data.date):""),data.oppId);
