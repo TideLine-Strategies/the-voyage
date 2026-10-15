@@ -3076,6 +3076,10 @@ render();renderActs();renderItems();
   roomNs.onPeers(ch=>{peers=[...ch.peers];if(view==="team")renderTyping()},()=>{peers=[];renderTyping()});
   const pending=new Set(["opps","team","channels","messages","notes","activities","activity","reads"]);
   function loaded(key){pending.delete(key);if(!pending.size){$("boot").hidden=true;$("app").hidden=false}}
+  window.addEventListener("voyage-sync-error", event => {
+    if (pending.size) $("boot").textContent = event.detail;
+    else { $("banner").hidden = false; $("banner").textContent = event.detail; }
+  });
   function failed(){if(pending.size){$("boot").textContent="The Voyage could not load its live data. Reload to try again."}else $("banner").hidden=false}
   db.collection("opps").onSnapshot(snap=>{
     opps=snap.docs.map(d=>({id:d.id,...d.data()}));render();loaded("opps");
