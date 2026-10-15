@@ -522,7 +522,6 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
     <button class="nav" data-view="calendar">Calendar</button>
-    <button class="nav" data-view="notes">Notes</button>
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
     <button class="nav" data-view="cadence">Pillage</button>
@@ -725,6 +724,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </section>
 
     <section id="view-activity" hidden>
+      <div class="tabs pgtabs"><button class="on" data-go="activity">Tasks &amp; appointments</button><button data-go="notes">Meeting notes</button></div>
       <div class="head"><div><h1>Activity</h1><div class="sub">Prospecting tasks and appointments across your opps.</div></div></div>
       <div class="scope" id="scope"><button class="on" data-s="all">Everyone</button><button data-s="mine">Mine and shared with me</button></div>
       <div class="cols">
@@ -789,6 +789,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </section>
 
     <section id="view-notes" hidden>
+      <div class="tabs pgtabs"><button data-go="activity">Tasks &amp; appointments</button><button class="on" data-go="notes">Meeting notes</button></div>
       <div class="head">
         <div><h1>Meeting notes</h1><div class="sub">Notes for every appointment, organized by meeting type.</div></div>
         <button class="btn" id="nOpenAcct">Open account</button>
@@ -2968,12 +2969,13 @@ const SOON={
 function go(v){
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
-  document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===navV));
+  document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===(navV==="notes"?"activity":navV)));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
   if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
+document.querySelectorAll(".pgtabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
 
 fillMe();const RV_BODY="M6 50 L12 46 L20 42 C21 35 28 29 37 27.5 C39.5 24 41 19 45 16 C48.5 13.5 53 13.5 55.5 16 C58.5 17 61.5 19.5 63.5 22.5 C60.5 22.8 58 23.6 55.8 25 L54.5 26.6 L52.6 26.1 L53 28 L50.8 27.7 L51 29.6 L49 29.3 C50.5 35 47.5 42 40 45 C36 46.5 32 47 28 47.2 L14 52 L9 53.5 Z";
 const RV_WING="M41 29 C34 28.6 25 32 18 39 L9.5 48.8 C19 46 29 43.8 35.5 41.3 C40.5 39.3 43 34 41 29 Z";
