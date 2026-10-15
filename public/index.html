@@ -865,10 +865,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <label>Lead source<select id="fSrc"></select></label>
       <label>Source details<input id="fSrcNote" autocomplete="off" maxlength="200" placeholder="Referred by Jordan Lee"></label>
     </div>
-    <div class="grid2">
-      <label>Class management software<select id="fCms"></select></label>
-      <label>Other software<input id="fCmsOther" autocomplete="off" maxlength="100" placeholder="Name of the software" hidden></label>
-    </div>
+    <label>Class management software<select id="fCms"></select></label>
     <label>Bio<textarea id="fBio" placeholder="Who they are, what they offer, and their mission"></textarea></label>
     <label>Notes<textarea id="fNotes"></textarea></label>
     <div class="acts">
@@ -1166,15 +1163,14 @@ function openDlg(o,preset){
   $("fRank").value=o?.rank??"";$("fOwner").value=o?.owner||me;
   $("fNext").value=o?.next?.label||"";$("fDate").value=o?.next?.date||"";$("fTime").value=o?.next?.time||"";
   $("fNotes").value=o?.notes||"";$("fBio").value=o?.bio||"";$("fVer").value=o?.verification||"";$("fEmp").value=o?.employees||"";$("fAct").value=o?.activeStudents||"";$("fInact").value=o?.inactiveStudents||"";$("fWeb").value=o?.website||"";$("fAddr").value=o?.address||"";$("fAddr2").value=o?.address2||"";$("fState").value=o?o.state||"":"IL";$("fZip").value=o?.zip||"";$("fLi").value=o?.linkedin||"";
-  fillCms();$("fCms").value=o?.cms||"";$("fCmsOther").value=o?.cmsOther||"";syncCms();
+  fillCms();$("fCms").value=o?.cms||"";
   fillSources($("fSrc"),"Not set");$("fSrc").value=o?.source||"";$("fSrcNote").value=o?.sourceNote||"";
   $("delBtn").hidden=!o;
   $("dlg").showModal();$("fName").focus();
 }
-const CMS_OPTIONS=["iClassPro","JackRabbit Class","Gymdesk","SmartRec","LoveAdmin","Other"];
-const CMS_LABEL=o=>o.cms==="Other"?(o.cmsOther||"Other software"):(o.cms||"");
-function fillCms(){const s=$("fCms");if(s.options.length)return;s.append(new Option("Not set",""));CMS_OPTIONS.forEach(x=>s.append(new Option(x)));s.onchange=syncCms}
-function syncCms(){const o=$("fCmsOther");o.hidden=$("fCms").value!=="Other";if(o.hidden)o.value=""}
+const CMS_OPTIONS=["iClassPro","JackRabbit Class","Gymdesk","SmartRec","LoveAdmin"];
+const CMS_LABEL=o=>o.cms||"";
+function fillCms(){const s=$("fCms");if(s.options.length)return;s.append(new Option("Not set",""));CMS_OPTIONS.forEach(x=>s.append(new Option(x)))}
 const LEAD_SOURCES=["Referral","Cold call","Walk-in","Event","Website or inbound","Social media","Partner","Existing customer","Other"];
 function fillSources(sel,blank){if(sel.options.length)return;sel.append(new Option(blank,""));LEAD_SOURCES.forEach(s=>sel.append(new Option(s)))}
 function normUrl(v){v=(v||"").trim();if(!v)return"";return /^https?:\/\//i.test(v)?v:"https://"+v}
@@ -1185,7 +1181,7 @@ function readForm(){
   const label=$("fNext").value.trim();
   return {name,city:$("fCity").value.trim(),stage:pickStage,rank,owner:$("fOwner").value,
     next:label?{label,date:$("fDate").value||"",time:$("fTime").value.trim()}:null,
-    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",cms:$("fCms").value,cmsOther:$("fCms").value==="Other"?$("fCmsOther").value.trim():"",source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
+    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",cms:$("fCms").value,source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
 }
 function fmtDate(d){if(!d)return"No date";const t=today();if(d===t)return"Today";const x=new Date(d+"T00:00");return x.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}
 function renderItems(){
