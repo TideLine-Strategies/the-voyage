@@ -774,7 +774,9 @@ async function handleProfile(request, env, actor, path) {
     if (!sql) return error("Expected scope: this, others, or all", 400);
     const result = await env.DB.prepare(sql).bind(actor.id, current).run();
     await audit(env, actor.id, "Signed out", null, null, { this: "This device", others: "Other devices", all: "All devices" }[scope]);
-    return reply({ ok: true, signedOut: result.meta.changes });
+    const response = reply({ ok: true, signedOut: result.meta.changes });
+    if (scope !== "others") response.headers.append("set-cookie", "voyage_session=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax");
+    return response;
   }
   if (path[2] === "external-calendar") return handleExternalCalendar(request, env, actor);
   if (path[2] === "calendar") {

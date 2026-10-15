@@ -531,6 +531,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav nav-chat" data-view="team">Team chat<span class="nbadge" id="teamBadge" hidden></span></button>
     <div class="sep"></div>
     <button class="nav nav-profile" data-view="profile" aria-label="Profile and settings"><span class="av OT" id="profAv">?</span><span class="pn"><b id="profName">Profile</b><small>Profile &amp; settings</small><span class="view-badge" id="viewBadge" hidden>Guest</span></span></button>
+    <button class="nav" id="navSignOut">Sign out</button>
     <select id="meSel" disabled hidden aria-hidden="true"></select>
     <div class="tag">One voyage, start to finish.</div>
   </nav>
@@ -573,6 +574,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
         <select id="acAct" aria-label="Active students"><option value="">Any active students</option></select>
         <select id="acOwner" aria-label="Owner"><option value="">Everyone's accounts</option></select>
         <select id="acSrc" aria-label="Lead source"><option value="">Any lead source</option></select>
+        <select id="acCms" aria-label="Class management software"><option value="">Any class software</option></select>
         <select id="acSort" aria-label="Sort by"><option value="name">Sort by name</option><option value="rank">Sort by rank</option><option value="city">Sort by city</option><option value="stage">Sort by stage</option></select>
       </div>
       <div class="cnt" id="acCount"></div>
@@ -863,6 +865,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <label>Lead source<select id="fSrc"></select></label>
       <label>Source details<input id="fSrcNote" autocomplete="off" maxlength="200" placeholder="Referred by Jordan Lee"></label>
     </div>
+    <label>Class management software<select id="fCms"></select></label>
     <label>Bio<textarea id="fBio" placeholder="Who they are, what they offer, and their mission"></textarea></label>
     <label>Notes<textarea id="fNotes"></textarea></label>
     <div class="acts">
@@ -1160,10 +1163,14 @@ function openDlg(o,preset){
   $("fRank").value=o?.rank??"";$("fOwner").value=o?.owner||me;
   $("fNext").value=o?.next?.label||"";$("fDate").value=o?.next?.date||"";$("fTime").value=o?.next?.time||"";
   $("fNotes").value=o?.notes||"";$("fBio").value=o?.bio||"";$("fVer").value=o?.verification||"";$("fEmp").value=o?.employees||"";$("fAct").value=o?.activeStudents||"";$("fInact").value=o?.inactiveStudents||"";$("fWeb").value=o?.website||"";$("fAddr").value=o?.address||"";$("fAddr2").value=o?.address2||"";$("fState").value=o?o.state||"":"IL";$("fZip").value=o?.zip||"";$("fLi").value=o?.linkedin||"";
+  fillCms();$("fCms").value=o?.cms||"";
   fillSources($("fSrc"),"Not set");$("fSrc").value=o?.source||"";$("fSrcNote").value=o?.sourceNote||"";
   $("delBtn").hidden=!o;
   $("dlg").showModal();$("fName").focus();
 }
+const CMS_OPTIONS=["iClassPro","JackRabbit Class","Gymdesk","SmartRec","LoveAdmin"];
+const CMS_LABEL=o=>o.cms||"";
+function fillCms(){const s=$("fCms");if(s.options.length)return;s.append(new Option("Not set",""));CMS_OPTIONS.forEach(x=>s.append(new Option(x)))}
 const LEAD_SOURCES=["Referral","Cold call","Walk-in","Event","Website or inbound","Social media","Partner","Existing customer","Other"];
 function fillSources(sel,blank){if(sel.options.length)return;sel.append(new Option(blank,""));LEAD_SOURCES.forEach(s=>sel.append(new Option(s)))}
 function normUrl(v){v=(v||"").trim();if(!v)return"";return /^https?:\/\//i.test(v)?v:"https://"+v}
@@ -1174,7 +1181,7 @@ function readForm(){
   const label=$("fNext").value.trim();
   return {name,city:$("fCity").value.trim(),stage:pickStage,rank,owner:$("fOwner").value,
     next:label?{label,date:$("fDate").value||"",time:$("fTime").value.trim()}:null,
-    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
+    verification:$("fVer").value,website:normUrl($("fWeb").value),linkedin:normUrl($("fLi").value),employees:$("fEmp").value,activeStudents:$("fAct").value,inactiveStudents:$("fInact").value,needs:editing?.needs||"",cms:$("fCms").value,source:$("fSrc").value,sourceNote:$("fSrcNote").value.trim(),notes:$("fNotes").value.trim(),bio:$("fBio").value.trim(),address:$("fAddr").value.trim(),address2:$("fAddr2").value.trim(),state:$("fState").value.trim().toUpperCase(),zip:$("fZip").value.trim(),locations:editing?.locations||[],lastTouch:editing?.lastTouch||today(),stageTs:(editing&&editing.stage===pickStage&&editing.stageTs)||Date.now()};
 }
 function fmtDate(d){if(!d)return"No date";const t=today();if(d===t)return"Today";const x=new Date(d+"T00:00");return x.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}
 function renderItems(){
@@ -1218,7 +1225,6 @@ function openT(kind,i,presetOpp,preset){
   sel.value=i?.oppId||presetOpp||"";
   const os=$("tOwner");os.replaceChildren();editors().forEach(m=>os.append(new Option(m.name,m.id)));os.value=i?.owner||me;
   $("tDate").value=i?.date||preset.date||today();$("tTime").value=i?.time||preset.time||"";
-  $("tTimeWrap").style.visibility=kind==="appt"?"visible":"hidden";
   $("tNotes").value=i?.notes||"";$("tDone").checked=!!i?.done;
   $("tDoneLbl").textContent=kind==="task"?"Done":"Completed";
   fillContactSelect(i?.contactId);
@@ -1243,7 +1249,7 @@ $("tSave").onclick=async()=>{
   const types=tKind==="task"?TASK_TYPES:APPT_TYPES;
   const o=opps.find(x=>x.id===$("tOpp").value);
   const done=$("tDone").checked;
-  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:tKind==="appt"?$("tTime").value.trim():"",notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
+  const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:$("tTime").value.trim(),notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
   const was=tEdit;$("tdlg").close();
   const what=data.type+(tKind==="appt"?" meeting":"")+(data.oppName?" with "+data.oppName:"");
   logAct(was?(!was.done&&done?"Completed ":"Updated ")+what:(tKind==="task"?"Added task: ":"Booked ")+what+(data.date?" for "+fmtDate(data.date):""),data.oppId);
@@ -1387,14 +1393,15 @@ const VER={owner_confirmed:"Owner confirmed",google_verified:"Google verified",n
 function renderAccounts(){
   const es=$("acEmp");if(es.options.length===1)EMP.forEach(([v,l])=>es.append(new Option(l+" employees",v)));
   const sr=$("acSrc");if(sr.options.length===1){LEAD_SOURCES.forEach(s=>sr.append(new Option(s)));sr.append(new Option("Not set","_none"))}
+  const cs=$("acCms");if(cs.options.length===1){CMS_OPTIONS.forEach(x=>cs.append(new Option(x)));cs.append(new Option("Not set","_none"))}
   const as=$("acAct");if(as.options.length===1)ACT.forEach(([v,l])=>as.append(new Option(l+" active students",v)));
   if(view!=="accounts")return;
   const st=$("acStage");if(st.options.length===1){st.append(new Option("Past Prospecting (all)","past"));STAGES.forEach((x,i)=>st.append(new Option(x,String(i))))}
   if(acctStage!==null){st.value=acctStage;acctStage=null}
   const ow=$("acOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's accounts",""));editors().forEach(m=>ow.append(new Option(m.name+"'s accounts",m.id)));ow.value=v}
-  const ev=$("acEmp").value,av=$("acAct").value,srcv=$("acSrc").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
+  const ev=$("acEmp").value,av=$("acAct").value,srcv=$("acSrc").value,cmsv=$("acCms").value;const q=$("acSearch").value.trim().toLowerCase(),sv=st.value,vv=$("acVer").value,ov=ow.value,so=$("acSort").value;
   const cmp={name:(a,b)=>a.name.localeCompare(b.name),rank:(a,b)=>(b.rank??-1)-(a.rank??-1)||a.name.localeCompare(b.name),city:(a,b)=>(a.city||"").localeCompare(b.city||"")||a.name.localeCompare(b.name),stage:(a,b)=>b.stage-a.stage||a.name.localeCompare(b.name)}[so];
-  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!srcv||(srcv==="_none"?!o.source:o.source===srcv))&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
+  const list=opps.filter(o=>(sv===""||(sv==="past"?o.stage>=1:o.stage===Number(sv)))&&(!vv||o.verification===vv)&&(!ev||o.employees===ev)&&(!av||o.activeStudents===av)&&(!ov||(o.owner||"CK")===ov)&&(!srcv||(srcv==="_none"?!o.source:o.source===srcv))&&(!cmsv||(cmsv==="_none"?!o.cms:o.cms===cmsv))&&(!q||(o.name+" "+(o.city||"")+" "+(o.locations||[]).map(l=>l.label+" "+l.city).join(" ")).toLowerCase().includes(q))).sort(cmp);
   $("acCount").textContent=list.length===opps.length?`${opps.length} accounts`:`Showing ${list.length} of ${opps.length} accounts`;
   const w=$("acList");w.replaceChildren();
   const hd=el("div","row hd");["Organization","City","Stage","Website","Rank",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
@@ -1408,7 +1415,7 @@ function renderAccounts(){
   });
 }
 ["acSearch"].forEach(id=>$(id).oninput=renderAccounts);
-["acStage","acVer","acEmp","acAct","acOwner","acSrc","acSort"].forEach(id=>$(id).onchange=renderAccounts);
+["acStage","acVer","acEmp","acAct","acOwner","acSrc","acCms","acSort"].forEach(id=>$(id).onchange=renderAccounts);
 $("acNew").onclick=()=>openDlg(null);
 function emptyRow(text){const e=el("div","empty",text);e.style.border="0";return e}
 function addrLines(a){
@@ -1722,7 +1729,7 @@ function renderAccount(){
     if(o[f]){const a=el("a",null,l+" ↗");a.href=o[f];a.target="_blank";a.rel="noopener noreferrer";a.title=o[f];lk.append(a)}
     else{const b=el("button",null,"+ Add "+l);b.onclick=()=>{openDlg(o);setTimeout(()=>$(f==="website"?"fWeb":"fLi").focus(),50)};lk.append(b)}
   });
-  $("aSub").textContent=[o.city?"HQ: "+o.city:"","Owner: "+nameOf(o.owner||"CK"),STAGES[o.stage],o.verification?VER[o.verification]:"",SIZE_LINE(o)].filter(Boolean).join(", ");
+  $("aSub").textContent=[o.city?"HQ: "+o.city:"","Owner: "+nameOf(o.owner||"CK"),STAGES[o.stage],o.verification?VER[o.verification]:"",SIZE_LINE(o),CMS_LABEL(o)?"Software: "+CMS_LABEL(o):""].filter(Boolean).join(", ");
   const pg=$("aProg");pg.replaceChildren();
   STAGES.forEach((sn,si)=>{const b=el("button",si<o.stage?"on":si===o.stage?"cur":"");b.append(el("i"),document.createTextNode(sn));b.title=si===o.stage?"Current stage":"Move to "+sn;b.setAttribute("aria-label",si===o.stage?sn+", current stage":"Move to "+sn);b.onclick=()=>moveOpp(o,si);pg.append(b)});
   const mine=items.filter(i=>i.oppId===o.id);
@@ -1972,7 +1979,7 @@ function downloadCsv(name,rows){
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
 }
 const EXPORTS={
-  "Accounts":()=>[["Organization","Stage","City","State","ZIP","Address","Website","Owner","Rank","Lead source","Source details","Next step","Next step date","Last touched","Notes"],...opps.map(o=>[o.name,STAGES[o.stage],o.city,o.state,o.zip,[o.address,o.address2].filter(Boolean).join(", "),o.website,nameOf(o.owner||"CK"),o.rank??"",o.source,o.sourceNote,o.next?.label,o.next?.date,o.lastTouch,o.notes])],
+  "Accounts":()=>[["Organization","Stage","City","State","ZIP","Address","Website","Owner","Rank","Class software","Lead source","Source details","Next step","Next step date","Last touched","Notes"],...opps.map(o=>[o.name,STAGES[o.stage],o.city,o.state,o.zip,[o.address,o.address2].filter(Boolean).join(", "),o.website,nameOf(o.owner||"CK"),o.rank??"",CMS_LABEL(o),o.source,o.sourceNote,o.next?.label,o.next?.date,o.lastTouch,o.notes])],
   "Tasks and appointments":()=>[["Kind","Type","Account","Date","Time","Owner","Done","Notes"],...items.map(i=>[i.kind==="appt"?"Appointment":"Task",i.type,i.oppName,i.date,i.time,nameOf(i.owner||"CK"),i.done?"Yes":"No",i.notes])],
   "Meeting notes":()=>[["Account","Meeting type","Date","Written by","Notes"],...notes.map(n=>[n.oppName,n.type,n.date,nameOf(n.by),n.text])],
   "Vendors":()=>[["Name","Company","What they do","Email","Phone","Website","Related account","Notes"],...vendors.map(v=>[v.name,v.company,v.kind,v.email,v.phone,v.website,opps.find(o=>o.id===v.oppId)?.name||"",v.notes])],
@@ -2950,6 +2957,7 @@ async function profileSignOut(others){
 }
 $("pOthers").onclick=()=>profileSignOut(true);
 $("pSignOut").onclick=()=>profileSignOut(false);
+$("navSignOut").onclick=()=>profileSignOut(false);
 function renderAdmin(){
   [...$("adTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===adTab));
   Object.entries(AD_PANELS).forEach(([t,id])=>$(id).hidden=t!==adTab);
