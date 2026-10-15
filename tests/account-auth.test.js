@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {generateKeyPair,SignJWT,jwtVerify} from 'jose';
-import {handleAccountAuth,googleMember} from '../src/account-auth.js';
+import {handleAccountAuth,googleMember,accountPage} from '../src/account-auth.js';
 import worker from '../src/worker.js';
 const origin='https://voyage.example';
 const {privateKey,publicKey}=await generateKeyPair('RS256');
@@ -80,4 +80,10 @@ test('recovery uses configured first-party destination and does not create sessi
  }
  assert.equal(sends,1);assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sessions').get().n,0);
  const csrf=await handleAccountAuth(passwordRequest('/auth/password',{},'https://evil.example'),passwordEnv(f),deps);assert.equal(csrf.status,403);
+});
+
+test('auth forms never fall back to sending credentials in a URL when JavaScript fails',async()=>{
+ const html=await accountPage({ACCOUNT_AUTH_URL:'https://example.supabase.co',ACCOUNT_AUTH_PUBLIC_KEY:'public-key'}).text();
+ const forms=[...html.matchAll(/<form\b[^>]*>/g)];assert.equal(forms.length,2);
+ for(const [form] of forms)assert.match(form,/method="post"/);
 });
