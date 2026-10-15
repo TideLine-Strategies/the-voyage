@@ -18,6 +18,11 @@ function fixture() {
         async run() { const result = sqlite.prepare(sql).run(...args); return { meta: { changes: result.changes } }; },
       };
     },
+    async batch(statements) {
+      sqlite.exec("BEGIN");
+      try { const out = []; for (const statement of statements) out.push(await statement.run()); sqlite.exec("COMMIT"); return out; }
+      catch (err) { sqlite.exec("ROLLBACK"); throw err; }
+    },
   };
   const token = id => id.repeat(64);
   const addSession = id => sqlite.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
@@ -36,7 +41,7 @@ function fixture() {
     headers: { cookie: `voyage_session=${token(who)}`, ...(method !== "GET" ? { origin: "https://voyage.example" } : {}), ...(data ? { "content-type": "application/json" } : {}) },
     ...(data ? { body: JSON.stringify(data) } : {}),
   }), { DB: db });
-  return { sqlite, call, seed };
+  return { sqlite, call, seed, db };
 }
 
 test("guest sees the full CRM and Muninn context but only the guest chat", async () => {
@@ -147,6 +152,52 @@ test("usage device labels", () => {
   assert.equal(deviceFrom("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"), "Phone, Safari");
   assert.equal(deviceFrom("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0"), "Computer, Edge");
   assert.equal(deviceFrom(""), "Computer, Other browser");
+});
+
+test("admin invitations: editors invite, re-send, and remove access without scripts; guests cannot", async () => {
+  const { call, sqlite, db } = fixture();
+  const open = (link, method = "POST") => worker.fetch(new Request(link, { method, headers: { origin: "https://voyage.example" } }), { DB: db });
+  assert.equal((await call("b", "POST", "/api/admin/invite", { name: "Pat Lee", email: "pat@example.com", role: "edit" })).status, 403);
+  assert.equal((await call("a", "POST", "/api/admin/invite", { name: "Pat Lee", email: "not-an-email", role: "guest" })).status, 400);
+  assert.equal((await call("a", "POST", "/api/admin/invite", { name: "Pat Lee", email: "pat@example.com", role: "owner" })).status, 400);
+  assert.equal((await call("a", "POST", "/api/admin/invite", { email: "pat@example.com", role: "guest" })).status, 400, "new people need a name");
+
+  const first = await call("a", "POST", "/api/admin/invite", { name: "Pat Lee", email: "pat@example.com", role: "guest" });
+  assert.equal(first.status, 201);
+  const made = await first.json();
+  assert.equal(made.member.id, "PL");
+  assert.match(made.link, /^https:\/\/voyage\.example\/invite\/[A-Za-z0-9_-]{43}$/);
+  assert.equal(sqlite.prepare("SELECT role, active FROM members WHERE id = 'PL'").get().role, "guest");
+  assert.doesNotMatch(JSON.stringify(sqlite.prepare("SELECT * FROM invites").all()), new RegExp(made.link.split("/").pop()), "only the hash is stored");
+
+  // A second invite for the same email keeps the member, updates the role, and kills the old link.
+  const second = await (await call("a", "POST", "/api/admin/invite", { name: "", email: "PAT@example.com", role: "edit" })).json();
+  assert.equal(second.member.id, "PL");
+  assert.equal(second.member.name, "Pat Lee");
+  assert.equal(sqlite.prepare("SELECT role FROM members WHERE id = 'PL'").get().role, "edit");
+  assert.equal((await open(made.link, "GET")).status, 410, "the replaced link no longer works");
+  assert.equal((await open(second.link, "GET")).status, 200);
+  const signIn = await open(second.link);
+  assert.equal(signIn.status, 303);
+  assert.match(signIn.headers.get("set-cookie"), /voyage_session=/);
+  assert.equal((await open(second.link, "GET")).status, 410, "links work once");
+
+  const another = await (await call("a", "POST", "/api/admin/invite", { name: "Pam Long", email: "pam@example.com", role: "guest" })).json();
+  assert.equal(another.member.id, "PL2", "initials that are taken get a number");
+  assert.equal((await call("a", "POST", "/api/admin/invite", { name: "Quan", email: "q.stewart@tidelinestrats.com", role: "guest" })).status, 400, "you can't change your own role");
+  assert.equal((await call("a", "POST", "/api/admin/invite", { name: "Quan", email: "q.stewart@tidelinestrats.com", role: "edit" })).status, 201, "you can make yourself a new link");
+
+  assert.equal((await call("a", "POST", "/api/admin/remove", { member: "QS" })).status, 400, "you can't remove yourself");
+  assert.equal((await call("b", "POST", "/api/admin/remove", { member: "PL2" })).status, 403);
+  assert.equal((await call("a", "POST", "/api/admin/remove", { member: "PL2" })).status, 200);
+  assert.equal(sqlite.prepare("SELECT active FROM members WHERE id = 'PL2'").get().active, 0);
+  assert.equal((await open(another.link, "GET")).status, 410, "removing access cancels unused links");
+  assert.equal((await call("b", "POST", "/api/admin/remove", { member: "MJ" })).status, 403);
+  assert.equal((await call("a", "POST", "/api/admin/remove", { member: "MJ" })).status, 200);
+  assert.equal((await call("b", "GET", "/api/me")).status, 403, "removed members are signed out everywhere");
+  const back = await (await call("a", "POST", "/api/admin/invite", { name: "Mary", email: "mary@example.com", role: "guest" })).json();
+  assert.equal(back.member.id, "MJ", "re-inviting restores the same member");
+  assert.equal(sqlite.prepare("SELECT active FROM members WHERE id = 'MJ'").get().active, 1);
 });
 
 test("admin: editors see access, invitations, and storage without secrets; guests are refused", async () => {

@@ -12,7 +12,9 @@ Run `npm ci` and `npm run check` locally. SQL migrations are separate from code 
 
 The D1 `members` table is the private roster. Active membership is checked on every request, including requests with an existing session. `edit` members can create, edit, and delete CRM entries. `guest` members can browse the full CRM, edit existing accounts, tasks, appointments, and notes, move stages, complete tasks, and use Muninn. Guests cannot create or delete CRM entries or add or remove account locations. Guests have their own team chat, separate from Quan and Cody's chat; presence and Muninn chat context follow that separation. A guest may delete only their own chat messages. Deactivating a member in D1 revokes access on the next request.
 
-Create a private roster JSON array outside Git, with objects containing `id`, `name`, `email`, and `role`. Run `node scripts/make-invites.mjs https://voyage.tidelinestrats.com <private-roster.json> <private-invites.sql> <private-links.json> [member-email]`. The script writes one-time links and roster/invitation SQL to private files with restricted permissions; it refuses to overwrite existing files. After reviewing the SQL, apply it with `wrangler d1 execute the-voyage --remote --profile tideline --file <private-invites.sql>`. Send each link privately. Invitations last 30 days; signed-in sessions last 180 days unless the member is deactivated.
+**Inviting people:** editors use **Admin › Security › Invite someone**. Enter a name, email, and role (Guest or Editor) to get a one-time link to copy and send privately. **New link** next to a person makes a fresh link and cancels any unused one (use it when someone lost theirs or it expired), **Remove** takes away access and signs them out everywhere, and **Re-invite** restores a removed person. Only the link's hash is stored, so a link is shown once. Every invite and removal is recorded in the audit log. Editors cannot change their own role or remove themselves.
+
+For bulk setup, the script still works: create a private roster JSON array outside Git, with objects containing `id`, `name`, `email`, and `role`. Run `node scripts/make-invites.mjs https://voyage.tidelinestrats.com <private-roster.json> <private-invites.sql> <private-links.json> [member-email]`. The script writes one-time links and roster/invitation SQL to private files with restricted permissions; it refuses to overwrite existing files. After reviewing the SQL, apply it with `wrangler d1 execute the-voyage --remote --profile tideline --file <private-invites.sql>`. Send each link privately. Invitations last 30 days; signed-in sessions last 180 days unless the member is deactivated.
 
 ## Muninn with local Codex
 
@@ -23,7 +25,7 @@ Muninn uses each member's signed-in Codex CLI through a local bridge; no OpenAI 
 Editors see an **Admin** page with Overview, Usage, Security, Data health, and System tabs. Guests cannot open it, and the Worker refuses `/api/admin` and `GET /api/usage` for them.
 
 - Usage records page views and action labels per member (never record contents or typed text), with device type and the coarse city/region/country Cloudflare reports. Rows older than 180 days are deleted when an editor loads usage. Apply `migrations/0004_usage_events.sql` before or after deploying; until it exists, usage writes are ignored and the Usage tab says it is off.
-- Security lists members, signed-in devices, and invitation status, and lets an editor sign a member out of every device. Token hashes are never returned.
+- Security lists members, signed-in devices, and invitation status, lets an editor invite people, make a new link, sign a member out of every device, or remove access. Token hashes are never returned.
 - Data health and System are computed from existing records.
 
 ## Search, import/export, calendar, and audit log

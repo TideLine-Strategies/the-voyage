@@ -36,6 +36,24 @@ function tokenHash(token) {
     [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, "0")).join(""));
 }
 
+const INVITE_DAYS = 30;
+
+// 32 random bytes as base64url: 43 characters, matching INVITE_PATTERN and scripts/make-invites.mjs.
+function inviteToken() {
+  return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
+    .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+// Initials, then a number if taken: "Mary Zellers" becomes MZ, then MZ2.
+export async function newMemberId(db, name) {
+  const base = (name.match(/[A-Za-z0-9]+/g) || []).map(word => word[0]).join("").toUpperCase().slice(0, 6) || "M";
+  for (let n = 1; n < 1000; n++) {
+    const id = n === 1 ? base : base + n;
+    if (!await db.prepare("SELECT 1 FROM members WHERE id = ?").bind(id).first()) return id;
+  }
+  return base + "-" + Date.now().toString(36);
+}
+
 function randomToken() {
   return [...crypto.getRandomValues(new Uint8Array(32))]
     .map(byte => byte.toString(16).padStart(2, "0")).join("");
@@ -52,8 +70,8 @@ async function memberForSession(request, env) {
 
 function invitePage(token, valid) {
   const body = valid
-    ? `<form id="open" method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form><p id="status" role="status"></p><script>document.getElementById('open').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;button.textContent='Opening…';try{const response=await fetch(event.target.action,{method:'POST',credentials:'same-origin'});if(!response.ok||!response.redirected)throw Error('Unable to sign in');const check=await fetch('/api/me',{credentials:'same-origin'});if(!check.ok)throw Error('Session was not saved');location.replace('/')}catch(_){document.getElementById('status').textContent='The invitation could not open in this browser. Try a different browser or ask Quan for a new link.';button.disabled=false;button.textContent='Open The Voyage'}})</script>`
-    : "<p>This invitation has expired or was already used. Ask Quan for a new link.</p>";
+    ? `<form id="open" method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form><p id="status" role="status"></p><script>document.getElementById('open').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;button.textContent='Opening…';try{const response=await fetch(event.target.action,{method:'POST',credentials:'same-origin'});if(!response.ok||!response.redirected)throw Error('Unable to sign in');const check=await fetch('/api/me',{credentials:'same-origin'});if(!check.ok)throw Error('Session was not saved');location.replace('/')}catch(_){document.getElementById('status').textContent='The invitation could not open in this browser. Try a different browser or ask an editor for a new link.';button.disabled=false;button.textContent='Open The Voyage'}})</script>`
+    : "<p>This invitation has expired or was already used. Ask an editor for a new link.</p>";
   return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage invitation</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}button{background:#42b6d4;color:#071726;border:0;border-radius:8px;padding:14px 22px;font:inherit;font-weight:700;cursor:pointer}</style><h1>The Voyage</h1>${body}</html>`, {
     status: valid ? 200 : 410,
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" },
@@ -61,7 +79,7 @@ function invitePage(token, valid) {
 }
 
 function signInPage() {
-  return new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}p{max-width:30rem;line-height:1.5}</style><h1>The Voyage</h1><p>Open the private invitation sent to your TideLine email to sign in. Ask Quan for a new invitation if your link has expired.</p></html>', {
+  return new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}p{max-width:30rem;line-height:1.5}</style><h1>The Voyage</h1><p>Open the private invitation sent to your TideLine email to sign in. Ask a TideLine editor for a new invitation if your link has expired.</p></html>', {
     status: 200,
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" },
   });
@@ -811,6 +829,42 @@ async function handleAdmin(request, env, actor, path) {
     await audit(env, actor.id, "Signed someone out", "members", member, `${result.meta.changes} device(s)`);
     return reply({ ok: true, signedOut: result.meta.changes });
   }
+  if (path.length === 3 && path[2] === "invite" && request.method === "POST") {
+    const body = await readJson(request);
+    const email = String(body.email || "").trim(), role = body.role;
+    if (email.length > 200 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return error("Enter a valid email address", 400);
+    if (role !== "edit" && role !== "guest") return error("Choose Editor or Guest", 400);
+    const existing = await env.DB.prepare("SELECT id, name, role FROM members WHERE email = ?").bind(email).first();
+    const name = String(body.name || "").trim().slice(0, 100) || existing?.name || "";
+    if (!name) return error("Enter their name", 400);
+    if (existing?.id === actor.id && role !== existing.role) return error("You can't change your own role", 400);
+    const id = existing?.id || await newMemberId(env.DB, name);
+    const token = inviteToken(), expiresAt = now + INVITE_DAYS * 86400000;
+    // A new link replaces any unused one, so a lost or forwarded link stops working.
+    await env.DB.batch([
+      existing
+        ? env.DB.prepare("UPDATE members SET name = ?, role = ?, active = 1 WHERE id = ?").bind(name, role, id)
+        : env.DB.prepare("INSERT INTO members (id, name, email, role, active) VALUES (?, ?, ?, ?, 1)").bind(id, name, email, role),
+      env.DB.prepare("DELETE FROM invites WHERE member_id = ? AND used_at IS NULL").bind(id),
+      env.DB.prepare("INSERT INTO invites (token_hash, member_id, email, expires_at) VALUES (?, ?, ?, ?)").bind(await tokenHash(token), id, email, expiresAt),
+    ]);
+    await audit(env, actor.id, existing ? "Created a new invitation" : "Invited someone", "members", id, `${name} (${role === "edit" ? "editor" : "guest"})`);
+    return reply({ link: `${new URL(request.url).origin}/invite/${token}`, member: { id, name, email, role }, expiresAt }, 201);
+  }
+  if (path.length === 3 && path[2] === "remove" && request.method === "POST") {
+    const { member } = await readJson(request);
+    if (typeof member !== "string" || !ID_PATTERN.test(member)) return error("Expected a member", 400);
+    if (member === actor.id) return error("You can't remove your own access", 400);
+    const row = await env.DB.prepare("SELECT name FROM members WHERE id = ?").bind(member).first();
+    if (!row) return error("Not found", 404);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE members SET active = 0 WHERE id = ?").bind(member),
+      env.DB.prepare("DELETE FROM sessions WHERE member_id = ?").bind(member),
+      env.DB.prepare("DELETE FROM invites WHERE member_id = ? AND used_at IS NULL").bind(member),
+    ]);
+    await audit(env, actor.id, "Removed someone's access", "members", member, row.name);
+    return reply({ ok: true });
+  }
   if (path.length === 3 && path[2] === "audit" && request.method === "GET") {
     const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));
     try {
@@ -835,7 +889,7 @@ async function handleAdmin(request, env, actor, path) {
     storage: await all("SELECT collection, COUNT(*) AS records, SUM(LENGTH(data_json)) AS bytes, MAX(updated_at) AS updated FROM documents GROUP BY collection ORDER BY collection"),
     usageEvents,
     settings: {
-      sessionDays: SESSION_MAX_AGE / 86400, inviteDays: 30,
+      sessionDays: SESSION_MAX_AGE / 86400, inviteDays: INVITE_DAYS,
       cloudflareAccess: Boolean(env.POLICY_AUD && !env.POLICY_AUD.startsWith("CONFIGURE_") && env.TEAM_DOMAIN),
     },
   });

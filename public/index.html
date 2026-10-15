@@ -492,6 +492,12 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 .itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.2fr);cursor:default}
 .ytbl .row{grid-template-columns:minmax(0,1.6fr) 5rem 6rem minmax(0,1fr);cursor:default}
 .stbl .row:hover,.itbl .row:hover,.ytbl .row:hover{background:none}
+.stbl .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.invform{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) 9rem auto;gap:10px;align-items:end}
+.invlink{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft,rgba(0,0,0,.03))}
+.invlink input{width:100%;font-family:ui-monospace,monospace;font-size:13px}
+.invlink .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.invlink a.btn{text-decoration:none;color:inherit}
+@media (max-width:860px){.invform{grid-template-columns:1fr}}
 .city.warn{color:var(--amber)}.warnx{color:var(--red)}
 @media (max-width:860px){.stbl .row{grid-template-columns:minmax(0,1fr) auto}.stbl .row>:nth-child(2),.stbl .row>:nth-child(3),.stbl .row>:nth-child(4){display:none}.itbl .row>:nth-child(2){display:none}.itbl .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .uhl{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;padding:0 16px 10px}
@@ -580,7 +586,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </section>
 
     <section id="view-vendors" hidden>
-      <div class="head"><div><h1>Vendors</h1><div class="sub">The people and companies you work with. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="vNew">+ New vendor</button></div>
+      <div class="head"><div><h1>Vendors</h1><div class="sub">The people and companies you work with. Only editors can see this page.</div></div><button class="btn primary" id="vNew">+ New vendor</button></div>
       <div class="bhead">
         <input id="vSearch" type="search" placeholder="Find a name, company, or service" aria-label="Find a vendor">
         <select id="vType" aria-label="What they do"><option value="">Everything they do</option></select>
@@ -597,7 +603,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     </section>
 
     <section id="view-deals" hidden>
-      <div class="head"><div><h1>Deals</h1><div class="sub">Build deals, get approvals, and submit the close. Only Quan and Cody can see this page.</div></div><button class="btn primary" id="dsNew">+ New deal</button></div>
+      <div class="head"><div><h1>Deals</h1><div class="sub">Build deals, get approvals, and submit the close. Only editors can see this page.</div></div><button class="btn primary" id="dsNew">+ New deal</button></div>
       <div class="ntabs" id="dsTabs" role="tablist"><button data-t="pipeline" class="on">Pipeline</button><button data-t="approvals">Approvals<span id="dsApprovalCount" hidden></span></button><button data-t="financials">Financials</button><button data-t="catalog">Products &amp; rules</button></div>
       <div id="dsBody"></div>
     </section>
@@ -692,7 +698,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
         <div id="calNew" hidden style="margin-top:10px"><div class="city" style="margin-bottom:6px">Copy this link now. For your security it won't be shown again.</div><input id="calUrl" readonly style="width:100%;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px;font-size:13px;color:var(--text)"></div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="calMake">Create calendar link</button><button class="btn" id="calCopy" hidden>Copy link</button><button class="btn danger" id="calOff" hidden>Turn off link</button></div>
       </div>
-      <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only Quan and Cody see this.</div>
+      <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only editors see this.</div>
         <button class="btn primary" id="pAdmin">Open admin dashboard</button>
       </div>
       <div class="usec"><h2>Signed-in devices</h2><div class="hint">Each device stays signed in for up to 180 days. Sign out of any you don't recognize.</div>
@@ -703,7 +709,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 
     <section id="view-admin" hidden>
       <button class="back" id="adBack">‹ Back to Profile</button>
-      <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
+      <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only editors can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
       <div class="ntabs" id="adTabs" role="tablist">
         <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="audit">Audit log</button><button data-t="system">System</button>
       </div>
@@ -925,7 +931,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <dialog id="pdlg" aria-labelledby="pdlgTitle">
   <div class="dlg">
     <h2 id="pdlgTitle">Edit profile</h2>
-    <p class="city" style="margin:-4px 0 12px">Your teammates can see this. Your name and sign-in email are managed by Quan.</p>
+    <p class="city" style="margin:-4px 0 12px">Your teammates can see this. Your name and sign-in email are managed in Admin › Security.</p>
     <div class="grid2">
       <label>Job title<input id="peTitle" maxlength="100" autocomplete="off" placeholder="Business development"></label>
       <label>Phone<input id="pePhone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="(555) 555-5555"></label>
@@ -1919,28 +1925,73 @@ function renderSecurity(){
   w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"],[pending.length,"unused invitations"]]));
   const st=usageSection("How sign-in works","Current access settings.");
   const sl=el("div","tbl");[
-    ["Sign-in method","One-time invitation link per person, sent privately"],
+    ["Sign-in method","One-time invitation link per person, created here and sent privately"],
     ["Invitation links","Work once and expire after "+admin.settings.inviteDays+" days"],
     ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
     ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: the invitation link is the only gate"],
     ["Guests","Can edit existing CRM records. Cannot create, delete, see vendors, or open Admin"],
   ].forEach(([k,v])=>{const r=el("div","ubar");r.style.gridTemplateColumns="minmax(0,10rem) minmax(0,1fr)";r.append(el("span","nm",k),cell(v));sl.append(r)});
+  w.append(inviteSection());
   st.append(sl);w.append(st);
-  const ms=usageSection("People with access","Sign someone out to end every session on every device. They need a new invitation to get back in.");
+  const ms=usageSection("People with access","New link makes a fresh invitation and cancels any unused one. Sign out ends every session on every device. Remove takes away access until they're invited again.");
   const rows=admin.members.map(m=>{
     const ss=admin.sessions.filter(s=>s.member_id===m.id),last=ss[0]?.created_at;
     const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.email));
-    const b=el("span");
+    const b=el("span","acts");
+    const nl=el("button","btn",m.active?"New link":"Re-invite");nl.onclick=()=>createInvite({name:m.name,email:m.email,role:m.role});b.append(nl);
     if(ss.length){const btn=el("button","btn danger",m.id===me?"Sign out my devices":"Sign out everywhere");btn.onclick=()=>adminSignOut(m,ss.length);b.append(btn)}
+    if(m.active&&m.id!==me){const rm=el("button","btn danger","Remove");rm.onclick=()=>adminRemove(m);b.append(rm)}
     r.append(n,cell(m.active?(m.role==="guest"?"Guest":"Editor"):"Removed"),cell(ss.length?`${ss.length} device${ss.length===1?"":"s"}${ss.some(s=>s.current)&&m.id===me?" (incl. this one)":""}`:"Not signed in"),cell(last?"Signed in "+fmtDay(last):"–"),b);
     return r;
   });
   ms.append(adTable("stbl",["Person","Role","Signed in on","Latest sign-in",""],rows));w.append(ms);
-  const is=usageSection("Invitation links","Unused links still work until they expire. Ask for a new one if someone lost theirs.");
+  const is=usageSection("Invitation links","Unused links still work until they expire. If someone lost theirs, use New link next to their name.");
   const irows=admin.invites.slice(0,50).map(i=>{const r=el("div","row");const n=admin.members.find(m=>m.id===i.member_id);
     const status=i.used_at?"Used "+fmtDay(i.used_at):i.expires_at>now?"Unused, expires "+fmtDay(i.expires_at):"Expired unused";
     r.append(el("span","nm",n?n.name:i.member_id),cell(i.email),cell(status,i.used_at||i.expires_at<=now?"city":"city warn"));return r});
   is.append(irows.length?adTable("itbl",["Person","Email","Status"],irows):el("div","empty","No invitations on record."));w.append(is);
+}
+let lastInvite=null;
+function inviteSection(){
+  const s=usageSection("Invite someone","Creates a one-time sign-in link. Send it to them yourself by text or a direct email, never a group thread. It works once and expires in "+admin.settings.inviteDays+" days.");
+  const f=el("form","invform");
+  const lab=(t,inp)=>{const l=el("label",null,t);l.append(inp);return l};
+  const nm=el("input");nm.maxLength=100;nm.autocomplete="off";nm.placeholder="Mary Zellers";
+  const em=el("input");em.type="email";em.maxLength=200;em.autocomplete="off";em.placeholder="name@company.com";
+  const rl=el("select");[["guest","Guest"],["edit","Editor"]].forEach(([v,t])=>{const o=el("option",null,t);o.value=v;rl.append(o)});
+  const go=el("button","btn primary","Create invitation link");go.type="submit";
+  f.append(lab("Name",nm),lab("Email",em),lab("Role",rl),go);
+  f.onsubmit=e=>{e.preventDefault();createInvite({name:nm.value.trim(),email:em.value.trim(),role:rl.value},go)};
+  s.append(f,el("div","hint","Guests can update existing accounts, tasks and contacts. Editors can do everything, including Admin, deals and inviting people."));
+  if(admin.settings.cloudflareAccess)s.append(el("div","hint warn","Cloudflare Access is on: they also need to be allowed in the Cloudflare Access policy."));
+  if(lastInvite){
+    const box=el("div","invlink"),who=lastInvite.member;
+    box.append(el("div","nm",`Link for ${who.name} (${who.role==="edit"?"Editor":"Guest"})`),el("div","hint","Copy it now. For security, Voyage can't show this link again. If it gets lost, make a new one."));
+    const inp=el("input");inp.readOnly=true;inp.value=lastInvite.link;inp.onfocus=()=>inp.select();box.append(inp);
+    const acts=el("div","acts");
+    const cp=el("button","btn primary","Copy link");cp.onclick=async()=>{try{await navigator.clipboard.writeText(lastInvite.link);toast("Link copied")}catch(_){inp.focus();inp.select();toast("Press Ctrl+C to copy")}};
+    const msg=`Hi ${who.name.split(/\s+/)[0]}, here's your private link to The Voyage, TideLine's CRM: ${lastInvite.link}\n\nIt works once and expires in ${admin.settings.inviteDays} days. Open it in the browser you'll use most.`;
+    const ml=el("a","btn","Open in email");ml.href=`mailto:${encodeURIComponent(who.email)}?subject=${encodeURIComponent("Your invitation to The Voyage")}&body=${encodeURIComponent(msg)}`;
+    const cm=el("button","btn","Copy as a message");cm.onclick=async()=>{try{await navigator.clipboard.writeText(msg);toast("Message copied")}catch(_){toast("Couldn't copy. Copy the link instead.")}};
+    const dn=el("button","btn danger","Done");dn.onclick=()=>{lastInvite=null;renderSecurity()};
+    acts.append(cp,ml,cm,dn);box.append(acts);s.append(box);
+  }
+  return s;
+}
+async function createInvite(data,btn){
+  if(!data.email){toast("Enter their email");return}
+  if(btn){btn.disabled=true;btn.textContent="Creating…"}
+  try{const r=await fetch("/api/admin/invite",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||"That didn't work. Try again.");
+    lastInvite=j;track("action","Created an invitation");toast("Invitation link ready for "+j.member.name);await loadAdmin();
+    document.querySelector("#adSecurity .invlink")?.scrollIntoView({behavior:"smooth",block:"center"})}
+  catch(e){toast(e.message)}
+  finally{if(btn){btn.disabled=false;btn.textContent="Create invitation link"}}
+}
+async function adminRemove(m){
+  if(!confirm(`Remove ${m.name}'s access? They'll be signed out everywhere and any unused invitation stops working. You can re-invite them later.`))return;
+  try{const r=await fetch("/api/admin/remove",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({member:m.id})});if(!r.ok)throw Error();
+    track("action","Removed a member");toast("Removed "+m.name);loadAdmin()}
+  catch(_){toast("That didn't work. Try again.")}
 }
 async function adminSignOut(m,n){
   const self=m.id===me;
