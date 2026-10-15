@@ -70,3 +70,18 @@ Files are stored in D1 in 512 KB chunks (`migrations/0006_deal_files.sql`), so n
 ## Contacts
 
 Each account has **Contacts** (name, title, role, email, phone, main contact, notes). Every task and meeting must name the contact it was with: the task form has a contact picker with **+ Add a new contact**, and saving or marking a task or meeting done is refused without one, in the app and by the Worker (`contactId` must exist and belong to the same account). Older tasks without a contact can still be edited, but need a contact before they can be completed. Sequence steps use the account's main contact automatically. Editors can add and delete contacts; guests can update existing ones. Contacts are searchable and included in Muninn's context.
+
+
+## TideLine & Loki analytics
+
+Editors open **Profile → Admin → TideLine & Loki**. The existing invitation sign-in
+is used; guests cannot read analytics or import inquiries. `TIDELINE_DB` must
+bind the existing TideLine account database `tideline-contact`. Apply that site's
+additive migration `0004_site_analytics.sql` before deploying this reader.
+
+The view combines anonymous site navigation, retained Loki audits and workspaces,
+move outcomes, contact inquiries and the linked CRM pipeline. Traffic begins when
+the collector is deployed; no backfilled traffic or guessed revenue is shown.
+The **Add to CRM** action creates/links a prospect, contact and inquiry note using
+exact contact-email matches and a durable source-inquiry reference. Repeated
+imports preserve later CRM edits. It sends no customer messages.

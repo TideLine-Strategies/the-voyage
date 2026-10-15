@@ -706,9 +706,10 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <button class="back" id="adBack">‹ Back to Profile</button>
       <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
       <div class="ntabs" id="adTabs" role="tablist">
-        <button data-t="overview" class="on">Overview</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="audit">Audit log</button><button data-t="system">System</button>
+        <button data-t="overview" class="on">Overview</button><button data-t="tideline">TideLine &amp; Loki</button><button data-t="usage">Usage</button><button data-t="security">Security</button><button data-t="health">Data health</button><button data-t="audit">Audit log</button><button data-t="system">System</button>
       </div>
       <div id="adOverview"></div>
+      <div id="adTideline" hidden><div class="bhead"><select id="tdDays" aria-label="TideLine analytics period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select><button class="btn" id="tdRefresh">Refresh analytics</button></div><div id="tdBody">Open this tab to load TideLine analytics.</div></div>
       <div id="adUsage" hidden>
         <div class="hint" style="color:var(--muted);font-size:13px;margin-bottom:10px">Who uses The Voyage, what they open and do, when, and from where. It records page names and actions, never what anyone typed.</div>
         <div class="bhead">
@@ -1876,13 +1877,13 @@ function renderUsage(){
 $("uDays").onchange=loadUsage;$("uWho").onchange=renderUsage;$("uRefresh").onclick=loadAdmin;
 
 let admin=null,adTab="overview",adminErr="";
-const AD_PANELS={overview:"adOverview",usage:"adUsage",security:"adSecurity",health:"adHealth",audit:"adAudit",system:"adSystem"};
-$("adTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;adTab=t;renderAdmin();track("action","Opened Admin "+t)};
+const AD_PANELS={overview:"adOverview",tideline:"adTideline",usage:"adUsage",security:"adSecurity",health:"adHealth",audit:"adAudit",system:"adSystem"};
+$("adTabs").onclick=e=>{const t=e.target.closest("button")?.dataset.t;if(!t)return;adTab=t;renderAdmin();if(t==="tideline")loadTideline();track("action","Opened Admin "+t)};
 async function loadAdmin(){
   adminErr="";renderAdmin();
   try{const r=await fetch("/api/admin",{credentials:"same-origin",cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Admin data could not load.");admin=j}
   catch(e){adminErr=e.message||"Admin data could not load."}
-  await loadUsage();renderAdmin();
+  await loadUsage();if(adTab==="tideline")await loadTideline();renderAdmin();
 }
 const fmtDay=ts=>new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric",year:new Date(ts).getFullYear()===new Date().getFullYear()?undefined:"numeric"});
 function adTiles(list){const s=el("div","stats");list.forEach(([n,l])=>{const t=el("div","stat");t.append(el("b",null,String(n)),el("span",null,l));s.append(t)});return s}
@@ -3112,5 +3113,6 @@ render();renderActs();renderItems();
 })();
 setInterval(()=>{render();renderItems()},60000);
 </script>
+<script src="/tideline-analytics.js" defer></script>
 </body>
 </html>

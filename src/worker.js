@@ -1,3 +1,4 @@
+import { handleTideline } from "./tideline.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
 import { STARTER_SEQUENCES, nextStepDate, sanitizeSequence, stepTask, OUTCOMES } from "./sequences.js";
@@ -861,6 +862,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
+  if (path[1] === "tideline") return handleTideline(request, env, actor, readJson);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
