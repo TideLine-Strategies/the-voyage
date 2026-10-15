@@ -149,7 +149,7 @@ test("usage device labels", () => {
   assert.equal(deviceFrom(""), "Computer, Other browser");
 });
 
-test("admin: editors see access, invitations, and storage without secrets; guests are refused", async () => {
+test("admin: editors see access and storage without secrets; retired invitations are hidden", async () => {
   const { call, seed, sqlite } = fixture();
   seed("opps", "account", { name: "Gym", stage: 1 });
   sqlite.prepare("INSERT INTO invites (token_hash, member_id, email, expires_at) VALUES ('secret-hash', 'JK', 'jack@example.com', ?)").run(Date.now() + 86400000);
@@ -162,7 +162,7 @@ test("admin: editors see access, invitations, and storage without secrets; guest
   const data = await response.json();
   assert.ok(data.members.some(member => member.id === "MJ" && member.role === "guest"));
   assert.ok(data.sessions.some(session => session.member_id === "QS" && session.current === 1));
-  assert.equal(data.invites.find(invite => invite.member_id === "JK").email, "jack@example.com");
+  assert.deepEqual(data.invites, []);
   assert.equal(data.storage.find(row => row.collection === "opps").records, 1);
   assert.equal(data.usageEvents, null);
   const out = await call("a", "POST", "/api/admin/signout", { member: "MJ" });

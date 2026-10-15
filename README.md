@@ -12,7 +12,18 @@ Run `npm ci` and `npm run check` locally. SQL migrations are separate from code 
 
 The D1 `members` table is the private roster. Active membership is checked on every request, including requests with an existing session. `edit` members can create, edit, and delete CRM entries. `guest` members can browse the full CRM, edit existing accounts, tasks, appointments, and notes, move stages, complete tasks, and use Muninn. Guests cannot create or delete CRM entries or add or remove account locations. Guests have their own team chat, separate from Quan and Cody's chat; presence and Muninn chat context follow that separation. A guest may delete only their own chat messages. Deactivating a member in D1 revokes access on the next request.
 
-Create a private roster JSON array outside Git, with objects containing `id`, `name`, `email`, and `role`. Run `node scripts/make-invites.mjs https://voyage.tidelinestrats.com <private-roster.json> <private-invites.sql> <private-links.json> [member-email]`. The script writes one-time links and roster/invitation SQL to private files with restricted permissions; it refuses to overwrite existing files. After reviewing the SQL, apply it with `wrangler d1 execute the-voyage --remote --profile tideline --file <private-invites.sql>`. Send each link privately. Invitations last 30 days; signed-in sessions last 180 days unless the member is deactivated.
+Sign in at `/` or `/login` using a company Google account or the existing WonPlace staff email/password. Both methods resolve the active D1 roster and keep its roles. Google uses an authorization-code flow with PKCE, a single-use browser-bound state and nonce, and verified Google identity tokens. Password verification/recovery uses the existing WonPlace Supabase Auth project; no password hashes or provider refresh tokens are stored in Voyage. Verified authenticator factors must be completed before a Voyage session is issued. Password recovery returns to the existing WonPlace recovery screen and changes that shared account password. Existing Voyage sessions remain valid until expiry, explicit sign-out or roster deactivation; an external password reset does not automatically revoke existing Voyage sessions.
+
+Apply `migrations/0007_account_signin.sql` through the reviewed release before deploying the new code. Configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as Worker secrets after creating the Voyage web OAuth client. Authorized redirect URIs:
+
+- `https://voyage.tidelinestrats.com/auth/google/callback`
+- `https://the-voyage.q-stewart.workers.dev/auth/google/callback`
+
+The public `ACCOUNT_AUTH_URL`, `ACCOUNT_AUTH_PUBLIC_KEY` and `ACCOUNT_RECOVERY_URL` settings select the existing company account service and recovery destination. The publishable key grants no administrative access. Google credentials and any user passwords must never be committed. Login attempts are bounded by durable fixed-window limits. Completed/expired OAuth requests are removed; rate-limit keys are hashed and old buckets are purged during login.
+
+Invitation-link login is retired; old `/invite/...` URLs redirect to `/login` and cannot issue a session. Roster membership still controls private company access; public visitors cannot claim an existing account by typing its email. `scripts/make-invites.mjs` is retired. Provision membership separately from identity verification, preserving current IDs and roles.
+
+Instinct uses the same visible browser login and company pages. No Instinct API or shared administrator token is required. Authenticated live acceptance must be completed in each owner's and agent's actual browser session after deployment. Never claim the agent connection is verified from unit tests alone.
 
 ## Muninn with local Codex
 
@@ -23,7 +34,7 @@ Muninn uses each member's signed-in Codex CLI through a local bridge; no OpenAI 
 Editors see an **Admin** page with Overview, Usage, Security, Data health, and System tabs. Guests cannot open it, and the Worker refuses `/api/admin` and `GET /api/usage` for them.
 
 - Usage records page views and action labels per member (never record contents or typed text), with device type and the coarse city/region/country Cloudflare reports. Rows older than 180 days are deleted when an editor loads usage. Apply `migrations/0004_usage_events.sql` before or after deploying; until it exists, usage writes are ignored and the Usage tab says it is off.
-- Security lists members, signed-in devices, and invitation status, and lets an editor sign a member out of every device. Token hashes are never returned.
+- Security lists members and signed-in devices, and lets an editor sign a member out of every device. Token hashes are never returned.
 - Data health and System are computed from existing records.
 
 ## Search, import/export, calendar, and audit log

@@ -1923,18 +1923,18 @@ function renderHealth(){
 function renderSecurity(){
   const w=$("adSecurity");w.replaceChildren();
   if(!admin){w.append(el("div","empty",adminErr||"Loading…"));return}
-  const now=admin.now,active=admin.members.filter(m=>m.active),pending=admin.invites.filter(i=>!i.used_at&&i.expires_at>now);
-  w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"],[pending.length,"unused invitations"]]));
+  const now=admin.now,active=admin.members.filter(m=>m.active);
+  w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"]]));
   const st=usageSection("How sign-in works","Current access settings.");
   const sl=el("div","tbl");[
-    ["Sign-in method","One-time invitation link per person, sent privately"],
-    ["Invitation links","Work once and expire after "+admin.settings.inviteDays+" days"],
+    ["Sign-in method","Company Google account"],
+
     ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
-    ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: the invitation link is the only gate"],
+    ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: company account sign-in protects the app"],
     ["Guests","Can edit existing CRM records. Cannot create, delete, see vendors, or open Admin"],
   ].forEach(([k,v])=>{const r=el("div","ubar");r.style.gridTemplateColumns="minmax(0,10rem) minmax(0,1fr)";r.append(el("span","nm",k),cell(v));sl.append(r)});
   st.append(sl);w.append(st);
-  const ms=usageSection("People with access","Sign someone out to end every session on every device. They need a new invitation to get back in.");
+  const ms=usageSection("People with access","Sign someone out to end every session on every device. They can sign in again with their company account.");
   const rows=admin.members.map(m=>{
     const ss=admin.sessions.filter(s=>s.member_id===m.id),last=ss[0]?.created_at;
     const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.email));
@@ -1944,15 +1944,11 @@ function renderSecurity(){
     return r;
   });
   ms.append(adTable("stbl",["Person","Role","Signed in on","Latest sign-in",""],rows));w.append(ms);
-  const is=usageSection("Invitation links","Unused links still work until they expire. Ask for a new one if someone lost theirs.");
-  const irows=admin.invites.slice(0,50).map(i=>{const r=el("div","row");const n=admin.members.find(m=>m.id===i.member_id);
-    const status=i.used_at?"Used "+fmtDay(i.used_at):i.expires_at>now?"Unused, expires "+fmtDay(i.expires_at):"Expired unused";
-    r.append(el("span","nm",n?n.name:i.member_id),cell(i.email),cell(status,i.used_at||i.expires_at<=now?"city":"city warn"));return r});
-  is.append(irows.length?adTable("itbl",["Person","Email","Status"],irows):el("div","empty","No invitations on record."));w.append(is);
+
 }
 async function adminSignOut(m,n){
   const self=m.id===me;
-  if(!confirm(self?`Sign out all ${n} of your devices, including this one?`:`Sign ${m.name} out of ${n} device${n===1?"":"s"}? They'll need a new invitation to get back in.`))return;
+  if(!confirm(self?`Sign out all ${n} of your devices, including this one?`:`Sign ${m.name} out of ${n} device${n===1?"":"s"}? They can sign in again with their company account.`))return;
   try{const r=await fetch("/api/admin/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({member:m.id})});if(!r.ok)throw Error();
     track("action","Signed out "+(self?"own devices":"a member"));toast(self?"Signed out":"Signed "+m.name+" out");if(self){location.reload();return}loadAdmin()}
   catch(_){toast("That didn't work. Try again.")}
@@ -2817,7 +2813,6 @@ function renderOverview(){
   const checks=healthChecks(),attention=[];
   if(admin){
     const now=admin.now;
-    admin.invites.filter(i=>!i.used_at&&i.expires_at>now).forEach(i=>attention.push(["amber",`Unused invitation for ${i.email}, expires ${fmtDay(i.expires_at)}. Anyone with that link can sign in as them.`,"security"]));
     admin.members.filter(m=>m.active&&!admin.sessions.some(s=>s.member_id===m.id)).forEach(m=>attention.push(["blue",`${m.name} isn't signed in on any device.`,"security"]));
     const old=admin.sessions.filter(s=>now-s.created_at>90*864e5).length;if(old)attention.push(["blue",`${old} sign-in${old===1?" is":"s are"} over 90 days old. Consider signing out devices that aren't in use.`,"security"]);
     if(!admin.settings.cloudflareAccess)attention.push(["blue","Cloudflare Access is off, so the invitation link is the only sign-in check.","security"]);
@@ -2974,7 +2969,7 @@ function go(v){
   if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
-document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>go(b.dataset.view));
+document.querySelectorAll(".nav[data-view]").forEach(b=>b.onclick=()=>go(b.dataset.view));
 document.querySelectorAll(".pgtabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
 
 fillMe();const RV_BODY="M6 50 L12 46 L20 42 C21 35 28 29 37 27.5 C39.5 24 41 19 45 16 C48.5 13.5 53 13.5 55.5 16 C58.5 17 61.5 19.5 63.5 22.5 C60.5 22.8 58 23.6 55.8 25 L54.5 26.6 L52.6 26.1 L53 28 L50.8 27.7 L51 29.6 L49 29.3 C50.5 35 47.5 42 40 45 C36 46.5 32 47 28 47.2 L14 52 L9 53.5 Z";
