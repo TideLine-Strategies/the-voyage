@@ -25,11 +25,12 @@ test("worker refuses requests without a verified member session", async () => {
   assert.equal(response.status, 403);
 });
 
-test("unauthenticated site root only shows invitation instructions", async () => {
-  const response = await worker.fetch(new Request("https://voyage.tidelinestrats.com/"), {});
+test("unauthenticated site root shows regular account sign-in", async () => {
+  const response = await worker.fetch(new Request("https://voyage.tidelinestrats.com/"), {GOOGLE_CLIENT_ID:"test",GOOGLE_CLIENT_SECRET:"test"});
   const html = await response.text();
   assert.equal(response.status, 200);
-  assert.match(html, /private invitation/);
+  assert.match(html, /Sign in with Google/);
+  assert.doesNotMatch(html, /private invitation/);
   assert.doesNotMatch(html, /Team chat|Pipeline/);
 });
 
