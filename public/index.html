@@ -1171,7 +1171,7 @@ function openDlg(o,preset){
   $("delBtn").hidden=!o;
   $("dlg").showModal();$("fName").focus();
 }
-const CMS_OPTIONS=["JackRabbit","iClassPro","The Studio Director","Uplifter","Other"];
+const CMS_OPTIONS=["iClassPro","JackRabbit Class","Gymdesk","SmartRec","LoveAdmin","Other"];
 const CMS_LABEL=o=>o.cms==="Other"?(o.cmsOther||"Other software"):(o.cms||"");
 function fillCms(){const s=$("fCms");if(s.options.length)return;s.append(new Option("Not set",""));CMS_OPTIONS.forEach(x=>s.append(new Option(x)));s.onchange=syncCms}
 function syncCms(){const o=$("fCmsOther");o.hidden=$("fCms").value!=="Other";if(o.hidden)o.value=""}
