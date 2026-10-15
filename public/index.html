@@ -1956,7 +1956,7 @@ function inviteSection(){
   const s=usageSection("Invite someone","Creates a one-time sign-in link. Send it to them yourself by text or a direct email, never a group thread. It works once and expires in "+admin.settings.inviteDays+" days.");
   const f=el("form","invform");
   const lab=(t,inp)=>{const l=el("label",null,t);l.append(inp);return l};
-  const nm=el("input");nm.maxLength=100;nm.autocomplete="off";nm.placeholder="Mary Zellers";
+  const nm=el("input");nm.maxLength=100;nm.autocomplete="off";nm.placeholder="Alex Rivera";
   const em=el("input");em.type="email";em.maxLength=200;em.autocomplete="off";em.placeholder="name@company.com";
   const rl=el("select");[["guest","Guest"],["edit","Editor"]].forEach(([v,t])=>{const o=el("option",null,t);o.value=v;rl.append(o)});
   const go=el("button","btn primary","Create invitation link");go.type="submit";

@@ -44,7 +44,7 @@ function inviteToken() {
     .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
-// Initials, then a number if taken: "Mary Zellers" becomes MZ, then MZ2.
+// Initials, then a number if taken: "Alex Rivera" becomes AR, then AR2.
 export async function newMemberId(db, name) {
   const base = (name.match(/[A-Za-z0-9]+/g) || []).map(word => word[0]).join("").toUpperCase().slice(0, 6) || "M";
   for (let n = 1; n < 1000; n++) {
