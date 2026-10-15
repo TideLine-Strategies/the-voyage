@@ -460,3 +460,11 @@ test("contacts: every task and meeting names who it was with, from the same acco
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });
+
+
+test("guest cannot read TideLine analytics or import inquiries into CRM",async()=>{
+ const {call}=fixture();
+ assert.equal((await call('b','GET','/api/tideline/analytics')).status,403);
+ assert.equal((await call('b','POST','/api/tideline/import',{id:'11111111-1111-4111-8111-111111111111'})).status,403);
+ assert.equal((await call('a','GET','/api/tideline/analytics')).status,503);
+});
