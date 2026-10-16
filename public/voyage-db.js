@@ -68,8 +68,11 @@
     let busy = false;
     const watcher = {
       collection: decodeURIComponent(path.split("/")[3].split("?")[0]),
-      async poll() {
-        if (busy || !mayPoll()) return;
+      async poll(initial = false) {
+        // The one initial snapshot must load even when Safari opens a background tab.
+        // Later reads still require visible activity and preserve quota/auth backoff.
+        const initialAllowed = initial && !blocked && !offline && Date.now() >= retryAt && !probeBusy;
+        if (busy || (!mayPoll() && !initialAllowed)) return;
         busy = true;
         const probing = failures > 0;
         if (probing) probeBusy = true;
@@ -88,7 +91,7 @@
       resync() { previous = ""; void watcher.poll(); },
     };
     watchers.add(watcher);
-    void watcher.poll();
+    void watcher.poll(true);
     const timer = setInterval(() => { if (!document.hidden) void watcher.poll(); }, interval);
     return () => { clearInterval(timer); watchers.delete(watcher); };
   }
