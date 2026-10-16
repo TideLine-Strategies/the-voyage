@@ -5,6 +5,11 @@
   "compatibility_date": "2026-09-29",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "vars": {
+    "ACCOUNT_AUTH_URL": "https://xdghdnlwrizvnrzkddgw.supabase.co",
+    "ACCOUNT_AUTH_PUBLIC_KEY": "sb_publishable_3SItPlSfk2-sP7xgGMG6Zw_WneEhxjg",
+    "ACCOUNT_RECOVERY_URL": "https://premieros-preview.signallabs.workers.dev/"
+  },
   "routes": [{ "pattern": "voyage.tidelinestrats.com", "custom_domain": true }],
   "assets": {
     "directory": "./public",
