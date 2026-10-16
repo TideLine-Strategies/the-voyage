@@ -519,6 +519,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="gsearch"><input id="gSearch" type="search" placeholder="Search everything  /" aria-label="Search everything" autocomplete="off"><div class="gres" id="gRes" role="listbox" hidden></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
+    <button class="nav" data-view="company" id="companyNav">Company</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
     <button class="nav" data-view="calendar">Calendar</button>
@@ -578,6 +579,19 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
       <div class="cnt" id="acCount"></div>
       <div class="tbl atbl" id="acList"></div>
+    </section>
+
+    <section id="view-company" hidden>
+      <div class="head"><div><h1>TideLine company</h1><div class="sub">Separate product analytics. One TideLine business ledger.</div></div><select id="companySelect" aria-label="Product analytics"><option value="wonplace">WonPlace</option><option value="tideline">TideLine website</option><option value="loki">Loki</option><option value="voyage">Voyage</option></select><button class="btn" id="companyRefresh">Refresh</button></div>
+      <p id="companyStatus" role="status"></p>
+      <div class="grid2"><section class="dlsec"><h2>Using it now</h2><div id="companyUsers"></div></section><section class="dlsec"><h2>Live activity &amp; incidents</h2><div id="companyEvents" style="max-height:320px;overflow:auto"></div></section></div><p id="companyCoverage" class="sub"></p>
+      <section class="dlsec"><h2>Analytics &amp; Spring diagnostics</h2><p>TideLine website sessions and WonPlace staff activity stay separate. Read source data on demand; the live feed above receives pushed events.</p><button class="btn" id="companyReadSource">Refresh analytics</button><div id="companySourceData"></div></section>
+      <section class="dlsec"><h2>Sources</h2><p>Link the exact company GitHub repositories, Cloudflare account, AI provider, billing, and revenue sources. Saved links do not imply API access.</p><div id="companyProviders"></div><div id="companySources"></div>
+        <form id="companySourceForm" class="grid2"><input type="hidden" name="recordId"><label>Source<select name="provider"><option value="github">GitHub</option><option value="cloudflare">Cloudflare</option><option value="ai">AI provider</option><option value="billing">Bills &amp; expenses</option><option value="revenue">Revenue provider</option><option value="other">Other</option></select></label><label>Name<input name="label" required maxlength="100"></label><label>Source URL<input name="url" type="url" required placeholder="https://"></label><button class="btn" type="submit">Save source link</button></form>
+      </section>
+      <section class="dlsec"><h2>TideLine brand bills, expenses &amp; revenue</h2><p id="companyFinanceCoverage"></p><div id="companyTotals"></div><div id="companyFinance"></div>
+        <form id="companyFinanceForm" class="grid3"><input type="hidden" name="recordId"><input type="hidden" name="expectedRevision"><label>Product<select name="product"><option value="tideline">TideLine</option><option value="wonplace">WonPlace</option><option value="loki">Loki</option><option value="voyage">Voyage</option><option value="tideline-other">Other TideLine work</option></select></label><label>Name<input name="label" required maxlength="160"></label><label>Type<select name="kind"><option value="bill">Bill</option><option value="expense">Expense</option><option value="revenue">Revenue</option></select></label><label>Status<select name="status"><option value="due">Due</option><option value="paid">Paid</option><option value="received">Received</option><option value="expected">Expected</option></select></label><label>Amount<input name="amount" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="0.00"></label><label>Currency<input name="currency" value="USD" required pattern="[A-Z]{3}" maxlength="3"></label><label>Date<input name="date" type="date" required></label><label>Repeats<select name="recurrence"><option value="once">Once</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><label>Receipt or bill URL<input name="reference" type="url"></label><button class="btn" type="submit">Save financial record</button><button class="btn" type="reset">Clear form</button></form>
+      </section>
     </section>
 
     <section id="view-vendors" hidden>
@@ -1058,6 +1072,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/voyage-db.js"></script>
+<script src="/company-ops.js"></script>
 <script>
 const STAGES=["Prospecting","Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const SHORT=["Prospect","Discovery","Alignment","Assess","Validation","Proposal","Review"];
@@ -1077,7 +1092,7 @@ function fillMe(){
 }
 function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
 try{applyTheme(localStorage.getItem("voyage-theme")||"")}catch(_){}
-function showGuestAccess(){document.body.classList.add("guest");$("viewBadge").hidden=false}
+function showGuestAccess(){$("companyNav").hidden=true;document.body.classList.add("guest");$("viewBadge").hidden=false}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
 
@@ -2962,6 +2977,9 @@ function renderAdmin(){
 const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
+  if(v==="company"&&guest)return;
+  $("view-company").hidden=v!=="company";
+  if(v==="company")window.VoyageCompany.open();else window.VoyageCompany.close();
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===(navV==="notes"?"activity":navV)));
