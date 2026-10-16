@@ -827,7 +827,7 @@ async function handleApi(request, env, actor, path) {
   }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
-      const { results } = await env.DB.prepare("SELECT p.member_id, p.view_name, p.typing_channel FROM presence p JOIN members m ON m.id = p.member_id WHERE p.seen_at > ? AND m.active = 1 AND m.role = ?").bind(Date.now() - 15000, actor.role).all();
+      const { results } = await env.DB.prepare("SELECT p.member_id, p.view_name, p.typing_channel FROM presence p JOIN members m ON m.id = p.member_id WHERE p.seen_at > ? AND m.active = 1 AND m.role = ?").bind(Date.now() - 90000, actor.role).all();
       return reply({ peers: results.map(row => ({ who: row.member_id, view: row.view_name, typing: row.typing_channel, isMe: row.member_id === actor.id })) });
     }
     if (method === "POST") {
