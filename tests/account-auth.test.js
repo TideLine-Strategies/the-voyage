@@ -65,12 +65,13 @@ test('password sign-in rate limiting works when D1 does not return rows from mut
  assert.equal(response.status,200);
 });
 test('default provider exchange invokes the active runtime fetch',async()=>{
- const f=fixture(),original=globalThis.fetch;let called=0;
+ const f=fixture(),original=globalThis.fetch,timeout=Object.getOwnPropertyDescriptor(AbortSignal,'timeout');let called=0;
  globalThis.fetch=async()=>{called++;return Response.json({error:'bad credentials'},{status:400});};
+ Object.defineProperty(AbortSignal,'timeout',{value:undefined,configurable:true});
  try{
   const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{}});
   assert.equal(response.status,401);assert.equal(called,1);
- }finally{globalThis.fetch=original;}
+ }finally{globalThis.fetch=original;Object.defineProperty(AbortSignal,'timeout',timeout);}
 });
 test('wrong credentials, unconfirmed or mismatched identities and unapproved accounts cannot sign in',async()=>{
  for(const result of [null,{id:'x',email:'q.stewart@tidelinestrats.com'},{id:'x',email:'other@example.com',email_confirmed_at:'2026-01-01'}]){
