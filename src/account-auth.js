@@ -9,7 +9,10 @@ export function accountPage(env={}){
 }
 async function limit(db,bucket,max){
  const now=Date.now(),windowStart=Math.floor(now/900000)*900000;
- const row=await db.prepare('INSERT INTO login_limits(bucket,window_start,attempts) VALUES(?,?,1) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN window_start=excluded.window_start THEN attempts+1 ELSE 1 END,window_start=excluded.window_start RETURNING attempts').bind(hash(bucket),windowStart).first();
+ const bucketHash=hash(bucket);
+ await db.prepare('INSERT INTO login_limits(bucket,window_start,attempts) VALUES(?,?,1) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN window_start=excluded.window_start THEN attempts+1 ELSE 1 END,window_start=excluded.window_start').bind(bucketHash,windowStart).run();
+ const row=await db.prepare('SELECT attempts FROM login_limits WHERE bucket=?').bind(bucketHash).first();
+ if(!row)throw Error('Login limit state unavailable');
  return row.attempts<=max;
 }
 export async function handleAccountAuth(request,env,{audit,readJson,verifyGoogle=googleMember,exchange=fetch}){
@@ -67,17 +70,23 @@ async function handlePassword(request,env,{audit,readJson,exchange}){
  if(request.method!=='POST')return json({error:'Method not allowed'},405);
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'Origin not allowed'},403);
  if(!env.ACCOUNT_AUTH_URL||!env.ACCOUNT_AUTH_PUBLIC_KEY)return json({error:'Account sign-in is not configured.'},503);
+ let stage='provider-config';
  try{
   const provider=new URL(env.ACCOUNT_AUTH_URL);if(provider.protocol!=='https:'||!provider.hostname.endsWith('.supabase.co')||provider.pathname!=='/'||provider.search||provider.hash||provider.username)throw Error('Invalid provider');
+  stage='rate-limit-ip';
   if(!await limit(env.DB,'account-ip:'+String(request.headers.get('cf-connecting-ip')||'unknown'),20))return json({error:'Too many attempts. Try again in 15 minutes.'},429,{'retry-after':'900'});
   if(new URL(request.url).pathname==='/auth/mfa')return completeMfa(request,env,{audit,readJson,exchange},provider);
+  stage='request-body';
   const data=await readJson(request),email=typeof data.email==='string'?data.email.trim().toLowerCase():'';
   if(!email||email.length>254)return json({error:'Enter your company email.'},400);
   const recover=new URL(request.url).pathname==='/auth/recover';
+  stage='rate-limit-account';
   if(!await limit(env.DB,'account-email:'+email,recover?3:10))return json({error:'Too many attempts. Try again in 15 minutes.'},429);
+  stage='member-lookup';
   const member=await env.DB.prepare('SELECT id,name,role FROM members WHERE email=? AND active=1').bind(email).first();
   if(recover){
    if(member){
+    stage='provider-recovery';
     const target=new URL('/auth/v1/recover',provider);target.searchParams.set('redirect_to',env.ACCOUNT_RECOVERY_URL);
     const response=await exchange(target.toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email}),redirect:'error',signal:AbortSignal.timeout(10000)});
     if(!response.ok)return json({error:'Recovery email is temporarily unavailable. Try again later.'},503);
@@ -85,6 +94,7 @@ async function handlePassword(request,env,{audit,readJson,exchange}){
    return json({ok:true,message:'If this account can recover access, a recovery email has been requested. Check your inbox.'});
   }
   if(typeof data.password!=='string'||data.password.length<1||data.password.length>128)return json({error:'Enter your account password.'},400);
+  stage='provider-password';
   const response=await exchange(new URL('/auth/v1/token?grant_type=password',provider).toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email,password:data.password}),redirect:'error',signal:AbortSignal.timeout(10000)});
   if(!response.ok)return json({error:response.status===429?'Too many sign-in attempts. Try again later.':'Email or password is incorrect.'},response.status===429?429:401);
   const result=await oauthResponse(response);
@@ -96,7 +106,10 @@ async function handlePassword(request,env,{audit,readJson,exchange}){
   await env.DB.prepare('INSERT INTO sessions(token_hash,member_id,expires_at,created_at) VALUES(?,?,?,?)').bind(hash(session),member.id,now+180*86400000,now).run();
   await audit(env,member.id,'Signed in',null,null,'Company account password');
   return json({ok:true},200,{'set-cookie':`voyage_session=${session}; Max-Age=15552000; Path=/; Secure; HttpOnly; SameSite=Lax`});
- }catch{return json({error:'Account sign-in is temporarily unavailable. Please try again later.'},503);}
+ }catch(error){
+  console.error(JSON.stringify({event:'account_signin_failure',route:new URL(request.url).pathname,stage,error:error?.name||'Error'}));
+  return json({error:'Account sign-in is temporarily unavailable. Please try again later.'},503);
+ }
 }
 
 async function completeMfa(request,env,{audit,readJson,exchange},provider){
