@@ -64,6 +64,14 @@ test('password sign-in rate limiting works when D1 does not return rows from mut
  const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic-password'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{},exchange:async()=>Response.json({user:{id:'provider-id',email:'q.stewart@tidelinestrats.com',email_confirmed_at:'2026-01-01'}})});
  assert.equal(response.status,200);
 });
+test('default provider exchange invokes the active runtime fetch',async()=>{
+ const f=fixture(),original=globalThis.fetch;let called=0;
+ globalThis.fetch=async()=>{called++;return Response.json({error:'bad credentials'},{status:400});};
+ try{
+  const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{}});
+  assert.equal(response.status,401);assert.equal(called,1);
+ }finally{globalThis.fetch=original;}
+});
 test('wrong credentials, unconfirmed or mismatched identities and unapproved accounts cannot sign in',async()=>{
  for(const result of [null,{id:'x',email:'q.stewart@tidelinestrats.com'},{id:'x',email:'other@example.com',email_confirmed_at:'2026-01-01'}]){
   const f=fixture();const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{},exchange:async()=>result?Response.json({user:result}):Response.json({error:'bad'},{status:400})});assert.equal(response.status,401);assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sessions').get().n,0);

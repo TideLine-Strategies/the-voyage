@@ -3,6 +3,9 @@ import { timingSafeEqual, randomBytes, createHash } from 'node:crypto';
 const headers={'content-type':'application/json','cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{...headers,...extra}});
 const hash=value=>createHash('sha256').update(value).digest('hex');
+// Cloudflare's request-scoped fetch must be invoked through the active global,
+// rather than retained and called as a detached platform function.
+const runtimeFetch=(...args)=>globalThis.fetch(...args);
 export function accountPage(env={}){
  const configured=!!(env.GOOGLE_CLIENT_ID&&env.GOOGLE_CLIENT_SECRET),passwordConfigured=!!(env.ACCOUNT_AUTH_URL&&env.ACCOUNT_AUTH_PUBLIC_KEY);
  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in · The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;margin:0;padding:24px}main{width:min(380px,85vw)}a{display:block;background:#42b6d4;color:#071726;border-radius:8px;padding:14px;text-align:center;font-weight:700;text-decoration:none}p{line-height:1.5}label{display:block;margin:14px 0}input,button{box-sizing:border-box;width:100%;font:inherit;padding:12px;border-radius:8px}input{margin-top:6px}button{cursor:pointer}</style><main><h1>The Voyage</h1><h2>Sign in to your account</h2>${configured?'<p>Use your company Google account.</p><a href="/auth/google">Sign in with Google</a>':passwordConfigured?'<p>Use your WonPlace staff email and password.</p>':'<p>Company sign-in is being configured. Existing signed-in devices can continue to use Voyage.</p>'}${passwordConfigured?'<form method="post" action="/auth/password"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Password<input type="password" name="password" autocomplete="current-password" maxlength="128" required></label><button>Sign in</button><p role="status" data-auth-status></p></form><details><summary>Forgot your password?</summary><p>This uses your WonPlace staff account. Resetting its password also changes your WonPlace sign-in.</p><form method="post" action="/auth/recover"><label>Company email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><button>Send recovery email</button><p role="status" data-auth-status></p></form></details>':''}<p>Your company account permissions determine what you can access.</p></main><script src="/auth/form.js"></script></html>`,{status:configured||passwordConfigured?200:503,headers:{'content-type':'text/html; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"}});
@@ -15,7 +18,7 @@ async function limit(db,bucket,max){
  if(!row)throw Error('Login limit state unavailable');
  return row.attempts<=max;
 }
-export async function handleAccountAuth(request,env,{audit,readJson,verifyGoogle=googleMember,exchange=fetch}){
+export async function handleAccountAuth(request,env,{audit,readJson,verifyGoogle=googleMember,exchange=runtimeFetch}){
  const path=new URL(request.url).pathname;
  if(path==='/auth/form.js'&&request.method==='GET')return new Response(accountFormScript,{headers:{'content-type':'text/javascript','cache-control':'no-store'}});
  if(path==='/auth/password'||path==='/auth/recover'||path==='/auth/mfa')return handlePassword(request,env,{audit,readJson,exchange});
