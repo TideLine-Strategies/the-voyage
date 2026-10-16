@@ -1,3 +1,4 @@
+import { accountPage, handleAccountAuth } from "./account-auth.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
 import { STARTER_SEQUENCES, nextStepDate, sanitizeSequence, stepTask, OUTCOMES } from "./sequences.js";
@@ -29,7 +30,6 @@ const ID_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const MAX_BODY_BYTES = 65536;
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" };
 const SESSION_MAX_AGE = 180 * 24 * 60 * 60;
-const INVITE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function tokenHash(token) {
   return crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)).then(bytes =>
@@ -50,48 +50,7 @@ async function memberForSession(request, env) {
   return row ? memberForId(row.member_id, env.DB) : null;
 }
 
-function invitePage(token, valid) {
-  const body = valid
-    ? `<form id="open" method="post" action="/invite/${token}"><button type="submit">Open The Voyage</button></form><p id="status" role="status"></p><script>document.getElementById('open').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;button.textContent='Opening…';try{const response=await fetch(event.target.action,{method:'POST',credentials:'same-origin'});if(!response.ok||!response.redirected)throw Error('Unable to sign in');const check=await fetch('/api/me',{credentials:'same-origin'});if(!check.ok)throw Error('Session was not saved');location.replace('/')}catch(_){document.getElementById('status').textContent='The invitation could not open in this browser. Try a different browser or ask Quan for a new link.';button.disabled=false;button.textContent='Open The Voyage'}})</script>`
-    : "<p>This invitation has expired or was already used. Ask Quan for a new link.</p>";
-  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage invitation</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}button{background:#42b6d4;color:#071726;border:0;border-radius:8px;padding:14px 22px;font:inherit;font-weight:700;cursor:pointer}</style><h1>The Voyage</h1>${body}</html>`, {
-    status: valid ? 200 : 410,
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" },
-  });
-}
-
-function signInPage() {
-  return new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Voyage</title><style>body{font:16px system-ui;background:#071726;color:#f1f6fa;min-height:100vh;display:grid;place-content:center;text-align:center;padding:24px}p{max-width:30rem;line-height:1.5}</style><h1>The Voyage</h1><p>Open the private invitation sent to your TideLine email to sign in. Ask Quan for a new invitation if your link has expired.</p></html>', {
-    status: 200,
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" },
-  });
-}
-
-async function handleInvite(request, env, token) {
-  if (!INVITE_PATTERN.test(token)) return invitePage("", false);
-  const hash = await tokenHash(token);
-  const invite = await env.DB.prepare("SELECT member_id, email FROM invites WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
-    .bind(hash, Date.now()).first();
-  const member = invite && await memberForEmail(invite.email, env.DB);
-  if (!member || member.id !== invite.member_id) return invitePage("", false);
-  if (request.method === "GET") return invitePage(token, true);
-  if (request.method !== "POST" || !checkWriteOrigin(request)) return error("Forbidden", 403);
-  const now = Date.now();
-  const result = await env.DB.prepare("UPDATE invites SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
-    .bind(now, hash, now).run();
-  if (!result.meta.changes) return invitePage("", false);
-  await audit(env, member.id, "Signed in", null, null, "Opened invitation link");
-  const session = randomToken();
-  await env.DB.prepare("INSERT INTO sessions (token_hash, member_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
-    .bind(await tokenHash(session), member.id, now + SESSION_MAX_AGE * 1000, now).run();
-  return new Response(null, {
-    status: 303,
-    headers: {
-      "location": "/", "cache-control": "no-store", "referrer-policy": "no-referrer",
-      "set-cookie": `voyage_session=${session}; Max-Age=${SESSION_MAX_AGE}; Path=/; Secure; HttpOnly; SameSite=Lax`,
-    },
-  });
-}
+function signInPage(env) { return accountPage(env); }
 
 // Guests can change existing CRM records and use their private chat space.
 export function canWrite(actor, path, method) {
@@ -833,7 +792,7 @@ async function handleAdmin(request, env, actor, path) {
     members: await all("SELECT id, name, email, role, active FROM members ORDER BY active DESC, role, name"),
     sessions: await all("SELECT member_id, created_at, expires_at, token_hash = ? AS current FROM sessions WHERE expires_at > ? ORDER BY created_at DESC LIMIT 200", currentHash, now),
     expiredSessions: (await env.DB.prepare("SELECT COUNT(*) AS n FROM sessions WHERE expires_at <= ?").bind(now).first()).n,
-    invites: await all("SELECT member_id, email, expires_at, used_at FROM invites ORDER BY expires_at DESC LIMIT 200"),
+    invites: [],
     storage: await all("SELECT collection, COUNT(*) AS records, SUM(LENGTH(data_json)) AS bytes, MAX(updated_at) AS updated FROM documents GROUP BY collection ORDER BY collection"),
     usageEvents,
     settings: {
@@ -950,10 +909,11 @@ async function handleApi(request, env, actor, path) {
 export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
-    if (pathName.startsWith("/invite/")) return handleInvite(request, env, pathName.slice(8));
+    if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
+    if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
     if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
-    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage() : error("Sign in with the approved TideLine account", 403);
+    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage(env) : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
     if (!path) {
       const asset = await env.ASSETS.fetch(request);
