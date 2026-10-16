@@ -59,3 +59,10 @@ test('presence and data stop offline and while hidden', async () => {
   h.listeners.online(); h.document.hidden = true;
   await h.advance(60000); assert.equal(h.calls.length, before);
 });
+
+test('background startup loads exactly one initial snapshot per feed and then stays quiet', async () => {
+ const h=harness();h.document.hidden=true;await h.window.voyageDb.init();let loaded=0;
+ for(let i=0;i<8;i++)h.window.voyageDb.collection('boot'+i).onSnapshot(()=>loaded++);
+ await h.settle();assert.equal(loaded,8);assert.equal(h.calls.length,9);
+ await h.advance(3600000);assert.equal(h.calls.length,9);
+});
