@@ -1,3 +1,4 @@
+import {handleCompany,ingestCompany,companyContext} from "./company-ops.js";
 import { accountPage, handleAccountAuth } from "./account-auth.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
@@ -817,13 +818,14 @@ async function handleApi(request, env, actor, path) {
     const problem = await activityContactProblem(request, env, path, method);
     if (problem) return error(problem, 400);
   }
+  if (path[1] === "companies") return handleCompany(request,env,actor,path,readJson);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
-    return reply({ context: await muninnContext(env.DB, actor) });
+    return reply({ context: await muninnContext(env.DB, actor) + (actor.role === "edit" ? await companyContext(env,actor) : "") });
   }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
@@ -910,6 +912,7 @@ export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
+    if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
     if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
