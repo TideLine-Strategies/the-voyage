@@ -52,3 +52,12 @@ test('stale financial updates are refused and imports cannot replace manual edit
  assert.equal((await call('wonplace','financials','PUT',{...finance,status:'due',expectedRevision:row.revision})).status,400);
  assert.equal((await companySummary(env,'tideline')).brandFinancials[0].status,'paid');
 });
+
+test('cockpit preferences persist by company and guests cannot read metrics or change targets',async()=>{
+ const {call}=fixture(),settings={aim:'Grow paying WonPlace customers',focus:['customers.paying','api.errorRate','revenue.received'],rules:{'api.requests':{direction:'above',warning:50000,critical:90000}}};
+ assert.equal((await call('wonplace','cockpit','PUT',settings)).status,200);
+ const response=await call('wonplace','metrics'),data=await response.json();assert.equal(response.status,200);assert.equal(data.settings.aim,settings.aim);assert.equal(data.metrics.find(m=>m.id==='api.requests').rule.critical,90000);
+ const other=await(await call('tideline','metrics')).json();assert.notEqual(other.settings.aim,settings.aim);
+ assert.equal((await call('wonplace','metrics','GET',null,{role:'guest'})).status,403);assert.equal((await call('wonplace','cockpit','PUT',settings,{role:'guest'})).status,403);
+ assert.equal((await call('wonplace','cockpit','PUT',{...settings,focus:['personal.balance']})).status,400);
+});

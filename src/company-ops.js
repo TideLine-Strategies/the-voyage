@@ -1,3 +1,4 @@
+import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
 import {COMPANIES} from './company-events.js';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const reply=(data,status=200)=>Response.json(data,{status,headers});
@@ -46,13 +47,13 @@ async function store(env,company,type,id,value,actor,expectedRevision) {
   if(!result.meta.changes)throw Error('Record changed; refresh before saving');
   return (prior?.revision||0)+1;
 }
-export async function companySummary(env,company) {
-  const [connections,financials,providers,live]=await Promise.all([records(env.DB,company,'connections'),records(env.DB,'tideline','financials'),records(env.DB,company,'providers'),companyStub(env,company)?.snapshot()||null]);
-  return {company,name:COMPANIES[company],brand:'tideline',connections,financials:financials.filter(row=>row.product===company),brandFinancials:financials,providers,live,asOf:Date.now(),financialCoverage:'TideLine brand only: WonPlace, TideLine, Loki and Voyage. Records are tagged by product; personal projects and other entities are excluded. Business records entered here only. No bank or payment-provider reconciliation is connected. Expected revenue is not received revenue. Gym tuition and family balances are excluded.'};
+export async function companySummary(env,company,includeHistory=false) {
+  const [connections,financials,providers,live,settings]=await Promise.all([records(env.DB,company,'connections'),records(env.DB,'tideline','financials'),records(env.DB,company,'providers'),companyStub(env,company)?.snapshot(includeHistory)||null,records(env.DB,company,'cockpit')]);
+  return {cockpit:settings.find(s=>s.id==='settings')||null,company,name:COMPANIES[company],brand:'tideline',connections,financials:financials.filter(row=>row.product===company),brandFinancials:financials,providers,live,asOf:Date.now(),financialCoverage:'TideLine brand only: WonPlace, TideLine, Loki and Voyage. Records are tagged by product; personal projects and other entities are excluded. Business records entered here only. No bank or payment-provider reconciliation is connected. Expected revenue is not received revenue. Gym tuition and family balances are excluded.'};
 }
 export async function companyContext(env,actor) {
   const summaries=await Promise.all(Object.keys(COMPANIES).map(async company=>{
-    try{const data=await companySummary(env,company);return {company,asOf:data.asOf,providers:data.providers,financials:data.financials.slice(0,30),live:data.live?{asOf:data.live.asOf,activeUsers:data.live.activeUsers,events:data.live.events.slice(0,15),coverage:data.live.coverage}:null,financialCoverage:data.financialCoverage};}catch{return {company,status:'unavailable'};}
+    try{const data=await companySummary(env,company);return {company,chiefAim:data.cockpit?.aim,focus:data.cockpit?.focus,thresholds:data.cockpit?.rules,asOf:data.asOf,providers:data.providers,financials:data.financials.slice(0,30),live:data.live?{asOf:data.live.asOf,activeUsers:data.live.activeUsers,events:data.live.events.slice(0,15),coverage:data.live.coverage}:null,financialCoverage:data.financialCoverage};}catch{return {company,status:'unavailable'};}
   }));
   const sections=summaries.map(data=>JSON.stringify(data).slice(0,5000));
   if(actor){for(const [label,read]of [['WONPLACE SOURCE DIAGNOSTICS',()=>wonplaceDiagnostics(env,actor)],['TIDELINE WEBSITE ANALYTICS',()=>tidelineAnalytics(env)],['LOKI ANALYTICS',()=>lokiAnalytics(env)]]){try{const response=await read();sections.push(label+' '+JSON.stringify(await response.json()).slice(0,5000));}catch{sections.push(label+' unavailable');}}}
@@ -63,12 +64,14 @@ export async function handleCompany(request,env,actor,path,readJson) {
   const company=path[2],operation=path[3];if(!Object.hasOwn(COMPANIES,company))return reply({error:'Company not found'},404);
   if(path.length>4)return reply({error:'Not found'},404);
   if(request.method==='GET'&&!operation)return reply(await companySummary(env,company));
+  if(request.method==='GET'&&operation==='metrics'){const [summary,source]=await Promise.all([companySummary(env,company,true),companySource(env,company,actor)]);return reply(buildCockpit(summary,await source.json(),summary.live?.measurements||[]));}
+  if(request.method==='PUT'&&operation==='cockpit'){try{const value=cockpitSettings(await readJson(request));await store(env,company,'cockpit','settings',value,actor);return reply(value);}catch(error){return reply({error:error.message},400);}}
   if(request.method==='GET'&&operation==='live') {
     if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
     if(request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'Origin not allowed'},403);
     return companyStub(env,company).fetch(request);
   }
-  if(request.method==='GET'&&operation==='source')return company==='tideline'?tidelineAnalytics(env):company==='wonplace'?wonplaceDiagnostics(env,actor):company==='loki'?lokiAnalytics(env):voyageAnalytics(env);
+  if(request.method==='GET'&&operation==='source')return companySource(env,company,actor);
   if(request.method==='PUT'&&['connections','financials'].includes(operation)) {
     const data=await readJson(request);if(!identifier.test(data.id||''))return reply({error:'A stable record ID is required'},400);
     try {
@@ -83,6 +86,7 @@ export async function handleCompany(request,env,actor,path,readJson) {
   }
   return reply({error:'Method not allowed'},405);
 }
+async function companySource(env,company,actor){return company==='tideline'?tidelineAnalytics(env):company==='wonplace'?wonplaceDiagnostics(env,actor):company==='loki'?lokiAnalytics(env):voyageAnalytics(env);}
 export function providerSnapshot(value) {
   if(!value||!['github','cloudflare','ai','billing','revenue'].includes(value.provider)||!['ok','unavailable'].includes(value.status))throw Error('Invalid provider snapshot');
   if(typeof value.resource!=='string'||value.resource.length>200||!value.resource.trim())throw Error('Provider resource is required');
@@ -104,12 +108,13 @@ export async function ingestCompany(request,env,readJson) {
   let data;try{data=await readJson(request);}catch{return reply({error:'Invalid event batch'},400);}
   const secret=({wonplace:env.WONPLACE_OPERATIONS_SECRET,tideline:env.TIDELINE_OPERATIONS_SECRET,loki:env.LOKI_OPERATIONS_SECRET,voyage:env.VOYAGE_OPERATIONS_SECRET})[company];
   if(!await verifySource(request,secret,JSON.stringify(data)))return reply({error:'Source authentication required'},401);
-  if(!Array.isArray(data.events)||data.events.length>20||!Array.isArray(data.providers||[])||(data.providers||[]).length>10||!Array.isArray(data.financials||[])||(data.financials||[]).length>50)return reply({error:'Invalid source batch'},400);
+  if(!Array.isArray(data.events)||data.events.length>20||!Array.isArray(data.providers||[])||(data.providers||[]).length>10||!Array.isArray(data.financials||[])||(data.financials||[]).length>50||!Array.isArray(data.measurements||[])||(data.measurements||[]).length>100)return reply({error:'Invalid source batch'},400);
   if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
   try {
     const providers=(data.providers||[]).map(providerSnapshot);
+    const measurements=[...(data.measurements||[]).map(value=>measurement(value)),...providers.flatMap(providerMeasurements)];
     const financials=(data.financials||[]).map(value=>{if(!identifier.test(value.id||''))throw Error('Invalid financial ID');return {id:value.id,...financialRecord(value),source:'signed-import'};});
-    const accepted=await companyStub(env,company).ingest(data.events);
+    const accepted=await companyStub(env,company).ingest(data.events,measurements);
     for(const provider of providers)await store(env,company,'providers',provider.provider,provider,{id:'signed-source'});
     for(const financial of financials){const {id,...value}=financial;await store(env,'tideline','financials',id,value,{id:'signed-source'});}
     return reply({...accepted,providers:providers.length,financials:financials.length});
@@ -130,7 +135,7 @@ async function tidelineAnalytics(env) {
   try {
     const since=new Date(Date.now()-30*86400000).toISOString();
     const query=async(sql)=>(await env.TIDELINE_DB.prepare(sql).bind(since).all()).results;
-    const [traffic,pages,daily]=await Promise.all([query("SELECT COUNT(*) events,COUNT(DISTINCT session_id) sessions,SUM(kind='page_view') pageviews FROM site_events WHERE created_at>=?"),query('SELECT page,COUNT(*) events FROM site_events WHERE created_at>=? GROUP BY page ORDER BY events DESC LIMIT 30'),query('SELECT substr(created_at,1,10) day,COUNT(*) events FROM site_events WHERE created_at>=? GROUP BY day ORDER BY day')]);
+    const [traffic,pages,daily]=await Promise.all([query("SELECT COUNT(*) events,COUNT(DISTINCT session_id) sessions,SUM(kind='page_view') pageviews FROM site_events WHERE created_at>=?"),query('SELECT page,COUNT(*) events FROM site_events WHERE created_at>=? GROUP BY page ORDER BY events DESC LIMIT 30'),query("SELECT substr(created_at,1,10) day,COUNT(*) events,COUNT(DISTINCT session_id) sessions,SUM(kind='page_view') pageviews FROM site_events WHERE created_at>=? GROUP BY day ORDER BY day")]);
     return reply({company:'tideline',connected:true,asOf:Date.now(),since,traffic:traffic[0],pages,daily,coverage:'Anonymous website sessions over 30 days; not identified WonPlace users. Collected page events only; privacy opt-outs excluded.'});
   }catch{return reply({connected:false,error:'TideLine analytics is unavailable'},503);}
 }
@@ -147,7 +152,7 @@ async function lokiAnalytics(env) {
 async function voyageAnalytics(env) {
   try {
     const since=Date.now()-30*86400000;
-    const [usage,members]=(await Promise.all([env.DB.prepare('SELECT COUNT(*) events,COUNT(DISTINCT member_id) people FROM usage_events WHERE ts>=?').bind(since).first(),env.DB.prepare('SELECT u.member_id,m.name,COUNT(*) events,MAX(u.ts) lastSeen FROM usage_events u JOIN members m ON m.id=u.member_id WHERE u.ts>=? GROUP BY u.member_id,m.name ORDER BY events DESC').bind(since).all()]));
-    return reply({company:'voyage',connected:true,asOf:Date.now(),since,usage,members:members.results,coverage:'Voyage CRM usage events over 30 days. This is separate from TideLine website traffic and WonPlace staff activity. Recent history is not a live presence signal.'});
+    const [usage,members,daily]=(await Promise.all([env.DB.prepare('SELECT COUNT(*) events,COUNT(DISTINCT member_id) people FROM usage_events WHERE ts>=?').bind(since).first(),env.DB.prepare('SELECT u.member_id,m.name,COUNT(*) events,MAX(u.ts) lastSeen FROM usage_events u JOIN members m ON m.id=u.member_id WHERE u.ts>=? GROUP BY u.member_id,m.name ORDER BY events DESC').bind(since).all(),env.DB.prepare("SELECT strftime('%Y-%m-%d',ts/1000,'unixepoch') day,COUNT(*) events FROM usage_events WHERE ts>=? GROUP BY day ORDER BY day").bind(since).all()]));
+    return reply({company:'voyage',connected:true,asOf:Date.now(),since,usage,daily:daily.results,members:members.results,coverage:'Voyage CRM usage events over 30 days. This is separate from TideLine website traffic and WonPlace staff activity. Recent history is not a live presence signal.'});
   }catch{return reply({connected:false,error:'Voyage usage source is unavailable'},503);}
 }

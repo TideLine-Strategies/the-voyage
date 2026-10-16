@@ -1,0 +1,14 @@
+// The managed coordinator is the sole deployment caller. Existing bindings/secrets are preserved.
+import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {execFileSync} from 'node:child_process';import {signedHeaders} from '../src/company-ops.js';
+const commit=process.env.AGENT_RELEASE_COMMIT;assert(commit&&process.env.AGENT_RELEASE_TASK,'Managed release context is required');assert.equal(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),commit);
+const cli=args=>execFileSync('node_modules/.bin/wrangler',[...args,'--profile','tideline'],{encoding:'utf8',env:{...process.env,CLOUDFLARE_ACCOUNT_ID:'58008ae4816f34f96786f0f52834dce5'},timeout:120000,maxBuffer:4000000,stdio:['ignore','pipe','pipe']});
+assert(process.argv.some(a=>['--apply','--verify','--reconcile'].includes(a)),'Choose a release stage');
+if(process.argv.includes('--apply'))cli(['deploy','--keep-vars','--message','company-cockpit:'+commit]);
+const deployments=JSON.parse(cli(['deployments','list','--name','the-voyage','--json'])),active=deployments.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1),version=active.versions.find(v=>v.percentage===100)?.version_id;assert(version);
+const detail=JSON.parse(cli(['versions','view',version,'--name','the-voyage','--json']));assert.equal(detail.annotations?.['workers/message'],'company-cockpit:'+commit,'Active provider version differs; reconcile without replaying deployment');console.log(JSON.stringify({commit,deploymentId:active.id,version,providerVersionVerified:true}));
+if(process.argv.includes('--verify')){
+ const configPath=process.env.COMPANY_OPERATIONS_CONFIG;assert(configPath);assert.equal((await fs.stat(configPath)).mode&0o077,0);const config=JSON.parse(await fs.readFile(configPath,'utf8'));assert.equal(config.voyageOrigin,'https://voyage.tidelinestrats.com');
+ for(const company of ['wonplace','tideline','loki','voyage']){const path=config.voyageOrigin+'/api/companies/'+company+'/metrics';assert.equal((await fetch(path,{signal:AbortSignal.timeout(15000)})).status,403);const url=config.voyageOrigin+'/api/company-events/'+company;const response=await fetch(url,{headers:await signedHeaders(config.secrets[company],'GET',url,'cockpit-release'),signal:AbortSignal.timeout(15000)});assert.equal(response.status,200);assert.equal((await response.json()).company,company);}
+ const ui=JSON.parse(await fs.readFile(process.env.COMPANY_COCKPIT_UI_RECEIPT,'utf8'));assert.equal(ui.voyageCommit,commit);assert.equal(ui.accepted,true);for(const key of ['metricPickerVerified','thresholdsVerified','companyIsolationVerified','aiInvestigationVerified','sourceControlsVerified'])assert.equal(ui[key],true,'Signed-in acceptance required: '+key);assert(ui.screenshot);
+ await fs.writeFile(process.env.AGENT_RELEASE_RECEIPT,JSON.stringify({commit,deploymentId:active.id,accepted:true,evidence:{version,signedSources:true,anonymousMetricsDenied:true,ui}}));
+}

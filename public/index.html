@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Voyage (Copy)</title>
+<title>The Voyage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
@@ -502,6 +502,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 .vtbl .co{color:var(--muted);font-size:13px;margin-top:2px}
 @media (max-width:860px){.vtbl .row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.vtbl .row>:nth-child(3),.vtbl .row>:nth-child(4){display:none}}
 </style>
+<link rel="stylesheet" href="/company-cockpit.css">
 </head>
 <body>
 <div id="boot" role="status">Loading The Voyage…</div>
@@ -584,14 +585,35 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <section id="view-company" hidden>
       <div class="head"><div><h1>TideLine company</h1><div class="sub">Separate product analytics. One TideLine business ledger.</div></div><select id="companySelect" aria-label="Product analytics"><option value="wonplace">WonPlace</option><option value="tideline">TideLine website</option><option value="loki">Loki</option><option value="voyage">Voyage</option></select><button class="btn" id="companyRefresh">Refresh</button></div>
       <p id="companyStatus" role="status"></p>
+      <div class="ops-cockpit">
+        <header class="ops-mission"><div><span class="ops-eyebrow">CHIEF AIM / ONE COMPANY, CLEAR PRIORITIES</span><h2 id="opsAim">Grow paying WonPlace customers while keeping service reliable and costs controlled.</h2><p>Win customers. Protect the experience. Keep the economics sound.</p></div><div><span id="opsHealth" class="ops-health unrated" role="status">Checking evidence…</span><button id="opsSound" class="ops-sound" type="button" aria-pressed="false">Sound off</button></div></header>
+        <div id="opsFocus" class="ops-focus-grid" aria-label="Three focus metrics"></div>
+        <section class="ops-triage"><div class="ops-section-head"><h3>Walk to the red <span id="opsSignalCount">0</span></h3><span>Resolve the highest-impact blocker first</span></div><div id="opsSignals" aria-live="polite"></div><button id="opsAllSignals" class="btn" hidden>Show all</button></section>
+        <section class="ops-terminal" id="opsChartPanel">
+          <div class="ops-chart-head"><div><span id="opsMetricGroup" class="ops-eyebrow">MEASUREMENT EXPLORER</span><button id="opsChooseMetric" class="ops-asset" type="button" aria-haspopup="dialog">Choose a measurement ▾</button></div><div class="ops-ranges" aria-label="Chart range"><button type="button" data-ops-range="1">24H</button><button type="button" data-ops-range="7">7D</button><button type="button" data-ops-range="30" aria-pressed="true">30D</button></div></div>
+          <div class="ops-price"><strong id="opsMetricValue">—</strong><span id="opsMetricState" class="ops-state unknown">Not measured</span></div><p id="opsMetricWindow" class="ops-muted"></p><div id="opsChart" class="ops-chart"></div><div id="opsReadout" class="ops-readout" aria-live="off"></div>
+          <div class="ops-chart-footer"><span id="opsFreshness">Waiting for source</span><button id="opsInvestigate" class="ops-ai" type="button">Investigate with Muninn ↗</button></div>
+          <div class="ops-explain"><div><h3>What this measures</h3><p id="opsMetricDescription"></p><p id="opsMetricCoverage" class="ops-muted"></p></div><div><h3>Levers &amp; controls</h3><div id="opsLevers" class="ops-actions"></div><small>Open the source to review a change. Investigating does not change production settings.</small></div></div>
+          <details class="ops-details"><summary>Evidence, targets &amp; focus</summary><div class="ops-evidence"><div><h3>Recorded samples</h3><p>Gaps are missing samples. Rolling totals remain rolling totals. Colors use configured limits, not whether a line rises.</p><div class="ops-table-scroll"><table><thead><tr><th>Sample time</th><th>Value</th></tr></thead><tbody id="opsDataRows"></tbody></table></div></div><form id="opsRuleForm"><h3>When should we act?</h3><label>Bad when value is<select id="opsRuleDirection"><option value="above">At or above</option><option value="below">At or below</option></select></label><div class="ops-thresholds"><label>Warning<input id="opsWarning" type="number" min="0" step="any"></label><label>Critical<input id="opsCritical" type="number" min="0" step="any"></label></div><label class="ops-check"><input id="opsPin" type="checkbox"> Keep in our three focus metrics</label><p id="opsRuleNote" role="status"></p><button type="submit" class="btn">Save target &amp; focus</button><button id="opsRuleClear" type="button" class="btn">Clear custom target</button></form></div></details>
+        </section>
+        <p id="opsLoadState" class="ops-load" role="status"></p>
+        <details class="ops-details"><summary>Edit this product’s chief aim</summary><form id="opsAimForm"><label>Chief aim<input id="opsAimEdit" maxlength="240" required></label><button class="btn" type="submit">Save aim</button><span id="opsAimState" role="status"></span></form></details>
+        <dialog id="opsMetricDialog" class="ops-picker"><div class="ops-section-head"><h2>Measurements</h2><button id="opsMetricClose" type="button" class="btn" aria-label="Close measurement picker">×</button></div><label class="ops-search-label">Find a measurement<input id="opsMetricSearch" type="search" placeholder="Search visits, revenue, API calls, errors…" autocomplete="off"></label><div id="opsMetricList"></div></dialog>
+      </div>
+
+      <details><summary>Staff activity &amp; original reports</summary>
       <div class="grid2"><section class="dlsec"><h2>Using it now</h2><div id="companyUsers"></div></section><section class="dlsec"><h2>Live activity &amp; incidents</h2><div id="companyEvents" style="max-height:320px;overflow:auto"></div></section></div><p id="companyCoverage" class="sub"></p>
-      <section class="dlsec"><h2>Analytics &amp; Spring diagnostics</h2><p>TideLine website sessions and WonPlace staff activity stay separate. Read source data on demand; the live feed above receives pushed events.</p><button class="btn" id="companyReadSource">Refresh analytics</button><div id="companySourceData"></div></section>
-      <section class="dlsec"><h2>Sources</h2><p>Link the exact company GitHub repositories, Cloudflare account, AI provider, billing, and revenue sources. Saved links do not imply API access.</p><div id="companyProviders"></div><div id="companySources"></div>
+      </details>
+      <details><summary>Source analytics &amp; Spring diagnostics</summary><section class="dlsec"><h2>Analytics &amp; Spring diagnostics</h2><p>TideLine website sessions and WonPlace staff activity stay separate. Read source data on demand; the live feed above receives pushed events.</p><button class="btn" id="companyReadSource">Refresh analytics</button><div id="companySourceData"></div></section>
+      </details>
+      <details><summary>Sources &amp; connections</summary><section class="dlsec"><h2>Sources</h2><p>Link the exact company GitHub repositories, Cloudflare account, AI provider, billing, and revenue sources. Saved links do not imply API access.</p><div id="companyProviders"></div><div id="companySources"></div>
         <form id="companySourceForm" class="grid2"><input type="hidden" name="recordId"><label>Source<select name="provider"><option value="github">GitHub</option><option value="cloudflare">Cloudflare</option><option value="ai">AI provider</option><option value="billing">Bills &amp; expenses</option><option value="revenue">Revenue provider</option><option value="other">Other</option></select></label><label>Name<input name="label" required maxlength="100"></label><label>Source URL<input name="url" type="url" required placeholder="https://"></label><button class="btn" type="submit">Save source link</button></form>
       </section>
-      <section class="dlsec"><h2>TideLine brand bills, expenses &amp; revenue</h2><p id="companyFinanceCoverage"></p><div id="companyTotals"></div><div id="companyFinance"></div>
+      </details>
+      <details id="companyLedgerDetails"><summary>TideLine business ledger</summary><section class="dlsec"><h2>TideLine brand bills, expenses &amp; revenue</h2><p id="companyFinanceCoverage"></p><div id="companyTotals"></div><div id="companyFinance"></div>
         <form id="companyFinanceForm" class="grid3"><input type="hidden" name="recordId"><input type="hidden" name="expectedRevision"><label>Product<select name="product"><option value="tideline">TideLine</option><option value="wonplace">WonPlace</option><option value="loki">Loki</option><option value="voyage">Voyage</option><option value="tideline-other">Other TideLine work</option></select></label><label>Name<input name="label" required maxlength="160"></label><label>Type<select name="kind"><option value="bill">Bill</option><option value="expense">Expense</option><option value="revenue">Revenue</option></select></label><label>Status<select name="status"><option value="due">Due</option><option value="paid">Paid</option><option value="received">Received</option><option value="expected">Expected</option></select></label><label>Amount<input name="amount" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="0.00"></label><label>Currency<input name="currency" value="USD" required pattern="[A-Z]{3}" maxlength="3"></label><label>Date<input name="date" type="date" required></label><label>Repeats<select name="recurrence"><option value="once">Once</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><label>Receipt or bill URL<input name="reference" type="url"></label><button class="btn" type="submit">Save financial record</button><button class="btn" type="reset">Clear form</button></form>
       </section>
+      </details>
     </section>
 
     <section id="view-vendors" hidden>
@@ -1072,6 +1094,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/voyage-db.js"></script>
+<script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
 <script>
 const STAGES=["Prospecting","Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
@@ -3011,6 +3034,7 @@ let chatTurns=[],chatCtl=null,chatBusy=false;
 const MUNINN_BRIDGE="http://127.0.0.1:38917";
 const CHIPS=["What's due today?","Which accounts have gone quiet?","What should I focus on this week?","Summarize my pipeline by stage"];
 function chipsInto(box,onPick){box.replaceChildren();CHIPS.forEach(c=>{const b=el("button",null,c);b.type="button";b.onclick=()=>onPick(c);box.append(b)})}
+window.addEventListener("voyage-company-investigate",event=>openChat(event.detail));
 function openChat(q){
   const c=$("chat");c.hidden=false;$("rvFloat").setAttribute("aria-expanded","true");
   if(!$("chatBody").children.length)renderChatTurns();
