@@ -58,6 +58,12 @@ test('password sign-in verifies confirmed provider identity, keeps Voyage role, 
  assert.equal(response.status,200);assert.equal(sent.url,'https://example.supabase.co/auth/v1/token?grant_type=password');assert.doesNotMatch(await response.text(),/provider-access|provider-refresh/);
  const me=await worker.fetch(new Request(origin+'/api/me',{headers:{cookie:response.headers.get('set-cookie').split(';')[0]}}),f.env);assert.equal((await me.json()).role,'edit');
 });
+test('password sign-in rate limiting works when D1 does not return rows from mutation statements',async()=>{
+ const f=fixture(),originalPrepare=f.env.DB.prepare;
+ f.env.DB.prepare=sql=>{assert.doesNotMatch(sql,/\bRETURNING\b/i);return originalPrepare(sql);};
+ const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic-password'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{},exchange:async()=>Response.json({user:{id:'provider-id',email:'q.stewart@tidelinestrats.com',email_confirmed_at:'2026-01-01'}})});
+ assert.equal(response.status,200);
+});
 test('wrong credentials, unconfirmed or mismatched identities and unapproved accounts cannot sign in',async()=>{
  for(const result of [null,{id:'x',email:'q.stewart@tidelinestrats.com'},{id:'x',email:'other@example.com',email_confirmed_at:'2026-01-01'}]){
   const f=fixture();const response=await handleAccountAuth(passwordRequest('/auth/password',{email:'q.stewart@tidelinestrats.com',password:'synthetic'}),passwordEnv(f),{readJson:r=>r.json(),audit:async()=>{},exchange:async()=>result?Response.json({user:result}):Response.json({error:'bad'},{status:400})});assert.equal(response.status,401);assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sessions').get().n,0);
