@@ -113,7 +113,7 @@ async function handlePassword(request,env,{audit,readJson,exchange}){
   await audit(env,member.id,'Signed in',null,null,'Company account password');
   return json({ok:true},200,{'set-cookie':`voyage_session=${session}; Max-Age=15552000; Path=/; Secure; HttpOnly; SameSite=Lax`});
  }catch(error){
-  console.error(JSON.stringify({event:'account_signin_failure',route:new URL(request.url).pathname,stage,error:error?.name||'Error'}));
+  console.error(JSON.stringify({event:'account_signin_failure',route:new URL(request.url).pathname,stage,error:error?.name||'Error',message:String(error?.message||'').slice(0,240)}));
   return json({error:'Account sign-in is temporarily unavailable. Please try again later.'},503);
  }
 }
