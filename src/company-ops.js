@@ -125,7 +125,7 @@ async function wonplaceDiagnostics(env,actor) {
   try {
     const origin=new URL(safeLink(env.WONPLACE_TICKETS_ORIGIN));if(origin.pathname!=='/')throw Error();
     const url=new URL('/api/integrations/voyage/operations',origin).toString();
-    const response=await fetch(url,{headers:await signedHeaders(env.WONPLACE_TICKETS_SECRET,'GET',url,actor.id),redirect:'error',signal:AbortSignal.timeout(10000)});
+    const response=await fetch(url,{headers:await signedHeaders(env.WONPLACE_TICKETS_SECRET,'GET',url,actor.id),redirect:'manual',signal:AbortSignal.timeout(10000)});
     if(!response.ok)return reply({connected:false,error:'WonPlace source access is unavailable'},503);
     return reply({company:'wonplace',connected:true,...await response.json()});
   }catch{return reply({connected:false,error:'WonPlace source is unavailable'},503);}
