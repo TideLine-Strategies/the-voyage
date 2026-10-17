@@ -5,6 +5,8 @@ const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status
 const hash=value=>createHash('sha256').update(value).digest('hex');
 // Cloudflare's request-scoped fetch must be invoked through the active global,
 // rather than retained and called as a detached platform function.
+// workerd rejects redirect:'error' before I/O. Use manual and reject non-2xx
+// responses below, so credentials are never forwarded to a redirect destination.
 const runtimeFetch=(...args)=>globalThis.fetch(...args);
 const timeoutOption=()=>typeof AbortSignal!=='undefined'&&typeof AbortSignal.timeout==='function'?{signal:AbortSignal.timeout(10000)}:{};
 export function accountPage(env={}){
@@ -59,7 +61,7 @@ async function handleGoogleLogin(request,env,{audit,verifyGoogle,exchange}){
   if(!/^[a-f0-9]{64}$/.test(state)||cookie.length!==64||!timingSafeEqual(Buffer.from(state),Buffer.from(cookie)))throw Error('Sign-in expired');
   const login=await env.DB.prepare('DELETE FROM oauth_logins WHERE state_hash=? AND expires_at>? RETURNING nonce,verifier').bind(hash(state),Date.now()).first();
   const code=url.searchParams.get('code');if(!login||!code||code.length>4096)throw Error('Sign-in expired');
-   const token=await oauthResponse(await exchange('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,client_secret:env.GOOGLE_CLIENT_SECRET,redirect_uri:callback,grant_type:'authorization_code',code,code_verifier:login.verifier}),redirect:'error',...timeoutOption()}));
+   const token=await oauthResponse(await exchange('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,client_secret:env.GOOGLE_CLIENT_SECRET,redirect_uri:callback,grant_type:'authorization_code',code,code_verifier:login.verifier}),redirect:'manual',...timeoutOption()}));
   const member=await verifyGoogle(token.id_token,env,login.nonce);if(!member)return json({error:'This Google account does not have company access.'},403,{'set-cookie':expire});
   const session=randomBytes(32).toString('hex'),now=Date.now();
   await env.DB.prepare('INSERT INTO sessions(token_hash,member_id,expires_at,created_at) VALUES(?,?,?,?)').bind(hash(session),member.id,now+180*86400000,now).run();
@@ -92,14 +94,14 @@ async function handlePassword(request,env,{audit,readJson,exchange}){
    if(member){
     stage='provider-recovery';
     const target=new URL('/auth/v1/recover',provider);target.searchParams.set('redirect_to',env.ACCOUNT_RECOVERY_URL);
-    const response=await exchange(target.toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email}),redirect:'error',...timeoutOption()});
+    const response=await exchange(target.toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email}),redirect:'manual',...timeoutOption()});
     if(!response.ok)return json({error:'Recovery email is temporarily unavailable. Try again later.'},503);
    }
    return json({ok:true,message:'If this account can recover access, a recovery email has been requested. Check your inbox.'});
   }
   if(typeof data.password!=='string'||data.password.length<1||data.password.length>128)return json({error:'Enter your account password.'},400);
   stage='provider-password';
-  const response=await exchange(new URL('/auth/v1/token?grant_type=password',provider).toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email,password:data.password}),redirect:'error',...timeoutOption()});
+  const response=await exchange(new URL('/auth/v1/token?grant_type=password',provider).toString(),{method:'POST',headers:{apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,'content-type':'application/json'},body:JSON.stringify({email,password:data.password}),redirect:'manual',...timeoutOption()});
   if(!response.ok)return json({error:response.status===429?'Too many sign-in attempts. Try again later.':'Email or password is incorrect.'},response.status===429?429:401);
   const result=await oauthResponse(response);
   if(!member||!result.user?.id||!result.user?.email_confirmed_at||result.user.email?.toLowerCase()!==email)return json({error:'Email or password is incorrect.'},401);
@@ -120,14 +122,14 @@ async function completeMfa(request,env,{audit,readJson,exchange},provider){
  const data=await readJson(request);
  if(typeof data.token!=='string'||data.token.length>8192||! /^[0-9a-f-]{36}$/i.test(data.factorId||'')||! /^\d{6}$/.test(data.code||''))return json({error:'Enter the six-digit authenticator code.'},400);
  const authHeaders={apikey:env.ACCOUNT_AUTH_PUBLIC_KEY,authorization:'Bearer '+data.token,'content-type':'application/json'};
- const user=await oauthResponse(await exchange(new URL('/auth/v1/user',provider).toString(),{headers:authHeaders,redirect:'error',...timeoutOption()}));
+ const user=await oauthResponse(await exchange(new URL('/auth/v1/user',provider).toString(),{headers:authHeaders,redirect:'manual',...timeoutOption()}));
  const factor=(user.factors||[]).find(f=>f.id===data.factorId&&f.status==='verified'&&f.factor_type==='totp');
  if(!factor||!user.email_confirmed_at)return json({error:'Account verification failed.'},401);
  const member=await env.DB.prepare('SELECT id,name,role FROM members WHERE email=? AND active=1').bind(String(user.email||'').toLowerCase()).first();
  if(!member)return json({error:'Account verification failed.'},401);
  if(!await limit(env.DB,'mfa:'+member.id,10))return json({error:'Too many verification attempts. Try again in 15 minutes.'},429);
- const challenge=await oauthResponse(await exchange(new URL('/auth/v1/factors/'+data.factorId+'/challenge',provider).toString(),{method:'POST',headers:authHeaders,body:'{}',redirect:'error',...timeoutOption()}));
- const response=await exchange(new URL('/auth/v1/factors/'+data.factorId+'/verify',provider).toString(),{method:'POST',headers:authHeaders,body:JSON.stringify({challenge_id:challenge.id,code:data.code}),redirect:'error',...timeoutOption()});
+ const challenge=await oauthResponse(await exchange(new URL('/auth/v1/factors/'+data.factorId+'/challenge',provider).toString(),{method:'POST',headers:authHeaders,body:'{}',redirect:'manual',...timeoutOption()}));
+ const response=await exchange(new URL('/auth/v1/factors/'+data.factorId+'/verify',provider).toString(),{method:'POST',headers:authHeaders,body:JSON.stringify({challenge_id:challenge.id,code:data.code}),redirect:'manual',...timeoutOption()});
  if(!response.ok)return json({error:'Authenticator code is incorrect or expired.'},401);
  const verified=await oauthResponse(response);
  if(verified.user?.id!==user.id||!verified.access_token)return json({error:'Account verification failed.'},401);
