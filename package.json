@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/company-metrics.js && node --check public/company-cockpit.js && node --check src/company-ops.js && node --check src/company-events.js && node --check src/company-hub.js && node --check public/company-ops.js && node --check src/worker.js && node --check src/account-auth.js && node --check src/ical.js && node --check src/deals.js && node --check src/sequences.js && node --check public/voyage-db.js && node --test tests/*.test.js && node scripts/verify-auth-runtime.mjs",
+    "check": "node --check src/tideline-intake.js && node --check src/tideline.js && node --check public/tideline-analytics.js && node --check src/company-metrics.js && node --check public/company-cockpit.js && node --check src/company-ops.js && node --check src/company-events.js && node --check src/company-hub.js && node --check public/company-ops.js && node --check src/worker.js && node --check src/account-auth.js && node --check src/ical.js && node --check src/deals.js && node --check src/sequences.js && node --check public/voyage-db.js && node --test tests/*.test.js && node scripts/verify-auth-runtime.mjs && node scripts/verify-tideline-runtime.mjs",
     "deploy": "wrangler deploy --profile tideline",
     "migrate:remote": "wrangler d1 migrations apply the-voyage --remote --profile tideline"
   },

@@ -460,3 +460,9 @@ test("contacts: every task and meeting names who it was with, from the same acco
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });
+
+test('TideLine signup analytics and retry routes remain editor-only in the real router',async()=>{
+ const {call}=fixture();
+ assert.equal((await call('b','GET','/api/tideline/analytics')).status,403);
+ assert.equal((await call('b','POST','/api/tideline/import',{kind:'contact',id:'c1454fe4-1b6b-46e0-ae73-b7c1fbf29b18'})).status,403);
+});
