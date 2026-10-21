@@ -503,6 +503,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 @media (max-width:860px){.vtbl .row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.vtbl .row>:nth-child(3),.vtbl .row>:nth-child(4){display:none}}
 </style>
 <link rel="stylesheet" href="/company-cockpit.css">
+<link rel="stylesheet" href="/content.css">
 </head>
 <body>
 <div id="boot" role="status">Loading The Voyage…</div>
@@ -520,6 +521,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="gsearch"><input id="gSearch" type="search" placeholder="Search everything  /" aria-label="Search everything" autocomplete="off"><div class="gres" id="gRes" role="listbox" hidden></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
+    <button class="nav" data-view="content" id="contentNav">Content</button>
     <button class="nav" data-view="company" id="companyNav">Company</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
@@ -582,6 +584,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <div class="tbl atbl" id="acList"></div>
     </section>
 
+    <section id="view-content" hidden><div class="head"><div><h1>Content</h1><div class="sub">Two brands. One voyage from useful content to qualified conversations.</div></div><div class="content-actions"><button class="btn" id="contentAsk">Ask Muninn</button><button class="btn" id="contentRefresh">Refresh</button></div></div><div class="content-tabs" id="contentBrands" aria-label="Content brand"><button class="btn" data-brand="all" aria-pressed="true">Both brands</button><button class="btn" data-brand="tideline" aria-pressed="false">TideLine</button><button class="btn" data-brand="wonplace" aria-pressed="false">WonPlace</button></div><p id="contentState" role="status" class="sub"></p><div id="contentBody"></div></section>
     <section id="view-company" hidden>
       <div class="head"><div><h1>TideLine company</h1><div class="sub">Separate product analytics. One TideLine business ledger.</div></div><select id="companySelect" aria-label="Product analytics"><option value="wonplace">WonPlace</option><option value="tideline">TideLine website</option><option value="loki">Loki</option><option value="voyage">Voyage</option></select><button class="btn" id="companyRefresh">Refresh</button></div>
       <p id="companyStatus" role="status"></p>
@@ -1096,6 +1099,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <script src="/voyage-db.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
+<script src="/content.js"></script>
 <script>
 const STAGES=["Prospecting","Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const SHORT=["Prospect","Discovery","Alignment","Assess","Validation","Proposal","Review"];
@@ -1115,7 +1119,7 @@ function fillMe(){
 }
 function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
 try{applyTheme(localStorage.getItem("voyage-theme")||"")}catch(_){}
-function showGuestAccess(){$("companyNav").hidden=true;document.body.classList.add("guest");$("viewBadge").hidden=false}
+function showGuestAccess(){$("companyNav").hidden=true;$("contentNav").hidden=true;document.body.classList.add("guest");$("viewBadge").hidden=false}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
 
@@ -3000,7 +3004,9 @@ function renderAdmin(){
 const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
-  if(v==="company"&&guest)return;
+  if((v==="company"||v==="content")&&guest)return;
+  $("view-content").hidden=v!=="content";
+  if(v==="content")window.VoyageContent.open();else window.VoyageContent.close();
   $("view-company").hidden=v!=="company";
   if(v==="company")window.VoyageCompany.open();else window.VoyageCompany.close();
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
@@ -3075,7 +3081,7 @@ async function sendChat(q){
     try{health=await fetch(MUNINN_BRIDGE+"/health",{signal:chatCtl.signal})}
     catch(e){if(e?.name==="AbortError")throw e;throw Error("Muninn needs the local Codex connector on this computer.")}
     if(!health.ok||(await health.json()).service!=="tideline-voyage-muninn")throw Error("Muninn's local Codex connector is unavailable.");
-    const contextResponse=await fetch("/api/muninn/context",{credentials:"same-origin",signal:chatCtl.signal});
+    const contextResponse=await fetch("/api/muninn/context"+(q.startsWith("Review Content for ")?"?scope=content":""),{credentials:"same-origin",signal:chatCtl.signal});
     if(!contextResponse.ok)throw Error("The live CRM data could not load.");
     const {context}=await contextResponse.json();
     let localResponse;
