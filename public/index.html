@@ -3004,12 +3004,12 @@ function renderAdmin(){
 const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
+  if(v==="oden"){openChat();track("action","Opened Muninn");return}
   if((v==="company"||v==="content")&&guest)return;
   $("view-content").hidden=v!=="content";
   if(v==="content")window.VoyageContent.open();else window.VoyageContent.close();
   $("view-company").hidden=v!=="company";
   if(v==="company")window.VoyageCompany.open();else window.VoyageCompany.close();
-  if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===(navV==="notes"?"activity":navV)));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
