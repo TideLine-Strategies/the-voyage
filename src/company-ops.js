@@ -86,7 +86,7 @@ export async function handleCompany(request,env,actor,path,readJson) {
   }
   return reply({error:'Method not allowed'},405);
 }
-async function companySource(env,company,actor){return company==='tideline'?tidelineAnalytics(env):company==='wonplace'?wonplaceDiagnostics(env,actor):company==='loki'?lokiAnalytics(env):voyageAnalytics(env);}
+async function companySource(env,company,actor){return company==='tideline'?tidelineAnalytics(env):company==='wonplace'?wonplaceSource(env,actor):company==='loki'?lokiAnalytics(env):voyageAnalytics(env);}
 export function providerSnapshot(value) {
   if(!value||!['github','cloudflare','ai','billing','revenue'].includes(value.provider)||!['ok','unavailable'].includes(value.status))throw Error('Invalid provider snapshot');
   if(typeof value.resource!=='string'||value.resource.length>200||!value.resource.trim())throw Error('Provider resource is required');
@@ -130,14 +130,22 @@ async function wonplaceDiagnostics(env,actor) {
     return reply({company:'wonplace',connected:true,...await response.json()});
   }catch{return reply({connected:false,error:'WonPlace source is unavailable'},503);}
 }
-async function tidelineAnalytics(env) {
+async function websiteAnalytics(env,company='tideline') {
   if(!env.TIDELINE_DB)return reply({connected:false,error:'TideLine analytics database is not connected'},503);
   try {
     const since=new Date(Date.now()-30*86400000).toISOString();
-    const query=async(sql)=>(await env.TIDELINE_DB.prepare(sql).bind(since).all()).results;
+    const table=company==='wonplace'?'wonplace_site_events':'site_events';
+    const query=async(sql)=>(await env.TIDELINE_DB.prepare(sql.replaceAll('site_events',table)).bind(since).all()).results;
     const [traffic,pages,daily]=await Promise.all([query("SELECT COUNT(*) events,COUNT(DISTINCT session_id) sessions,SUM(kind='page_view') pageviews FROM site_events WHERE created_at>=?"),query('SELECT page,COUNT(*) events FROM site_events WHERE created_at>=? GROUP BY page ORDER BY events DESC LIMIT 30'),query("SELECT substr(created_at,1,10) day,COUNT(*) events,COUNT(DISTINCT session_id) sessions,SUM(kind='page_view') pageviews FROM site_events WHERE created_at>=? GROUP BY day ORDER BY day")]);
-    return reply({company:'tideline',connected:true,asOf:Date.now(),since,traffic:traffic[0],pages,daily,coverage:'Anonymous website sessions over 30 days; not identified WonPlace users. Collected page events only; privacy opt-outs excluded.'});
+    return reply({company,connected:true,asOf:Date.now(),since,traffic:traffic[0],pages,daily,coverage:`Anonymous ${company} marketing website sessions over 30 days; not identified app users. Collected page events only; privacy opt-outs excluded.`});
   }catch{return reply({connected:false,error:'TideLine analytics is unavailable'},503);}
+}
+
+async function tidelineAnalytics(env){return websiteAnalytics(env,'tideline');}
+async function wonplaceSource(env,actor){
+ const [appResponse,marketingResponse]=await Promise.all([wonplaceDiagnostics(env,actor),websiteAnalytics(env,'wonplace')]);
+ const [app,marketing]=await Promise.all([appResponse.json(),marketingResponse.json()]);
+ return reply({...app,company:'wonplace',marketing});
 }
 
 async function lokiAnalytics(env) {

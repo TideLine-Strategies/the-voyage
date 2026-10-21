@@ -911,6 +911,7 @@ async function handleApi(request, env, actor, path) {
 export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
+    if(pathName === "/__release.json" && request.method === "GET") return Response.json({commit:env.RELEASE_COMMIT||null,product:"voyage"},{headers:{"cache-control":"no-store"}});
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
     if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
