@@ -30,3 +30,9 @@ test('staff identities are deduplicated and error reports retain original refere
  const e={id:'e',kind:'incident',severity:'error',at:now,source:'spring',ticketId:'original-report'};
  const m=buildCockpit(summary({live:{asOf:now,events:[e],activeUsers:[{userId:'u',sessionId:'s1',at:now},{userId:'u',sessionId:'s2',at:now}]}}),{},[],now);assert.equal(metric(m,'staff.active').current,1);assert.equal(m.signals.find(s=>s.id==='event:e').ticketId,'original-report');assert.equal(metric(m,'incidents.errors').status,'warning');
 });
+test('WonPlace marketing remains measurable when app diagnostics are unavailable and cannot leak into TideLine',()=>{
+ const source={connected:false,error:'App unavailable',marketing:{connected:true,asOf:now,coverage:'Marketing only',daily:[{day:'2026-10-15',sessions:7,pageviews:11}],pages:[{page:'home',events:11}]}};
+ const wonplace=buildCockpit(summary(),source,[],now);
+ assert.equal(metric(wonplace,'site.visits').current,7);assert.equal(metric(wonplace,'content.views').current,11);assert.equal(metric(wonplace,'staff.active').current,null);
+ assert.equal(metric(buildCockpit(summary({company:'tideline'}),source,[],now),'site.visits').current,null);
+});
