@@ -1,3 +1,4 @@
+import {handleContent,ingestContent,contentContext} from './content.js';
 import {handleCompany,ingestCompany,companyContext} from "./company-ops.js";
 import { accountPage, handleAccountAuth } from "./account-auth.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -818,6 +819,7 @@ async function handleApi(request, env, actor, path) {
     const problem = await activityContactProblem(request, env, path, method);
     if (problem) return error(problem, 400);
   }
+  if (path[1] === "content") return handleContent(request,env,actor);
   if (path[1] === "companies") return handleCompany(request,env,actor,path,readJson);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
@@ -825,7 +827,12 @@ async function handleApi(request, env, actor, path) {
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
-    return reply({ context: await muninnContext(env.DB, actor) + (actor.role === "edit" ? await companyContext(env,actor) : "") });
+    const crm = await muninnContext(env.DB, actor);
+    const content = actor.role === "edit" ? await contentContext(env) : "";
+    const context = actor.role === "edit" && new URL(request.url).searchParams.get("scope") === "content"
+      ? content + "\nCRM excerpt (bounded):\n" + crm.slice(0, 12000)
+      : crm.slice(0, 40000) + (actor.role === "edit" ? (await companyContext(env,actor)).slice(0, 16000) + content.slice(0, 10000) : "");
+    return reply({ context });
   }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
@@ -912,6 +919,7 @@ export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
+    if (pathName.startsWith("/api/content-source/")) return ingestContent(request,env,readJson);
     if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
     if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
