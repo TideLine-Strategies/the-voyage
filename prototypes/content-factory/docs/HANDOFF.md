@@ -1,31 +1,30 @@
-# Content Factory recovery
+# Completed frontend prototype
 
-Source project: Voyage Content Factory, Lovable project `fc30d38a-deb4-4fbe-92b3-2d0c34902868`.
-Recovered 2026-10-21 from the existing signed-in Safari session.
+Recovered and completed on 2026-10-22. Source: **Voyage Content Factory**, Lovable project `fc30d38a-deb4-4fbe-92b3-2d0c34902868`.
 
-The original brief is preserved in `lovable-original-brief.txt`. Lovable stopped after its first edit because its free credits were exhausted. The saved tree includes `src/features/content-factory/{data,logic,services}`, `store.tsx`, `types.ts`, and `constants.ts`. A source export is pending restoration of the existing GitHub connection; no substitute implementation should be described as an exported clone.
+## Delivered
 
-The project Knowledge field was empty. The chat contains one build brief and a paused response, with a `tl-board.jpg` detail attachment and the approved Concept C reference image.
+- All 98 original files recovered, checksummed and archived. Original brief, approved Concept C image and Lovable's partial-build notes are preserved alongside the completed source.
+- Main page assembled with the slim Voyage sidebar, two-brand filter, responsive 3D coverflow, keyboard/direct selection, demo user switch, global stop, new idea and reset controls.
+- Selected-item cockpit, editable brief/script/captions/schedule/destinations, version history, scene thumbnails, storyboard playback and activity trail.
+- Final-package human approval and change requests, stale approval details, per-platform delivery states and simulated receipts, independent failure/retry, source-only company LinkedIn and visibly held TideLine routes.
+- Analytics views and range/platform filters, honest missing metrics and platform rates, qualified outcome examples and insight-to-brief provenance.
+- Restored strict unchecked-index and exact-optional checking. Fixed destination-account and scene/version fingerprint gaps, brief-only edits, post-publication re-approval, missing video/footage checks, privileged patches, unconfigured-route advancement, stale steering responses, corrupt local storage and unsaved approval guards.
+- A dedicated prototype deployment config and build verification prevent inheriting the parent CRM Worker, domain routes or bindings; local production preview uses the compiled Worker.
+- Self-hosted fonts; no external page requests in desktop/phone checks. No CRM, social or AI service is connected.
 
-## Scope
+## Review and verification
 
-Complete and verify a self-contained frontend prototype. Keep CRM APIs, databases, real social connections and publishing disabled. The user intends to attach this to the live CRM after reviewing the finished work. Existing Voyage PR #24 contains separate Content-source integration work; reconcile its adapters during that later integration instead of silently replacing it.
+`npm run typecheck`, 33 unit/rules/storage/routing checks, 14 Playwright scenarios across desktop Chromium and mobile WebKit, production build and local preview verification. Tests include refresh persistence, brand selection/new ideas, Cody approval, stale edits, steering/global stop, analytics/insights, keyboard/direct selection, mobile overflow and unresolved footage.
 
-## Acceptance
+The app starts paused so the initial pipeline remains inspectable. Resume explicitly for simulated progression. Reset restores all seeded stages and clears edits. The You/Cody switch and local state are demonstrations, not production authorization.
 
-- Seven stages in the requested order; brand-filtered coverflow, direct and keyboard selection, responsive layout, reduced-motion behavior.
-- Selected item controls all detail panels. Brief, script, scenes, versions, captions, destinations, thumbnail and schedule are editable and persist on refresh.
-- New ideas and insight-derived briefs enter Research with provenance.
-- Factory and item pause prevent simulated progress and dispatch. Steering records the human direction and pauses for replanning.
-- Only demo You/Cody may approve an exact package revision. Muninn cannot approve. Material package edits invalidate approval; stage moves cannot bypass it.
-- Individual platform delivery states and simulated receipts are visibly distinguished. TideLine destinations remain unconfigured; the company LinkedIn source is not duplicated as a destination.
-- Analytics filters change the data shown, compatible totals alone are aggregated, unavailable metrics stay unavailable and every example is marked demo.
-- Typed adapter boundary supports later authenticated CRM/worker integration without treating this demo's local state or user switch as production authority.
+## Next: attach to the existing CRM
 
-## Export and completion evidence
+This remains a separate prototype under `prototypes/content-factory`; the live Voyage navigation, database, permissions, publishing worker and website are untouched. Reconcile the separate Voyage PR #24 Content adapters during integration. Map the UI into the existing Content page, preserve current authenticated editor identity and audit permissions, and add server-side immutable package approval plus dispatch-time approval, stop, timezone and due-schedule checks, independent provider receipts and reconciliation. Existing unconfigured destinations must remain held until separately connected.
 
-Pending source export. Do not claim a completed clone, passing tests, deployment or CRM attachment until separately verified.
+The prototype adapter intentionally rejects live mode. No live publication or AI execution is implemented, and no provider credentials or paid backend were provisioned.
 
-### Export blocker observed
+## Provenance
 
-GitHub sign-in restored to `quanbuilds`. Lovable still identifies its prior account as `quanmakestrades` and reports lost access/no available installations. GitHub confirms the existing `lovable.dev` app installation `78465849` on `quanbuilds`; no permission or repository-access changes were made. Refreshing the installation list did not reconcile it. Native computer-use then became unavailable (`codex app-server exited before returning a response`), preventing the per-file export fallback from the embedded file tree. The source is not yet cloned/exported. Browser sessions were preserved.
+GitHub sign-in was restored to `quanbuilds`, but Lovable retained the old account mismatch. The complete source was recovered via authenticated UI exports rather than a Git clone. Original checksums and recovery methods are recorded in `lovable-source-export.jsonl`; the original Bun lock is retained as `lovable-original.bun.lock`. Use the finished npm lock to reproduce this app.
