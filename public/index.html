@@ -3016,7 +3016,7 @@ function go(v){
   if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
-document.querySelectorAll(".nav[data-view]").forEach(b=>b.onclick=()=>go(b.dataset.view));
+document.querySelectorAll(".nav[data-view]").forEach(b=>b.onclick=()=>{if(b.dataset.view==="content"&&!guest){location.href="/factory/";return}go(b.dataset.view)});
 document.querySelectorAll(".pgtabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
 
 fillMe();const RV_BODY="M6 50 L12 46 L20 42 C21 35 28 29 37 27.5 C39.5 24 41 19 45 16 C48.5 13.5 53 13.5 55.5 16 C58.5 17 61.5 19.5 63.5 22.5 C60.5 22.8 58 23.6 55.8 25 L54.5 26.6 L52.6 26.1 L53 28 L50.8 27.7 L51 29.6 L49 29.3 C50.5 35 47.5 42 40 45 C36 46.5 32 47 28 47.2 L14 52 L9 53.5 Z";
@@ -3156,6 +3156,10 @@ render();renderActs();renderItems();
   db.collection("activity").orderBy("ts","desc").limit(200).onSnapshot(snap=>{
     acts=snap.docs.map(d=>d.data());renderActs();renderAccount();loaded("activity");
   },failed);
+const requestedView=new URLSearchParams(location.search).get("view");
+  if(["accounts","company","content"].includes(requestedView)&&(!guest||requestedView==="accounts"))go(requestedView);
+  const contentItem=new URLSearchParams(location.search).get("contentItem");
+  if(!guest&&requestedView==="content"&&contentItem&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Suggest the next useful step for gym owners and admin staff. Do not invent claims, media or analytics. Do not publish."}));
 })();
 setInterval(()=>{render();renderItems()},60000);
 </script>
