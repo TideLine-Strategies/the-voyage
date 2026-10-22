@@ -1,0 +1,73 @@
+import {AGENT_DOCS} from './content-agent-docs.js';
+import {listMedia} from './content-media.js';
+const json=(d,s=200)=>Response.json(d,{status:s,headers:{'cache-control':'private, no-store'}});
+export async function readOpsDoc(env,c,id){const r=await env.DB.prepare('SELECT data_json,revision FROM documents WHERE collection=? AND id=?').bind(c,id).first();return r?{value:JSON.parse(r.data_json),revision:r.revision}:null;}
+async function put(env,c,id,d){return env.DB.prepare('INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?) ON CONFLICT(collection,id) DO UPDATE SET data_json=excluded.data_json,revision=documents.revision+1,updated_at=excluded.updated_at').bind(c,id,JSON.stringify(d),Date.now()).run();}
+const text=(s,n=2000)=>typeof s==='string'?s.slice(0,n):'';
+const validDate=d=>typeof d==='string'&&Number.isFinite(Date.parse(d));
+const publicUrl=s=>{const u=new URL(s);if(u.protocol!=='https:'||u.username||u.password||u.hostname==='localhost'||/^\d+\.\d+/.test(u.hostname))throw Error('Public HTTPS source required');return u.toString();};
+export function researchSnapshot(d){
+ if(!validDate(d.checkedAt)||!Array.isArray(d.observations)||d.observations.length>100)throw Error('Bounded dated observations required');
+ const metrics=m=>Object.fromEntries(['views','reactions','comments','reposts','impressions','clicks','watchSeconds','qualifiedConversations'].map(k=>[k,Number.isFinite(m?.[k])&&m[k]>=0?m[k]:null]));
+ const observations=d.observations.map(o=>({id:text(o.id,100),creator:text(o.creator,150),title:text(o.title,250),url:publicUrl(o.url),publishedAt:validDate(o.publishedAt)?o.publishedAt:null,observedAt:validDate(o.observedAt)?o.observedAt:d.checkedAt,kind:text(o.kind,40),metrics:metrics(o.metrics),scope:text(o.scope,500)}));
+ if(new Set(observations.map(o=>o.id)).size!==observations.length)throw Error('Duplicate observations');
+ const facts=(rows,max=40)=>(Array.isArray(rows)?rows:[]).slice(0,max).map(o=>({id:text(o.id,100),title:text(o.title,250),url:publicUrl(o.url),summary:text(o.summary,1500),observedAt:validDate(o.observedAt)?o.observedAt:d.checkedAt,sourceDate:validDate(o.sourceDate)?o.sourceDate:null,status:text(o.status,40),limitation:text(o.limitation,1000)}));
+ return {checkedAt:d.checkedAt,observations,creators:facts(d.creators,20),complaints:facts(d.complaints),features:facts(d.features),coverage:text(d.coverage,2000),metricsAccess:text(d.metricsAccess,1000)};
+}
+export function deriveResearch(d,now=Date.now()){
+ const cutoff=now-7*86400000,weekly=d.observations.filter(o=>o.publishedAt&&Date.parse(o.publishedAt)>=cutoff&&Date.parse(o.publishedAt)<=now&&!['own-post'].includes(o.kind));
+ const own=d.observations.filter(o=>o.kind==='own-post');
+ return {gymWeekly:weekly.filter(o=>/Two-Brain|Gym Launch/.test(o.creator)),adjacentWeekly:weekly.filter(o=>!/Two-Brain|Gym Launch/.test(o.creator)),windowStart:new Date(cutoff).toISOString(),windowEnd:new Date(now).toISOString(),weekly:weekly.sort((a,b)=>(b.metrics.views??-1)-(a.metrics.views??-1)),excludedUndated:d.observations.filter(o=>!o.publishedAt&&o.kind!=='own-post').length,own,limitations:['Cumulative counts are not age-matched; a newer post has had less time to accumulate views.','Views across different creators and audiences are not directly comparable.','No causal explanation follows from these snapshots; creative explanations are hypotheses.',...(own.some(o=>o.metrics.impressions===null)?['Own-post impression data is unavailable; engagement and click-through rates cannot be calculated.']:[]),...(own.length<10?['The own-post sample is too small to infer a reliable winning format.']:[])]};
+}
+export async function opsState(env){
+ const research=(await readOpsDoc(env,'content_research','current'))?.value||null;
+ const runs=await env.DB.prepare('SELECT id,data_json FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 30').bind('content_agent_runs').all();
+ const docs=await Promise.all(AGENT_DOCS.map(async d=>({...d,living:(await readOpsDoc(env,'content_agent_docs',d.step))?.value||{passes:0,lessons:[]}})));
+ const operator=(await readOpsDoc(env,'content_operator','current'))?.value||null;
+ return {research,insights:research?deriveResearch(research):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
+}
+export async function handleOps(request,env,actor,readJson){
+ if(actor.role!=='edit')return json({error:'Not available to guests'},403);const url=new URL(request.url);
+ if(url.pathname!=='/api/content-ops')return json({error:'Not found'},404);
+ if(request.method==='GET')return json(await opsState(env));
+ if(request.method!=='POST'||request.headers.get('origin')!==url.origin)return json({error:'Same-origin editor action required'},403);
+ let body;try{body=await readJson(request);}catch{return json({error:'Invalid request'},400);}
+ if(body.action!=='run'||!AGENT_DOCS.some(d=>d.step===body.step))return json({error:'Choose a valid workflow step'},400);
+ const pending=await env.DB.prepare("SELECT id FROM documents WHERE collection=? AND json_extract(data_json,'$.status') IN ('pending','running') LIMIT 5").bind('content_agent_runs').all();if(pending.results.length>=5)return json({error:'Decision queue is full; let current runs finish.'},429);
+ const doc=AGENT_DOCS.find(d=>d.step===body.step),state=await opsState(env);if(!state.research)return json({error:'Import current evidence before running an agent.'},409);
+ const itemId=text(body.itemId,100),item=itemId?(await readOpsDoc(env,'content_editorial',itemId))?.value:null;if(itemId&&!item)return json({error:'Saved item not found'},404);
+ const id=crypto.randomUUID();const run={step:doc.step,status:'pending',requestedBy:actor.id,requestedName:actor.name,requestedAt:Date.now(),instructionSha:doc.sha256,input:{instructions:doc.instructions,living:state.docs.find(d=>d.step===doc.step).living,research:state.research,insights:state.insights,item,media:state.media.map(a=>({id:a.id,title:a.title,kind:a.kind,brand:a.brand,provenance:a.provenance,profileUrl:a.profileUrl})),direction:text(body.direction,1500)}};
+ await put(env,'content_agent_runs',id,run);return json({id,status:'pending'});
+}
+export function validateDecision(decision,input){
+ if(!decision||!['proceed','needs_evidence','blocked'].includes(decision.verdict)||typeof decision.summary!=='string'||decision.summary.length>1800||!Array.isArray(decision.evidenceIds)||!Array.isArray(decision.nextActions)||decision.nextActions.length>6||!Array.isArray(decision.cautions))throw Error('Invalid decision shape');
+ if(!decision.summary.trim()||typeof decision.learning!=='string'||!decision.learning.trim()||decision.learning.length>1200||decision.evidenceIds.length>15||decision.cautions.length>8||[...decision.nextActions,...decision.cautions].some(x=>typeof x!=='string'||!x.trim()||x.length>600))throw Error('Bounded, nonempty decision text required');
+ const ids=new Set([...input.research.observations,...input.research.complaints,...input.research.features,...input.research.creators].map(x=>x.id));
+ if(decision.evidenceIds.some(id=>!ids.has(id))||!decision.evidenceIds.length)throw Error('Decision must cite supplied evidence');
+ return {verdict:decision.verdict,summary:text(decision.summary,1800),evidenceIds:decision.evidenceIds.slice(0,15),nextActions:decision.nextActions.map(x=>text(x,600)),cautions:decision.cautions.slice(0,8).map(x=>text(x,600)),learning:text(decision.learning,1200),draftCopy:text(decision.draftCopy,6000),shotList:(Array.isArray(decision.shotList)?decision.shotList:[]).slice(0,8).map(x=>text(x,600))};
+}
+export async function ingestOps(env,body){
+ if(body.action==='research'){try{const d=researchSnapshot(body.snapshot),old=await readOpsDoc(env,'content_research','current');if(old&&Date.parse(old.value.checkedAt)>Date.parse(d.checkedAt))return json({accepted:false});await put(env,'content_research','current',d);return json({accepted:true,observations:d.observations.length});}catch(e){return json({error:e.message},400);}}
+ if(body.action==='bootstrap'){
+  const state=await opsState(env);if(!state.research)return json({accepted:false,reason:'No research'});
+  const day=new Date().toISOString().slice(0,10),id='auto-analytics-'+day,doc=AGENT_DOCS.find(d=>d.step==='analytics');
+  const run={step:'analytics',status:'pending',requestedBy:'content-operator',requestedName:'Scheduled content review',requestedAt:Date.now(),instructionSha:doc.sha256,input:{instructions:doc.instructions,living:state.docs.find(d=>d.step==='analytics').living,research:state.research,insights:state.insights,item:null,media:state.media.map(a=>({id:a.id,title:a.title,kind:a.kind,brand:a.brand,provenance:a.provenance,profileUrl:a.profileUrl})),direction:'Review this week’s dated niche evidence and our actual post observations. State measurement limits and propose one useful, falsifiable gym-owner content experiment.'}};
+  const r=await env.DB.prepare('INSERT OR IGNORE INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?)').bind('content_agent_runs',id,JSON.stringify(run),Date.now()).run();return json({accepted:r.meta.changes===1,id});
+ }
+ if(body.action==='claim'){
+  await put(env,'content_operator','current',{lastSeenAt:Date.now(),engine:'codex',permissions:'tool-free decision only'});
+  const rows=await env.DB.prepare("SELECT id,data_json,revision FROM documents WHERE collection=? AND (json_extract(data_json,'$.status')='pending' OR (json_extract(data_json,'$.status')='running' AND json_extract(data_json,'$.leaseUntil') < ?)) ORDER BY updated_at LIMIT 1").bind('content_agent_runs',Date.now()).all();const row=rows.results[0];if(!row)return json({job:null});const run=JSON.parse(row.data_json),claimed={...run,status:'running',claimToken:crypto.randomUUID(),leaseUntil:Date.now()+180000};
+  const r=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(claimed),Date.now(),'content_agent_runs',row.id,row.revision).run();return json({job:r.meta.changes===1?{id:row.id,...claimed}:null});
+ }
+ if(body.action==='complete'||body.action==='fail'){
+  const stored=await readOpsDoc(env,'content_agent_runs',body.id);if(!stored)return json({error:'Run not found'},404);const run=stored.value;if(run.status==='complete'||run.status==='failed')return json({accepted:true,alreadyFinished:true});if(run.claimToken!==body.claimToken||run.status!=='running'||run.leaseUntil<Date.now())return json({error:'Run lease expired'},409);
+  let decision;try{decision=body.action==='complete'?validateDecision(body.decision,run.input):null;}catch(e){return json({error:e.message},400);}
+  const passNonce=crypto.randomUUID();const done={...run,passNonce,status:decision?'complete':'failed',completedAt:Date.now(),decision,engine:decision?'codex':null,model:decision?text(body.model,100):null,error:decision?null:text(body.error,500)};delete done.claimToken;delete done.leaseUntil;
+  const old=await readOpsDoc(env,'content_agent_docs',run.step),living=old?.value||{passes:0,lessons:[]};const updated={passNonce,version:run.instructionSha,passes:living.passes+1,lastRunId:body.id,lastOutcome:done.status,updatedAt:done.completedAt,lessons:[{runId:body.id,at:done.completedAt,outcome:done.status,text:decision?.learning||done.error,evidenceIds:decision?.evidenceIds||[]} ,...living.lessons].slice(0,30)};
+  // Both the durable run and its living document advance together.
+  const docStatement=env.DB.prepare("INSERT INTO documents(collection,id,data_json,revision,updated_at) SELECT ?,?,?,1,? WHERE EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=? AND json_extract(data_json,'$.status')='running') ON CONFLICT(collection,id) DO UPDATE SET data_json=excluded.data_json,revision=documents.revision+1,updated_at=excluded.updated_at WHERE documents.revision=?").bind('content_agent_docs',run.step,JSON.stringify(updated),Date.now(),'content_agent_runs',body.id,stored.revision,old?.revision||0);
+  const runStatement=env.DB.prepare("UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=? AND EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND json_extract(data_json,'$.passNonce')=?)").bind(JSON.stringify(done),Date.now(),'content_agent_runs',body.id,stored.revision,'content_agent_docs',run.step,passNonce);
+  const result=await env.DB.batch([docStatement,runStatement]);return result[1].meta.changes===1?json({accepted:true}):json({error:'Concurrent pass finished first; retry this completion'},409);
+ }
+ return json({error:'Unknown operation'},400);
+}

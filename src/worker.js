@@ -1,4 +1,8 @@
-import {handleCompany,ingestCompany,companyContext} from "./company-ops.js";
+import {handleOps,ingestOps} from "./content-ops.js";
+import {serveMedia,ingestMedia} from "./content-media.js";
+import {handleFactory,baselineSnapshot,factoryContext} from "./content-factory.js";
+import {handleContent,ingestContent,contentContext} from './content.js';
+import {handleCompany,ingestCompany,companyContext,verifySource} from "./company-ops.js";
 import { accountPage, handleAccountAuth } from "./account-auth.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
@@ -818,6 +822,14 @@ async function handleApi(request, env, actor, path) {
     const problem = await activityContactProblem(request, env, path, method);
     if (problem) return error(problem, 400);
   }
+  if (path[1] === "content-ops") return handleOps(request,env,actor,readJson);
+  if (path[1] === "content-media") return serveMedia(request,env,actor,path[2]);
+  if (path[1] === "content-factory") {
+    const response=await handleFactory(request,env,actor,readJson);
+    if(request.method==='POST'&&response.ok){const saved=await response.clone().json();await audit(env,actor.id,'Content updated','content_editorial',saved.id,saved.title);}
+    return response;
+  }
+  if (path[1] === "content") return handleContent(request,env,actor);
   if (path[1] === "companies") return handleCompany(request,env,actor,path,readJson);
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
@@ -825,7 +837,12 @@ async function handleApi(request, env, actor, path) {
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
-    return reply({ context: await muninnContext(env.DB, actor) + (actor.role === "edit" ? await companyContext(env,actor) : "") });
+    const crm = await muninnContext(env.DB, actor);
+    const content = actor.role === "edit" ? (await contentContext(env))+(await factoryContext(env)) : "";
+    const context = actor.role === "edit" && new URL(request.url).searchParams.get("scope") === "content"
+      ? content + "\nCRM excerpt (bounded):\n" + crm.slice(0, 12000)
+      : crm.slice(0, 40000) + (actor.role === "edit" ? (await companyContext(env,actor)).slice(0, 16000) + content.slice(0, 10000) : "");
+    return reply({ context });
   }
   if (path.length === 2 && path[1] === "presence") {
     if (method === "GET") {
@@ -913,6 +930,27 @@ export default {
     const pathName = new URL(request.url).pathname;
     if(pathName === "/__release.json" && request.method === "GET") return Response.json({commit:env.RELEASE_COMMIT||null,product:"voyage"},{headers:{"cache-control":"no-store"}});
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
+    if(pathName === "/api/content-agent-source" && request.method === "POST") {
+      let body;try{body=await readJson(request);}catch{return error("Invalid agent source",400);}
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,JSON.stringify(body)))return error("Source authentication required",401);
+      return ingestOps(env,body);
+    }
+    if(pathName === "/api/content-media-source" && request.method === "POST") {
+      const length=Number(request.headers.get("content-length")||0);if(length>1600000)return error("Media batch too large",413);
+      let raw="";const reader=request.body?.getReader();if(!reader)return error("Body required",400);const decoder=new TextDecoder();let size=0;for(;;){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>1600000){await reader.cancel();return error("Media batch too large",413);}raw+=decoder.decode(part.value,{stream:true});}raw+=decoder.decode();
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,raw))return error("Source authentication required",401);
+      try{return await ingestMedia(env,JSON.parse(raw));}catch{return error("Invalid media request",400);}
+    }
+    if(pathName === "/api/content-factory-source" && request.method === "GET") {
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,''))return error("Source authentication required",401);
+      const row=await env.DB.prepare("SELECT data_json FROM documents WHERE collection=? AND id=?").bind("content_baseline","linkedin").first();return reply({baseline:row?JSON.parse(row.data_json):null});
+    }
+    if(pathName === "/api/content-factory-source" && request.method === "POST") {
+      let body;try{body=await readJson(request);}catch{return error("Invalid source",400);}
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,JSON.stringify(body)))return error("Source authentication required",401);
+      try{const snapshot=baselineSnapshot(body);const result=await env.DB.prepare("INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?) ON CONFLICT(collection,id) DO UPDATE SET data_json=excluded.data_json,revision=documents.revision+1,updated_at=excluded.updated_at WHERE json_extract(documents.data_json,'$.checkedAt') <= json_extract(excluded.data_json,'$.checkedAt')").bind("content_baseline","linkedin",JSON.stringify(snapshot),Date.now()).run();return reply({accepted:result.meta.changes===1,posts:snapshot.posts.length});}catch{return error("Invalid source baseline",400);}
+    }
+    if (pathName.startsWith("/api/content-source/")) return ingestContent(request,env,readJson);
     if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
     if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
@@ -920,6 +958,7 @@ export default {
     if (!actor) return request.method === "GET" && pathName === "/" ? signInPage(env) : error("Sign in with the approved TideLine account", 403);
     const path = parsePath(new URL(request.url).pathname);
     if (!path) {
+      if (pathName.startsWith("/factory") && actor.role !== "edit") return error("Not available to guests",403);
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);
       headers.set("cache-control", "private, no-store");

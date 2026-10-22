@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import {signedHeaders} from '../src/company-ops.js';
+import {baselineSnapshot} from '../src/content-factory.js';
+const file=process.env.CONTENT_BASELINE_FILE,configFile=process.env.COMPANY_OPERATIONS_CONFIG;
+if(!file||!configFile)throw Error('Private baseline and company configuration paths required');
+if((await fs.stat(configFile)).mode&0o077)throw Error('Private configuration permissions required');
+const config=JSON.parse(await fs.readFile(configFile,'utf8'));if(config.voyageOrigin!=='https://voyage.tidelinestrats.com')throw Error('Wrong Voyage origin');
+const value=baselineSnapshot(JSON.parse(await fs.readFile(file,'utf8'))),body=JSON.stringify(value),url=config.voyageOrigin+'/api/content-factory-source';
+const r=await fetch(url,{method:'POST',headers:await signedHeaders(config.secrets.tideline,'POST',url,'content-baseline',body),body,redirect:'manual',signal:AbortSignal.timeout(15000)});
+if(!r.ok)throw Error('Source import rejected: '+r.status);console.log(JSON.stringify(await r.json()));
