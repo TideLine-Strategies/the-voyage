@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Voyage Content Factory · Demo" },
+      { title: "Content Factory · TideLine" },
       {
         name: "description",
         content: "An interactive content production prototype for TideLine and WonPlace.",
       },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Voyage Content Factory · Demo" },
+      { property: "og:title", content: "Content Factory · TideLine" },
       {
         property: "og:description",
         content: "An interactive content production prototype for TideLine and WonPlace.",

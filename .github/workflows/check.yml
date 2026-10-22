@@ -20,3 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npx --yes npm@11 ci --prefix prototypes/content-factory --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck --prefix prototypes/content-factory
+      - run: npm test --prefix prototypes/content-factory
+      - run: npm run build:live --prefix prototypes/content-factory
+      - run: git diff --exit-code -- public/factory
