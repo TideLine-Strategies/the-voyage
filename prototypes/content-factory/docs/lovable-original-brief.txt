@@ -1,0 +1,40 @@
+Build a NEW project named “Voyage Content Factory” from the attached approved Concept C image. Make it awesome: a premium, tactile, genuinely interactive production cockpit that feels like a content assembly line, with beautiful restrained motion and incredible clarity. This is a working app prototype for the Content page inside our existing Voyage CRM, NOT a landing page, NOT a generic dashboard. Keep it modular for later integration into the existing CRM. Do not change our separate WonPlace landing-page project.
+
+VISUAL NORTH STAR
+
+Recreate Concept C faithfully: slim Voyage sidebar; airy cool gray #f3f5fa canvas; white rounded panels; navy text #121828; coral #e23b4c accent; Figtree-like UI type, elegant small serif Voyage wordmark. Existing navigation Home, Accounts, Content (active), Company, Muninn. Main header Content factory. Both brands / TideLine / WonPlace filter. Pause factory and New idea controls. Premium editorial software, not neon sci-fi. The hero is an actual interactive horizontal 3D COVERFLOW ASSEMBLY LINE of portrait 9:16 content windows, not a screenshot. Real perspective, stacked depth, a larger selected card, beautiful spring transitions, tasteful shadows, hover/focus states, arrows/keyboard navigation and direct card selection. Multiple pieces per stage, stage counts, distinct stage colors. Keep content previews recognizable and readable. Use gymnastics gym imagery for WonPlace, service-business/operator systems imagery for TideLine, no boats or generic weightlifting. Responsive: horizontal snap-scrolling pipeline on narrower screens, panels stack cleanly. Respect reduced motion and keyboard accessibility.
+
+EXACT STAGES AND LOOP
+
+Research → Scripting → Filming / Generation → Editing → Human approval → Posting → Analytics → research for the next idea.
+
+Autonomous work is visible and interruptible at EVERY non-approval stage. Each card shows brand, campaign, current task, progress, owner/agent, latest update, blockers. Stage-specific previews: source/evidence board, hook/script, scene/footage board, video with caption overlays, final approval package, per-platform delivery queue, performance breakdown. The Filming stage can generate scenes/voice or use uploaded human footage; when real footage is needed show an explicit request, do not pretend an agent physically filmed people.
+
+SELECTED ITEM COCKPIT
+
+Use “Training / Retaining” as the featured WonPlace campaign: visible skill progress and proactive parent communication. Big 9:16 preview and scene thumbnails. Brief / Script / Scenes / Versions tabs that actually change content. Editable hook and script, brand brief, platform captions, destination choices and schedule. Version history and clear activity trail. Muninn active-task panel, progress, Pause item / Resume / Steer / Retry / Send back controls. A steering composer for You or Cody; show submitted direction in the activity trail, pause/replan the simulated task and allow resuming. Factory-wide pause must stop progression, not just change a label. Clicking any card changes all inspector panels. New idea creates a real local item. Persist demo state locally across refresh and offer Reset demo. Make the core actions function rather than leaving dead buttons.
+
+MANDATORY HUMAN GATE
+
+Only You or Cody can approve the exact final package: video version, captions per platform, six destinations, schedule, thumbnail. Include a demo current-user switch You / Cody to demonstrate roles. Muninn CANNOT approve. Posting remains locked until a human chooses Approve this version. Request changes routes the item back with a note. Any material edit after approval invalidates it and returns it to Human approval. Even drag/move actions cannot bypass this gate. Show approver, time, approved revision, and what changed if approval becomes stale. Autonomous Posting may run only after valid approval. A global stop or item pause always prevents dispatch.
+
+TWO BRANDS, ONE BUSINESS DIRECTION
+
+TideLine: practical systems for owner-led service businesses; useful operator lessons and real product proof build trust and qualified conversations.
+
+WonPlace: gym owners/coaches/program directors; classes, enrollment, skill progress, parent communication. Product voice is gym-first and concrete. Credit only “Built by TideLine.” Do not put Quan's name in product copy.
+
+Distinct brand briefs, campaigns, channel ownership and queues; shared path useful content → product proof → qualified conversation → CRM Account and next step → demo → paying customer. Never treat followers as leads. Brand filters must work and never cross-publish a general TideLine item into WonPlace accounts by default.
+
+POSTING AND ANALYTICS
+
+Six platforms total: LinkedIn, Facebook, Instagram, YouTube, TikTok, X. WonPlace handles @wonplaceapp where applicable. Existing business route: TideLine COMPANY LinkedIn is the source, not the founder's personal profile, and must not be duplicated to itself. Support a source-only LinkedIn record plus the five brand destinations. Distinguish queued, needs approval, scheduled at provider, published with receipt, failed, held for reconciliation. One success does not imply all platforms succeeded. Include platform-specific caption/format previews and individual delivery receipts. Keep general TideLine destinations visibly unconfigured/held until connected.
+
+Analytics: Aggregate / By platform tabs, working date range and platform filters. Views, watch time, completion/retention, engagement, clicks, qualified conversations and demo attribution where sourced. Show available vs unavailable metrics honestly. Aggregate only compatible totals: label “Total reported views,” never imply unique people across platforms; compare rates separately per platform. Show useful insight cards and “Turn this insight into a brief” feeding Research, preserving provenance. Exact numbers can be illustrative DEMO data, clearly labeled. Example dates and simulated statuses must never look like real publishing receipts.
+
+MUNINN AND IMPLEMENTATION BOUNDARY
+
+This build is an interactive FRONTEND PROTOTYPE. Use typed data models and a clean service/adapter boundary for future Voyage CRM APIs and the existing local publishing worker. Implement a controllable demo progression to show autonomous work, clearly labeled Demo mode / Simulated activity. Do not secretly connect social accounts, publish, send outreach, buy services, enable paid AI APIs or paid backend resources. No API keys required. Muninn panel demonstrates planning, progress and steering, with transparent simulated responses and a future adapter; do not claim production agents or analytics are live. No need for Lovable Cloud or a new database for this prototype.
+
+Use realistic seeded campaigns across ALL stages, both brands, with a selected WonPlace campaign in Editing and another awaiting human review. Build beautiful cinematographic but usable motion and card interactions; no giant marketing hero or filler charts. Make the approval flow and pipeline movement compelling enough that we can really review the product experience. Do a browser pass for filter selection, creating an idea, editing a script, steering/pause, invalidated approvals, blocked posting without approval, individual platform statuses, analytics and mobile layout. Start building now from the attached image and the brief. Make it awesome.
+
