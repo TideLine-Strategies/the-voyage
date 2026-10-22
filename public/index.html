@@ -503,6 +503,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 @media (max-width:860px){.vtbl .row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.vtbl .row>:nth-child(3),.vtbl .row>:nth-child(4){display:none}}
 </style>
 <link rel="stylesheet" href="/company-cockpit.css">
+<link rel="stylesheet" href="/content.css">
 </head>
 <body>
 <div id="boot" role="status">Loading The Voyage…</div>
@@ -520,6 +521,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <div class="gsearch"><input id="gSearch" type="search" placeholder="Search everything  /" aria-label="Search everything" autocomplete="off"><div class="gres" id="gRes" role="listbox" hidden></div></div>
     <button class="nav on" data-view="dash">Home</button>
     <button class="nav" data-view="accounts">Accounts</button>
+    <button class="nav" data-view="content" id="contentNav">Content</button>
     <button class="nav" data-view="company" id="companyNav">Company</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
@@ -582,6 +584,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       <div class="tbl atbl" id="acList"></div>
     </section>
 
+    <section id="view-content" hidden><div class="head"><div><h1>Content</h1><div class="sub">Two brands. One voyage from useful content to qualified conversations.</div></div><div class="content-actions"><button class="btn" id="contentAsk">Ask Muninn</button><button class="btn" id="contentRefresh">Refresh</button></div></div><div class="content-tabs" id="contentBrands" aria-label="Content brand"><button class="btn" data-brand="all" aria-pressed="true">Both brands</button><button class="btn" data-brand="tideline" aria-pressed="false">TideLine</button><button class="btn" data-brand="wonplace" aria-pressed="false">WonPlace</button></div><p id="contentState" role="status" class="sub"></p><div id="contentBody"></div></section>
     <section id="view-company" hidden>
       <div class="head"><div><h1>TideLine company</h1><div class="sub">Separate product analytics. One TideLine business ledger.</div></div><select id="companySelect" aria-label="Product analytics"><option value="wonplace">WonPlace</option><option value="tideline">TideLine website</option><option value="loki">Loki</option><option value="voyage">Voyage</option></select><button class="btn" id="companyRefresh">Refresh</button></div>
       <p id="companyStatus" role="status"></p>
@@ -1096,6 +1099,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <script src="/voyage-db.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
+<script src="/content.js"></script>
 <script>
 const STAGES=["Prospecting","Discovery","Alignment","Assessment","Validation","Proposal","Business review"];
 const SHORT=["Prospect","Discovery","Alignment","Assess","Validation","Proposal","Review"];
@@ -1115,7 +1119,7 @@ function fillMe(){
 }
 function applyTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
 try{applyTheme(localStorage.getItem("voyage-theme")||"")}catch(_){}
-function showGuestAccess(){$("companyNav").hidden=true;document.body.classList.add("guest");$("viewBadge").hidden=false}
+function showGuestAccess(){$("companyNav").hidden=true;$("contentNav").hidden=true;document.body.classList.add("guest");$("viewBadge").hidden=false}
 let items=[], tf={task:"open",appt:"open"}, tEdit=null, tKind="task", tType=0;
 let db=window.voyageDb, acts=[], opps=[], filter=null, editing=null, pickStage=0, live=true;
 
@@ -3000,17 +3004,19 @@ function renderAdmin(){
 const SOON={
   oden:["Muninn","The raven who remembers every touch on every account, flags what's slipping, and drafts follow-ups. We add Muninn once the other pages exist."]};
 function go(v){
-  if(v==="company"&&guest)return;
+  if(v==="oden"){openChat();track("action","Opened Muninn");return}
+  if((v==="company"||v==="content")&&guest)return;
+  $("view-content").hidden=v!=="content";
+  if(v==="content")window.VoyageContent.open();else window.VoyageContent.close();
   $("view-company").hidden=v!=="company";
   if(v==="company")window.VoyageCompany.open();else window.VoyageCompany.close();
-  if(v==="oden"){openChat();track("action","Opened Muninn");return}
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===(navV==="notes"?"activity":navV)));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
   if(v==="account"){renderAccount();renderAccountDeals();renderAccountContacts()}if(v==="accounts")renderAccounts();if(v==="vendors")renderVendors();if(v==="calendar")openCalendar();if(v==="cadence")renderPillage();if(v==="deals")renderDeals();if(v==="admin"&&!guest)loadAdmin();if(v==="profile")loadProfile();if(v==="notes")renderNotes(true);if(v==="team"){tcForceScroll=true;renderTeam();setTimeout(()=>$("tcIn").focus(),30)}else updateBadge();if(roomNs)roomNs.presence({who:me,view:v}).catch(()=>{});
   if(SOON[v]){$("soonTitle").textContent=SOON[v][0];$("soonText").textContent=SOON[v][1]}
 }
-document.querySelectorAll(".nav[data-view]").forEach(b=>b.onclick=()=>go(b.dataset.view));
+document.querySelectorAll(".nav[data-view]").forEach(b=>b.onclick=()=>{if(b.dataset.view==="content"&&!guest){location.href="/factory/";return}go(b.dataset.view)});
 document.querySelectorAll(".pgtabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
 
 fillMe();const RV_BODY="M6 50 L12 46 L20 42 C21 35 28 29 37 27.5 C39.5 24 41 19 45 16 C48.5 13.5 53 13.5 55.5 16 C58.5 17 61.5 19.5 63.5 22.5 C60.5 22.8 58 23.6 55.8 25 L54.5 26.6 L52.6 26.1 L53 28 L50.8 27.7 L51 29.6 L49 29.3 C50.5 35 47.5 42 40 45 C36 46.5 32 47 28 47.2 L14 52 L9 53.5 Z";
@@ -3075,7 +3081,7 @@ async function sendChat(q){
     try{health=await fetch(MUNINN_BRIDGE+"/health",{signal:chatCtl.signal})}
     catch(e){if(e?.name==="AbortError")throw e;throw Error("Muninn needs the local Codex connector on this computer.")}
     if(!health.ok||(await health.json()).service!=="tideline-voyage-muninn")throw Error("Muninn's local Codex connector is unavailable.");
-    const contextResponse=await fetch("/api/muninn/context",{credentials:"same-origin",signal:chatCtl.signal});
+    const contextResponse=await fetch("/api/muninn/context"+(q.startsWith("Review Content for ")?"?scope=content":""),{credentials:"same-origin",signal:chatCtl.signal});
     if(!contextResponse.ok)throw Error("The live CRM data could not load.");
     const {context}=await contextResponse.json();
     let localResponse;
@@ -3150,6 +3156,10 @@ render();renderActs();renderItems();
   db.collection("activity").orderBy("ts","desc").limit(200).onSnapshot(snap=>{
     acts=snap.docs.map(d=>d.data());renderActs();renderAccount();loaded("activity");
   },failed);
+const requestedView=new URLSearchParams(location.search).get("view");
+  if(["accounts","company","content"].includes(requestedView)&&(!guest||requestedView==="accounts"))go(requestedView);
+  const contentItem=new URLSearchParams(location.search).get("contentItem");
+  if(!guest&&requestedView==="content"&&contentItem&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Suggest the next useful step for gym owners and admin staff. Do not invent claims, media or analytics. Do not publish."}));
 })();
 setInterval(()=>{render();renderItems()},60000);
 </script>
