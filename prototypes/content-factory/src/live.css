@@ -494,3 +494,17 @@
   max-width: 220px;
   margin-top: 5px;
 }
+
+.live-page-avatar {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  border-radius: 50%;
+  border: 2px solid #ffffff70;
+}
+.live-research-card video {
+  margin: 12px 0;
+}
+.live-research-card + .live-research-card {
+  margin-top: 10px;
+}

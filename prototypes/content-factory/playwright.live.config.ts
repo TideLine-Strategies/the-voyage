@@ -5,7 +5,11 @@ export default defineConfig({
   workers: 1,
   maxFailures: 1,
   timeout: 30000,
-  use: { baseURL: "http://127.0.0.1:17901", reducedMotion: "reduce", trace: "retain-on-failure" },
+  use: {
+    baseURL: process.env["FACTORY_TEST_ORIGIN"] || "http://127.0.0.1:17902",
+    reducedMotion: "reduce",
+    trace: "retain-on-failure",
+  },
   projects: [
     {
       name: "desktop-live",

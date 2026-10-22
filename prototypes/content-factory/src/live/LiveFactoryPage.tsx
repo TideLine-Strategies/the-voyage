@@ -1,3 +1,4 @@
+import { OperationsPanel, type Asset } from "./OperationsPanel";
 import { useEffect, useState } from "react";
 type Source = {
   id: string;
@@ -36,6 +37,9 @@ type Item = {
   stage: string;
   sourceUrls: string[];
   mediaUrl: string;
+  mediaAssetId: string;
+  mediaRightsVerified?: boolean;
+  mediaProfileUrl?: string;
   cta: string;
   accountId: string;
   approval?: { name: string; at: number } | null;
@@ -112,6 +116,7 @@ const blank = (): Item => ({
   stage: "research",
   sourceUrls: [],
   mediaUrl: "",
+  mediaAssetId: "",
   cta: "",
   accountId: "",
 });
@@ -129,6 +134,7 @@ async function api(body?: unknown) {
   return value;
 }
 export function LiveFactoryPage() {
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [data, setData] = useState<Data | null>(null),
     [message, setMessage] = useState("Reading your content…"),
     [brand, setBrand] = useState("all"),
@@ -400,6 +406,18 @@ export function LiveFactoryPage() {
                     <span className="live-chip">
                       {c.brand === "tideline" ? "TideLine" : "WonPlace"} · {c.stage}
                     </span>
+                    {assets.find((a) => a.kind === "avatar" && a.brand === c.brand) && (
+                      <img
+                        className="live-page-avatar"
+                        src={
+                          "/api/content-media/" +
+                          assets.find((a) => a.kind === "avatar" && a.brand === c.brand)!.id
+                        }
+                        alt={c.brand + " page avatar"}
+                        width={36}
+                        height={36}
+                      />
+                    )}
                     <div className="live-type-art">
                       <span>{c.kind === "published" ? "Published source" : "Working brief"}</span>
                       <b>{c.title}</b>
@@ -429,6 +447,25 @@ export function LiveFactoryPage() {
                   </span>
                   <h2>{published.title}</h2>
                   <pre>{published.text}</pre>
+                  {assets
+                    .filter(
+                      (a) =>
+                        a.postId === published.id &&
+                        a.kind === "original" &&
+                        a.mime === "video/mp4",
+                    )
+                    .map((a) => (
+                      <div key={a.id}>
+                        <video
+                          controls
+                          preload="metadata"
+                          playsInline
+                          src={"/api/content-media/" + a.id}
+                          style={{ width: "100%", maxWidth: 850, borderRadius: 12 }}
+                        />
+                        <p className="live-muted">{a.provenance}</p>
+                      </div>
+                    ))}
                   <a href={published.url} target="_blank" rel="noreferrer">
                     Open the actual LinkedIn post ↗
                   </a>
@@ -531,6 +568,31 @@ export function LiveFactoryPage() {
                     <>
                       {field("format", "Format")}
                       {field("copy", "Final post copy — written and reviewed by your team", true)}
+                      <label className="live-field">
+                        Verified publisher-branded footage
+                        <select
+                          aria-label="Verified footage"
+                          value={draft.mediaAssetId || ""}
+                          onChange={(e) => edit("mediaAssetId", e.target.value)}
+                        >
+                          <option value="">Choose verified footage</option>
+                          {assets
+                            .filter((a) => a.kind === "branded" && a.brand === draft.brand)
+                            .map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.title}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      {draft.mediaAssetId && (
+                        <video
+                          controls
+                          preload="metadata"
+                          src={"/api/content-media/" + draft.mediaAssetId}
+                          style={{ width: "100%", maxWidth: 800 }}
+                        />
+                      )}
                       {field("mediaUrl", "Real media or recording URL")}
                       {field("cta", "Useful next step / call to action", true)}
                       <p className="live-muted">
@@ -566,7 +628,8 @@ export function LiveFactoryPage() {
                           !draft.value ||
                           !draft.cta ||
                           !draft.sourceUrls.length ||
-                          !draft.product
+                          !draft.product ||
+                          (Boolean(draft.mediaAssetId) && !draft.mediaRightsVerified)
                         }
                         onClick={() => void command("approve")}
                       >
@@ -602,6 +665,7 @@ export function LiveFactoryPage() {
                 </>
               )}
             </section>
+            <OperationsPanel itemId={draft?.id || ""} onMedia={setAssets} />
             <div className="live-columns">
               <section className="live-panel">
                 <span className="live-eyebrow">STRATEGY / CURRENT PRIORITY</span>

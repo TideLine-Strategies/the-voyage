@@ -55,6 +55,7 @@ test("approval uses server identity, stale edit is invalidated and conflicts can
   await page.getByLabel("Title", { exact: true }).fill(title);
   await page.getByLabel("Stage", { exact: true }).selectOption("approval");
   await page.getByRole("tab", { name: "Post & media" }).click();
+  await page.getByLabel("Format", { exact: true }).fill("Text checklist");
   await page
     .getByLabel("Final post copy — written and reviewed by your team")
     .fill("Acceptance test only: reviewed coach update workflow.");
@@ -77,17 +78,47 @@ test("approval uses server identity, stale edit is invalidated and conflicts can
   const data = await (await page.request.get("/api/content-factory")).json();
   const item = data.items.find((i: { title: string }) => i.title === title);
   const conflict = await page.request.post("/api/content-factory", {
-    headers: { origin: "http://127.0.0.1:17901" },
+    headers: { origin: process.env["FACTORY_TEST_ORIGIN"] || "http://127.0.0.1:17902" },
     data: { action: "save", id: item.id, revision: 0, item },
   });
   expect(conflict.status()).toBe(409);
 });
 test("anonymous requests cannot read sources or modify editorial work", async ({ playwright }) => {
-  const request = await playwright.request.newContext({ baseURL: "http://127.0.0.1:17901" });
+  const request = await playwright.request.newContext({
+    baseURL: process.env["FACTORY_TEST_ORIGIN"] || "http://127.0.0.1:17902",
+  });
   expect((await request.get("/api/content-factory")).status()).toBe(403);
   expect((await request.get("/factory/")).status()).toBe(403);
   expect((await request.post("/api/content-factory", { data: { action: "save" } })).status()).toBe(
     403,
   );
   await request.dispose();
+});
+test("dated research, real private video and governed policies are usable", async ({
+  page,
+}, info) => {
+  const panel = page.locator("#production-evidence");
+  await expect(panel.getByRole("heading", { name: "This week in our niche" })).toBeVisible();
+  await expect(panel.getByText("Run a governed pass", { exact: true })).toBeVisible();
+  const data = await (await page.request.get("/api/content-ops")).json();
+  expect(data.research.observations.length).toBeGreaterThan(2);
+  expect(data.docs).toHaveLength(7);
+  expect(
+    data.insights.weekly.every(
+      (x: { publishedAt: string }) => Date.parse(x.publishedAt) <= Date.now(),
+    ),
+  ).toBe(true);
+  const asset = data.media.find(
+    (a: { kind: string; brand: string }) => a.kind === "branded" && a.brand === "tideline",
+  );
+  expect(asset).toBeTruthy();
+  const range = await page.request.get("/api/content-media/" + asset.id, {
+    headers: { range: "bytes=0-100" },
+  });
+  expect(range.status()).toBe(206);
+  expect((await range.body()).length).toBe(101);
+  const video = panel.locator("video").first();
+  await video.scrollIntoViewIfNeeded();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState)).toBeGreaterThan(0);
+  await page.screenshot({ path: info.outputPath("real-media-and-research.png") });
 });

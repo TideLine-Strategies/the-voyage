@@ -4,15 +4,15 @@ const headers={'cache-control':'private, no-store','x-content-type-options':'nos
 const reply=(v,s=200)=>Response.json(v,{status:s,headers});
 const stages=new Set(['research','scripting','filming','editing','approval','posting']);
 const clean=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
-const fields=['title','brand','product','audience','pain','value','brief','copy','format','stage','sourceUrls','mediaUrl','cta','accountId'];
+const fields=['title','brand','product','audience','pain','value','brief','copy','format','stage','sourceUrls','mediaUrl','mediaAssetId','cta','accountId'];
 export function editorial(input){
- const item={title:clean(input.title,180),brand:input.brand,product:clean(input.product,100),audience:clean(input.audience,300),pain:clean(input.pain,1000),value:clean(input.value,2000),brief:clean(input.brief,6000),copy:clean(input.copy,12000),format:clean(input.format,100),stage:input.stage,sourceUrls:(Array.isArray(input.sourceUrls)?input.sourceUrls:[]).slice(0,12).map(url=>{const u=new URL(url);if(u.protocol!=='https:'||u.username||u.password)throw Error('Use public HTTPS evidence links');return u.toString();}),mediaUrl:clean(input.mediaUrl,1000),cta:clean(input.cta,1000),accountId:clean(input.accountId,100)};
+ const item={title:clean(input.title,180),brand:input.brand,product:clean(input.product,100),audience:clean(input.audience,300),pain:clean(input.pain,1000),value:clean(input.value,2000),brief:clean(input.brief,6000),copy:clean(input.copy,12000),format:clean(input.format,100),stage:input.stage,sourceUrls:(Array.isArray(input.sourceUrls)?input.sourceUrls:[]).slice(0,12).map(url=>{const u=new URL(url);if(u.protocol!=='https:'||u.username||u.password)throw Error('Use public HTTPS evidence links');return u.toString();}),mediaUrl:clean(input.mediaUrl,1000),mediaAssetId:clean(input.mediaAssetId,64),cta:clean(input.cta,1000),accountId:clean(input.accountId,100)};
  if(!item.title||!['tideline','wonplace'].includes(item.brand)||!stages.has(item.stage))throw Error('A title, brand and valid stage are required');
  if(item.mediaUrl){const u=new URL(item.mediaUrl);if(u.protocol!=='https:'||u.username||u.password)throw Error('Use HTTPS media links');}
  return item;
 }
 export async function fingerprint(item){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(Object.fromEntries(fields.filter(k=>k!=='stage'&&k!=='accountId').map(k=>[k,item[k]])))));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-export function approvalProblems(item){return [!item.copy&&'Add the final post copy.',!item.value&&'Describe the immediate takeaway.',!item.sourceUrls.length&&'Attach source evidence.',!item.cta&&'Add the next step or call to action.',!item.product&&'Identify the product or service.'].filter(Boolean);}
+export function approvalProblems(item){return [!item.copy&&'Add the final post copy.',!item.value&&'Describe the immediate takeaway.',!item.sourceUrls.length&&'Attach source evidence.',!item.cta&&'Add the next step or call to action.',!item.product&&'Identify the product or service.',item.mediaAssetId&&item.mediaRightsVerified!==true&&'Verify rights for this footage before approval.',/video|recording|clip/i.test(item.format||'')&&!item.mediaAssetId&&'Choose verified footage and publisher branding for this video.'].filter(Boolean);}
 async function row(env,id){return env.DB.prepare('SELECT data_json, revision FROM documents WHERE collection=? AND id=?').bind('content_editorial',id).first();}
 export async function handleFactory(request,env,actor,readJson){
  if(actor.role!=='edit')return reply({error:'Not available to guests'},403);
@@ -35,6 +35,7 @@ export async function handleFactory(request,env,actor,readJson){
   if(body.action==='save'){
    item=editorial(body.item||{});
    if(item.accountId&&!await env.DB.prepare('SELECT id FROM documents WHERE collection=? AND id=?').bind('opps',item.accountId).first())throw Error('The linked account was not found');
+   if(item.mediaAssetId){const media=await env.DB.prepare('SELECT data_json FROM documents WHERE collection=? AND id=?').bind('content_media',item.mediaAssetId).first();const asset=media?JSON.parse(media.data_json):null;if(!asset?.ready||asset.kind!=='branded'||asset.brand!==item.brand)throw Error('Choose a verified derivative for this publisher');item.mediaRightsVerified=asset.rightsVerified===true;item.mediaProfileUrl=asset.profileUrl;}
    const hash=await fingerprint(item),changed=old&&hash!==await fingerprint(old);
    item={...item,approval:changed?null:old?.approval||null,approvalStale:!!(changed&&old?.approval),createdAt:old?.createdAt||Date.now()};
    if(item.stage==='posting'&&!item.approval)throw Error('Human approval is required before posting preparation');
@@ -62,5 +63,5 @@ export function baselineSnapshot(input){
 export async function factoryContext(env){
  const result=await env.DB.prepare('SELECT id,data_json,revision FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 30').bind('content_editorial').all();
  const baseline=await env.DB.prepare('SELECT data_json FROM documents WHERE collection=? AND id=?').bind('content_baseline','linkedin').first();
- return '\nLIVE CONTENT FACTORY: Source posts are immutable observations. Research briefs are not post drafts or customer claims. Approval is for the exact saved package; it does not publish. No social dispatch or AI generation is granted by this context. Missing analytics remain unavailable. Prioritize gym owners and admin staff, immediate useful takeaways and real WonPlace proof. Never invent footage, customer quotes, savings, retention or revenue results.\n'+JSON.stringify({baseline:baseline?JSON.parse(baseline.data_json):null,editorial:result.results.map(r=>({id:r.id,revision:r.revision,...JSON.parse(r.data_json)})),research:CONTENT_RESEARCH}).slice(0,28000);
+ return '\nLIVE CONTENT FACTORY: Source posts are immutable observations. Research briefs are not post drafts or customer claims. Approval is for the exact saved package; it does not publish. No social dispatch is granted by this context. Governed decision runs may produce evidence-linked drafts; those remain subject to named human review. Missing analytics remain unavailable. Prioritize gym owners and admin staff, immediate useful takeaways and real WonPlace proof. Never invent footage, customer quotes, savings, retention or revenue results.\n'+JSON.stringify({baseline:baseline?JSON.parse(baseline.data_json):null,editorial:result.results.map(r=>({id:r.id,revision:r.revision,...JSON.parse(r.data_json)})),research:CONTENT_RESEARCH}).slice(0,28000);
 }

@@ -1,3 +1,5 @@
+import {handleOps,ingestOps} from "./content-ops.js";
+import {serveMedia,ingestMedia} from "./content-media.js";
 import {handleFactory,baselineSnapshot,factoryContext} from "./content-factory.js";
 import {handleContent,ingestContent,contentContext} from './content.js';
 import {handleCompany,ingestCompany,companyContext,verifySource} from "./company-ops.js";
@@ -820,6 +822,8 @@ async function handleApi(request, env, actor, path) {
     const problem = await activityContactProblem(request, env, path, method);
     if (problem) return error(problem, 400);
   }
+  if (path[1] === "content-ops") return handleOps(request,env,actor,readJson);
+  if (path[1] === "content-media") return serveMedia(request,env,actor,path[2]);
   if (path[1] === "content-factory") {
     const response=await handleFactory(request,env,actor,readJson);
     if(request.method==='POST'&&response.ok){const saved=await response.clone().json();await audit(env,actor.id,'Content updated','content_editorial',saved.id,saved.title);}
@@ -926,6 +930,17 @@ export default {
     const pathName = new URL(request.url).pathname;
     if(pathName === "/__release.json" && request.method === "GET") return Response.json({commit:env.RELEASE_COMMIT||null,product:"voyage"},{headers:{"cache-control":"no-store"}});
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
+    if(pathName === "/api/content-agent-source" && request.method === "POST") {
+      let body;try{body=await readJson(request);}catch{return error("Invalid agent source",400);}
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,JSON.stringify(body)))return error("Source authentication required",401);
+      return ingestOps(env,body);
+    }
+    if(pathName === "/api/content-media-source" && request.method === "POST") {
+      const length=Number(request.headers.get("content-length")||0);if(length>1600000)return error("Media batch too large",413);
+      let raw="";const reader=request.body?.getReader();if(!reader)return error("Body required",400);const decoder=new TextDecoder();let size=0;for(;;){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>1600000){await reader.cancel();return error("Media batch too large",413);}raw+=decoder.decode(part.value,{stream:true});}raw+=decoder.decode();
+      if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,raw))return error("Source authentication required",401);
+      try{return await ingestMedia(env,JSON.parse(raw));}catch{return error("Invalid media request",400);}
+    }
     if(pathName === "/api/content-factory-source" && request.method === "GET") {
       if(!await verifySource(request,env.TIDELINE_OPERATIONS_SECRET,''))return error("Source authentication required",401);
       const row=await env.DB.prepare("SELECT data_json FROM documents WHERE collection=? AND id=?").bind("content_baseline","linkedin").first();return reply({baseline:row?JSON.parse(row.data_json):null});

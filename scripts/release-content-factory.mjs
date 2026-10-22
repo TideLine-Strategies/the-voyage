@@ -9,14 +9,14 @@ if(process.argv.includes('--apply'))cli(['deploy','--keep-vars','--var','RELEASE
 const deployments=JSON.parse(cli(['deployments','list','--name','the-voyage','--json'])),active=deployments.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1),version=active?.versions.find(v=>v.percentage===100)?.version_id;assert(version);
 const detail=JSON.parse(cli(['versions','view',version,'--name','the-voyage','--json']));assert.equal(detail.annotations?.['workers/message'],'content-factory:'+commit,'Active provider revision differs; reconcile without replaying deployment');
 if(process.argv.includes('--apply')||process.argv.includes('--reconcile')){
- for(const script of ['scripts/content-sync.mjs','scripts/content-baseline-sync.mjs'])execFileSync(process.execPath,[script,...(script.includes('baseline')?[]:['--send'])],{stdio:'inherit'});
- if(process.argv.includes('--apply'))execFileSync(process.execPath,['scripts/install-content-sync.mjs'],{stdio:'inherit'});
+ for(const script of ['scripts/content-sync.mjs','scripts/content-baseline-sync.mjs','scripts/content-import-assets.mjs'])execFileSync(process.execPath,[script,...(script.endsWith('/content-sync.mjs')?['--send']:[])],{stdio:'inherit'});
+ if(process.argv.includes('--apply')){for(const script of ['scripts/install-content-sync.mjs','scripts/install-content-operator.mjs'])execFileSync(process.execPath,[script],{stdio:'inherit'});}
 }
 if(process.argv.includes('--verify')){
  const url=config.voyageOrigin+'/api/content-factory-source',r=await fetch(url,{headers:await signedHeaders(config.secrets.tideline,'GET',url,'factory-release'),redirect:'manual',signal:AbortSignal.timeout(15000)});assert.equal(r.status,200);const source=await r.json();assert.equal(source.baseline?.posts.length,2);
- for(const route of ['/factory/','/api/content-factory'])assert.equal((await fetch(config.voyageOrigin+route,{redirect:'manual',signal:AbortSignal.timeout(15000)})).status,403);
+ for(const route of ['/factory/','/api/content-factory','/api/content-ops'])assert.equal((await fetch(config.voyageOrigin+route,{redirect:'manual',signal:AbortSignal.timeout(15000)})).status,403);
  const live=await (await fetch(config.voyageOrigin+'/__release.json',{signal:AbortSignal.timeout(15000)})).json();assert.equal(live.commit,commit);
- const uiFile=process.env.CONTENT_FACTORY_UI_RECEIPT;assert(uiFile,'Signed-in live acceptance receipt required');const ui=JSON.parse(await fs.readFile(uiFile,'utf8'));assert.equal(ui.commit,commit);for(const key of ['accepted','twoPublishedSourcesVerified','serverPersistenceVerified','approvalIdentityVerified','staleApprovalVerified','responsiveVerified','noPlaceholdersVerified'])assert.equal(ui[key],true,'Live UI acceptance required: '+key);assert(ui.screenshot);
+ const uiFile=process.env.CONTENT_FACTORY_UI_RECEIPT;assert(uiFile,'Signed-in live acceptance receipt required');const ui=JSON.parse(await fs.readFile(uiFile,'utf8'));assert.equal(ui.commit,commit);for(const key of ['accepted','twoPublishedSourcesVerified','serverPersistenceVerified','approvalIdentityVerified','staleApprovalVerified','responsiveVerified','noPlaceholdersVerified','privateMediaPlaybackVerified','publisherAvatarVerified','researchDatesVerified','agentPassAndLivingDocsVerified'])assert.equal(ui[key],true,'Live UI acceptance required: '+key);assert(ui.screenshot);
  await fs.writeFile(process.env.AGENT_RELEASE_RECEIPT,JSON.stringify({commit,deploymentId:active.id,accepted:true,evidence:{version,sourcePosts:source.baseline.posts.map(p=>p.id),anonymousDenied:true,ui}}));
 }
 console.log(JSON.stringify({commit,deploymentId:active.id,version}));
