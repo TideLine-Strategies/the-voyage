@@ -1,0 +1,13 @@
+# Company Performance Canvas
+
+Company is a viewport-contained workspace on desktop (1024px and wider). The chart, UTC date timeline, evidence and acquisition cells share one grid. Opening a tool moves preserved form nodes into an inspector and animates the grid; expanding gives that tool the available workspace. Mobile uses document scrolling. Reduced-motion preferences disable morph animations.
+
+Every measurement retains its source, freshness, unit and aggregation window. Daily chart headlines sum only recorded buckets inside the date selection; gaps remain gaps. Target state refers to the latest source measurement, not the selected period sum. Rolling provider counters are never interpreted as daily traffic. Website page views are not social views. Unknown and stale sources are coverage gaps, not red business failures. Threshold breaches and overdue CRM follow-through receive red emphasis.
+
+Website figures currently come from existing first-party collection. The owner authorized creating GA4 after the business account showed no existing property. Property 560643880 / stream 16194490959 / measurement G-MT88JH46JC was created in that account; tag deployment and reporting access remain separate gates. The canvas links the actual property and keeps its first-party counts distinct until the reporting connection is verified. Social reads existing content-engine LinkedIn observations on demand and labels their observation time. Impressions, video retention and TikTok data remain unavailable without authorized sources. Sales reads the existing CRM with its permissions, labels all-product business scope and a 2,000-record cap, and opens canonical account tools. Prospect records are not qualified leads. Finance reuses the existing currency-aware ledger and revision checks; bank reconciliation is not connected.
+
+Settings and targets remain persisted through the existing Company API. Provider links are navigation controls, not proof of API synchronization. Switching products clears the inspector and invalidates in-flight data. No publishing, messaging, billing or bank connection is activated by this layout.
+
+## Verification
+
+Run `npm run check`. For browser acceptance, run `node scripts/preview-company-cockpit.mjs` in one terminal, then `node scripts/verify-performance-canvas.mjs` with Playwright installed (or `PLAYWRIGHT_MODULE` set to an installed Playwright module). The preview is explicitly synthetic and binds localhost only; it must never seed production. Browser checks cover 1440×900, 1280×720, 1024×768 and 390×844, all inspector modules, expand/restore, date brush, day evidence, retained forms, metric search, reduced motion and leaving Company. Actual signed-in production acceptance remains a separate release gate.

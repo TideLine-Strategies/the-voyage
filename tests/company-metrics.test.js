@@ -36,3 +36,13 @@ test('WonPlace marketing remains measurable when app diagnostics are unavailable
  assert.equal(metric(wonplace,'site.visits').current,7);assert.equal(metric(wonplace,'content.views').current,11);assert.equal(metric(wonplace,'staff.active').current,null);
  assert.equal(metric(buildCockpit(summary({company:'tideline'}),source,[],now),'site.visits').current,null);
 });
+
+test('website defaults focus on acquisition without overwriting saved product settings',()=>{
+ const website=buildCockpit(summary({company:'tideline'}),{},[],now);
+ assert.deepEqual(website.settings.focus,['site.visits','content.views','revenue.received']);
+ assert.match(metric(website,'content.views').label,/Website page views/);
+ assert.match(metric(website,'content.views').description,/not video/);
+ const saved={aim:'Retain our explicit aim',focus:['api.errors'],rules:{}};
+ assert.deepEqual(buildCockpit(summary({company:'tideline',cockpit:saved}),{},[],now).settings,saved);
+ assert.deepEqual(buildCockpit(summary(),{},[],now).settings.focus,['customers.paying','api.errorRate','revenue.received']);
+});
