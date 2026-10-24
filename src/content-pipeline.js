@@ -3,7 +3,7 @@ import {packageFingerprint} from './content-package.js';
 // A model recommendation is never treated as a recording, approval or delivery.
 const collection='content_pipeline_receipts';
 async function read(env,c,id){const r=await env.DB.prepare('SELECT data_json,revision FROM documents WHERE collection=? AND id=?').bind(c,id).first();return r?{value:JSON.parse(r.data_json),revision:r.revision}:null;}
-export async function recordTransition(env,{eventId,itemId,expectedRevision,from,to,patch={},step,source,reason,actor='Content operator',preserveApproval=false}){
+export async function recordTransition(env,{eventId,itemId,expectedRevision,from,to,patch={},step,source,reason,actor='Content operator',preserveApproval=false,guard=null}){
  const prior=await read(env,collection,eventId);if(prior)return {...prior.value,duplicate:true};
  const stored=await read(env,'content_editorial',itemId);const at=Date.now();
  const eligible=!!stored&&stored.revision===expectedRevision&&stored.value.stage===from;
@@ -11,7 +11,7 @@ export async function recordTransition(env,{eventId,itemId,expectedRevision,from
  if(!eligible){await env.DB.prepare('INSERT OR IGNORE INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?)').bind(collection,eventId,JSON.stringify(receipt),at).run();return receipt;}
  const old=stored.value,next={...old,...patch,stage:to,approval:preserveApproval?old.approval:null,approvalStale:preserveApproval?old.approvalStale:!!old.approval,updatedAt:at,updatedBy:'content-pipeline',production:{...old.production,...patch.production,lastEvent:eventId},activity:[{at,by:'content-pipeline',name:actor,action:reason},...(old.activity||[])].slice(0,60)};
  const result=await env.DB.batch([
-  env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=? AND NOT EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=?)').bind(JSON.stringify(next),at,'content_editorial',itemId,expectedRevision,collection,eventId),
+  env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=? AND NOT EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=?)'+(guard?' AND EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)':'')).bind(JSON.stringify(next),at,'content_editorial',itemId,expectedRevision,collection,eventId,...(guard?[guard.collection,guard.id,guard.revision]:[])),
   env.DB.prepare("INSERT OR IGNORE INTO documents(collection,id,data_json,revision,updated_at) SELECT ?,?,?,1,? WHERE EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND json_extract(data_json,'$.production.lastEvent')=?)").bind(collection,eventId,JSON.stringify(receipt),at,'content_editorial',itemId,eventId)
  ]);
  return result[0].meta.changes===1?receipt:{...receipt,status:'held',reason:'Another edit or completion won the race'};
@@ -36,15 +36,15 @@ export async function advanceDecision(env,run,decision,runId){
  const patch={sourceUrls:[...new Set([...(old.value.sourceUrls||[]),...evidence])].slice(0,12),production:{...old.value.production,steps:{...old.value.production?.steps,[run.step]:{runId,at:Date.now(),summary:decision.summary,evidenceIds:decision.evidenceIds,shotList:decision.shotList||[]}}},...(run.step==='scripting'?{copy:decision.draftCopy}:{})};
  return recordTransition(env,{eventId:'decision-'+runId,itemId,expectedRevision:revision,from:run.step,to:run.step==='research'?'scripting':'filming',patch,step:run.step,source:'signed-decision-completion',reason:run.step==='research'?'Evidence-backed research completed':'Unapproved script and shot list completed'});
 }
-export async function advanceMedia(env,asset,eventId,editorialId=asset.editorialId,expectedRevision,actor){
+export async function advanceMedia(env,asset,eventId,editorialId=asset.editorialId,expectedRevision,actor,guard=null){
  if(!editorialId)return {status:'held',reason:'Media is in the library; no editorial item attached'};
  const stored=await read(env,'content_editorial',editorialId);if(!stored)return {status:'held',reason:'Editorial item not found'};
  const item=stored.value;if(item.brand!==asset.brand||asset.mime!=='video/mp4'||!asset.ready)return {status:'held',reason:'A ready video for this brand is required'};
  let from,to,patch;
- if(item.stage==='filming'&&['original','capture'].includes(asset.kind)){from='filming';to='editing';patch={production:{...item.production,captureAssetId:asset.id}};}
+ if(item.stage==='filming'&&['original','capture'].includes(asset.kind)){from='filming';to='editing';patch={mediaAssetId:'',mediaRightsVerified:false,mediaProfileUrl:'',production:{...item.production,captureAssetId:asset.id}};}
  else if(item.stage==='editing'&&asset.kind==='branded'&&asset.rightsVerified===true&&(!item.production?.captureAssetId||item.production.captureAssetId===asset.originalId)){from='editing';to='approval';patch={mediaAssetId:asset.id,mediaRightsVerified:true,mediaProfileUrl:asset.profileUrl,production:{...item.production,finalAssetId:asset.id,captureAssetId:asset.originalId}};}
  else return {status:'held',reason:item.stage==='editing'?'A publisher-branded final with verified rights is required':'Media cannot skip the current station'};
- return recordTransition(env,{eventId,itemId:editorialId,expectedRevision:expectedRevision??stored.revision,from,to,patch,step:from,source:'verified-media',actor,reason:to==='editing'?'Constructed footage verified':'Final cut and publisher identity verified; awaiting human approval'});
+ return recordTransition(env,{eventId,itemId:editorialId,expectedRevision:expectedRevision??stored.revision,from,to,patch,step:from,source:'verified-media',actor,guard,reason:to==='editing'?'Constructed footage verified':'Final cut and publisher identity verified; awaiting human approval'});
 }
 export async function pipelineState(env){const r=await env.DB.prepare('SELECT data_json FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 30').bind(collection).all();return r.results.map(x=>JSON.parse(x.data_json));}
 

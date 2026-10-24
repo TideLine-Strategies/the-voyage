@@ -80,6 +80,16 @@ type Analytics = {
   }[];
 };
 export type State = {
+  analyticsStatus?: { checkedAt: string; observations: number; blockers: string[] } | null;
+  production?: {
+    id: string;
+    itemId: string;
+    mode: string;
+    status: string;
+    reason?: string;
+    startedAt: number;
+    finishedAt?: number;
+  }[];
   analytics?: Record<string, Analytics>;
   pipeline?: { eventId: string; step: string; status: string; reason: string; at: number }[];
   media: Asset[];
@@ -207,6 +217,29 @@ export function OperationsPanel({
             <>
               <details>
                 <summary>Completion receipts</summary>
+                {data.production?.map((j) => (
+                  <p key={j.id}>
+                    <b>
+                      {j.mode} · {j.status}
+                    </b>{" "}
+                    · {j.reason || "Actual production worker"}
+                    {j.status === "running" && (
+                      <button
+                        onClick={async () => {
+                          const response = await fetch("/api/content-ops", {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ action: "cancel_production", id: j.id }),
+                          });
+                          if (!response.ok) setStatus((await response.json()).error);
+                          await read();
+                        }}
+                      >
+                        Stop production
+                      </button>
+                    )}
+                  </p>
+                ))}
                 {data.pipeline?.map((r) => (
                   <p key={r.eventId}>
                     <b>
@@ -421,6 +454,18 @@ export function OperationsPanel({
           {panel === "analytics" && (
             <>
               <h3>Platform observations</h3>
+              {data.analyticsStatus && (
+                <details>
+                  <summary>
+                    Last native collection ·{" "}
+                    {new Date(data.analyticsStatus.checkedAt).toLocaleString()} ·{" "}
+                    {data.analyticsStatus.observations} observations
+                  </summary>
+                  {data.analyticsStatus.blockers.map((b, i) => (
+                    <p key={i}>{b}</p>
+                  ))}
+                </details>
+              )}
               {totals && (
                 <>
                   <p>

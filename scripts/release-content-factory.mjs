@@ -5,12 +5,13 @@ assert(process.argv.some(a=>['--apply','--verify','--reconcile'].includes(a)));
 const configFile=process.env.COMPANY_OPERATIONS_CONFIG;assert(configFile&&process.env.CONTENT_BASELINE_FILE,'Private source paths required');assert.equal((await fs.stat(configFile)).mode&0o077,0);
 const config=JSON.parse(await fs.readFile(configFile,'utf8'));assert.equal(config.voyageOrigin,'https://voyage.tidelinestrats.com');
 const cli=args=>execFileSync('node_modules/.bin/wrangler',[...args,'--profile','tideline'],{encoding:'utf8',env:{...process.env,CLOUDFLARE_ACCOUNT_ID:'58008ae4816f34f96786f0f52834dce5'},timeout:120000,maxBuffer:4000000,stdio:['ignore','pipe','pipe']});
+if(process.argv.includes('--apply'))assert.equal(execFileSync('git',['ls-remote','origin','refs/heads/main'],{encoding:'utf8'}).trim().split(/\s+/)[0],commit,'Only the published current main may deploy');
 if(process.argv.includes('--apply'))cli(['deploy','--keep-vars','--var','RELEASE_COMMIT:'+commit,'--message','content-factory:'+commit]);
 const deployments=JSON.parse(cli(['deployments','list','--name','the-voyage','--json'])),active=deployments.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1),version=active?.versions.find(v=>v.percentage===100)?.version_id;assert(version);
 const detail=JSON.parse(cli(['versions','view',version,'--name','the-voyage','--json']));assert.equal(detail.annotations?.['workers/message'],'content-factory:'+commit,'Active provider revision differs; reconcile without replaying deployment');
 if(process.argv.includes('--apply')||process.argv.includes('--reconcile')){
  for(const script of ['scripts/content-sync.mjs','scripts/content-baseline-sync.mjs','scripts/content-import-assets.mjs'])execFileSync(process.execPath,[script,...(script.endsWith('/content-sync.mjs')?['--send']:[])],{stdio:'inherit'});
- if(process.argv.includes('--apply')){for(const script of ['scripts/install-content-sync.mjs','scripts/install-content-operator.mjs'])execFileSync(process.execPath,[script],{stdio:'inherit'});}
+ if(process.argv.includes('--apply')){for(const script of ['scripts/install-factory-native.mjs','scripts/install-content-sync.mjs','scripts/install-content-operator.mjs'])execFileSync(process.execPath,[script],{stdio:'inherit'});}
 }
 if(process.argv.includes('--verify')){
  const url=config.voyageOrigin+'/api/content-factory-source',r=await fetch(url,{headers:await signedHeaders(config.secrets.tideline,'GET',url,'factory-release'),redirect:'manual',signal:AbortSignal.timeout(15000)});assert.equal(r.status,200);const source=await r.json();assert.equal(source.baseline?.posts.length,2);

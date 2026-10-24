@@ -35,7 +35,7 @@ read-only actions, privacy-safe aggregate screens, and an actual recording
 receipt. A missing or failed action cannot become a success claim. The earlier
 Spring navigation/invoice failures remain failures.
 
-Release uses the managed coordinator and protected PR review. The release script
+Release uses the managed coordinator, tests and direct-main publication. The release script
 imports private media and research only after provider revision reconciliation,
 then installs the operator. Live acceptance requires signed-in playback,
 publisher identity, dated research, a real completed LLM pass and its persisted

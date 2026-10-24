@@ -8,18 +8,20 @@ Keep sandbox data separate from the TideLine CRM.
 
 ## Each change
 
-1. Pull the latest `main` from the shared repository. Create a short-lived
-   topic branch, such as `cody/company-bio` or `quan/meeting-notes`. There is
-   no permanent branch for either person.
-2. Make the change in an isolated worktree. Run `npm ci` and `npm run check`.
-   For work on this shared Mac, follow the registered `agent-workspace`
-   protocol in `CLAUDE.md`.
-3. Push the topic branch to the shared repository and open a pull request to
-   `main`. Describe the user-visible change, test results, data or access
-   impact, and any SQL migration. The other person reviews it.
-4. Merge only after the required GitHub check and one review pass. A merge to
-   `main` starts Cloudflare Workers Builds for the TideLine production Worker.
-   Verify the build and active deployment before announcing the change as live.
+1. Pull the latest `main` from the shared repository. On this Mac, make changes
+   in a registered isolated worktree following `CLAUDE.md` and the workspace protocol.
+2. Run `npm ci`, `npm run check`, and the checks appropriate to the changed UI.
+3. Quan and Cody may push tested changes directly to `main` without the other
+   person's review. Pull requests and reviews are optional collaboration tools.
+   Managed agents publish through the coordinator, which checks current upstream
+   and serializes the short main publication step.
+4. CI still runs on `main` after a push. A main update starts the existing
+   production build. Verify the active deployment and the actual changed behavior
+   before calling a release live. Force pushes and main deletion remain disabled.
+
+This direct-main policy was explicitly authorized by Quan on October 24, 2026.
+It replaces the previous mutual-review and required-pre-push-check policy. It does
+not remove human approval of social content, authentication or account permissions.
 
 Do not commit a personal Cloudflare account's database ID, Worker route, token,
 or production data to this repository. In particular, keep `wrangler.jsonc`

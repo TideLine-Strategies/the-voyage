@@ -15,7 +15,7 @@ export function editorial(input){
  return item;
 }
 export const fingerprint=packageFingerprint;
-export function approvalProblems(item){return [!item.copy&&'Add the final post copy.',!item.value&&'Describe the immediate takeaway.',!item.sourceUrls.length&&'Attach source evidence.',!item.cta&&'Add the next step or call to action.',!item.product&&'Identify the product or service.',item.mediaAssetId&&item.mediaRightsVerified!==true&&'Verify rights for this footage before approval.',/video|recording|clip/i.test(item.format||'')&&!item.mediaAssetId&&'Choose verified footage and publisher branding for this video.'].filter(Boolean);}
+export function approvalProblems(item){return [item.brand==='wonplace'&&(item.title||'').length>100&&'Keep the approved title within YouTube’s 100-character limit.',item.brand==='wonplace'&&!item.mediaAssetId&&'The six-platform package needs verified video for the video destinations.',item.brand==='wonplace'&&item.copy.length>280&&'Keep the six-platform master copy within 280 characters, including spaces.',item.brand==='tideline'&&item.copy.length>3000&&'Keep LinkedIn copy within 3000 characters.',!item.copy&&'Add the final post copy.',!item.value&&'Describe the immediate takeaway.',!item.sourceUrls.length&&'Attach source evidence.',!item.cta&&'Add the next step or call to action.',!item.product&&'Identify the product or service.',item.mediaAssetId&&item.mediaRightsVerified!==true&&'Verify rights for this footage before approval.',/video|recording|clip/i.test(item.format||'')&&!item.mediaAssetId&&'Choose verified footage and publisher branding for this video.'].filter(Boolean);}
 async function row(env,id){return env.DB.prepare('SELECT data_json, revision FROM documents WHERE collection=? AND id=?').bind('content_editorial',id).first();}
 export async function handleFactory(request,env,actor,readJson){
  if(actor.role!=='edit')return reply({error:'Not available to guests'},403);
@@ -24,7 +24,7 @@ export async function handleFactory(request,env,actor,readJson){
  if(request.method==='GET'){
   const results=await env.DB.prepare('SELECT id,data_json,revision FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 100').bind('content_editorial').all();
   const baseline=await env.DB.prepare('SELECT data_json FROM documents WHERE collection=? AND id=?').bind('content_baseline','linkedin').first();
-  return reply({actor:{id:actor.id,name:actor.name},items:results.results.map(r=>({...JSON.parse(r.data_json),id:r.id,revision:r.revision})),baseline:baseline?JSON.parse(baseline.data_json):null,research:CONTENT_RESEARCH,brands:await Promise.all(['tideline','wonplace'].map(b=>readContent(env,b))),publishing:{enabled:false,reason:'Review and preparation are live. Dispatch stays in the existing publishing workflow; this page does not send posts.'},metrics:null});
+  return reply({actor:{id:actor.id,name:actor.name},items:results.results.map(r=>({...JSON.parse(r.data_json),id:r.id,revision:r.revision})),baseline:baseline?JSON.parse(baseline.data_json):null,research:CONTENT_RESEARCH,brands:await Promise.all(['tideline','wonplace'].map(b=>readContent(env,b))),publishing:{enabled:true,reason:'Named approval queues this exact saved package for the native publisher. Account identity, rights, route verification and actual publication receipts still apply.'},metrics:null});
  }
  if(request.method!=='POST')return reply({error:'Not found'},404);
  if(request.headers.get('origin')!==url.origin)return reply({error:'Same-origin request required'},403);
