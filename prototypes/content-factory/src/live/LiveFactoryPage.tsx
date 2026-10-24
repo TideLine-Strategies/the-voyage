@@ -1,5 +1,7 @@
-import { OperationsPanel, type Asset } from "./OperationsPanel";
-import { useEffect, useState } from "react";
+import { MediaLoop } from "./MediaLoop";
+import { StationBoard } from "./StationBoard";
+import { OperationsPanel, type Asset, type State } from "./OperationsPanel";
+import { useEffect, useState, useRef } from "react";
 type Source = {
   id: string;
   title: string;
@@ -22,7 +24,13 @@ type Brief = {
   sourceIds: string[];
   status: string;
 };
-type Item = {
+export type Item = {
+  production?: {
+    captureAssetId?: string;
+    finalAssetId?: string;
+    campaignId?: string;
+    steps?: Record<string, unknown>;
+  };
   id: string;
   revision: number;
   title: string;
@@ -58,7 +66,7 @@ type Published = {
   reposts: number | null;
   note: string;
 };
-type Data = {
+export type Data = {
   actor: { id: string; name: string };
   items: Item[];
   baseline: { posts: Published[]; checkedAt: string } | null;
@@ -76,6 +84,7 @@ type Data = {
     snapshot: {
       checkedAt: string;
       campaigns: {
+        id: string;
         title: string;
         sourceStatus: string;
         sourceUrl: string | null;
@@ -134,6 +143,10 @@ async function api(body?: unknown) {
   return value;
 }
 export function LiveFactoryPage() {
+  const [campaignLink, setCampaignLink] = useState("");
+  const [pane, setPane] = useState("line");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [ops, setOps] = useState<State | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [data, setData] = useState<Data | null>(null),
     [message, setMessage] = useState("Reading your content…"),
@@ -144,6 +157,8 @@ export function LiveFactoryPage() {
     [busy, setBusy] = useState(false),
     [tab, setTab] = useState("brief"),
     [note, setNote] = useState("");
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
   const refresh = async () => {
     try {
       const value: Data = await api();
@@ -156,6 +171,14 @@ export function LiveFactoryPage() {
   };
   useEffect(() => {
     void refresh();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible" && navigator.onLine) void refresh();
+    }, 60000);
+    try {
+      const theme = localStorage.getItem("voyage-theme");
+      if (theme) document.documentElement.dataset["theme"] = theme;
+    } catch {}
+    return () => clearInterval(timer);
   }, []);
   useEffect(() => {
     const f = (e: BeforeUnloadEvent) => {
@@ -164,6 +187,44 @@ export function LiveFactoryPage() {
     window.addEventListener("beforeunload", f);
     return () => window.removeEventListener("beforeunload", f);
   }, [dirty]);
+  useEffect(() => {
+    if (dirty || !draft?.id) return;
+    const current = data?.items.find((i) => i.id === draft.id);
+    if (current && current.revision !== draft.revision) setDraft(current);
+  }, [data, dirty, draft?.id, draft?.revision]);
+  useEffect(() => {
+    if (!inspectorOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = document.getElementById("inspector");
+    const controls = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>("button,input,select,textarea,a[href]") || [],
+      ).filter((e) => !e.hasAttribute("disabled") && e.getClientRects().length > 0);
+    controls()[0]?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (!dirtyRef.current || window.confirm("Discard your unsaved edits?"))
+          setInspectorOpen(false);
+      }
+      if (e.key === "Tab") {
+        const list = controls(),
+          first = list[0],
+          last = list.at(-1);
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("keydown", key);
+      previous?.focus();
+    };
+  }, [inspectorOpen]);
   const posts = data?.baseline?.posts || [];
   const cards = [
     ...(data?.items || [])
@@ -195,6 +256,7 @@ export function LiveFactoryPage() {
   const mayLeave = () => !dirty || window.confirm("Discard your unsaved edits?");
   function choose(id: string) {
     if (!mayLeave()) return;
+    setInspectorOpen(true);
     setSelected(id);
     setDraft(data?.items.find((i) => i.id === id) || null);
     setDirty(false);
@@ -202,6 +264,7 @@ export function LiveFactoryPage() {
   }
   function newItem(brief?: Brief) {
     if (!mayLeave()) return;
+    setInspectorOpen(true);
     setSelected("new");
     setDraft({
       ...blank(),
@@ -271,7 +334,8 @@ export function LiveFactoryPage() {
     <div className="live-shell">
       <aside className="live-sidebar">
         <a className="live-logo" href="/">
-          V<span>Voyage</span>
+          <i className="factory-voyage-mark" />
+          <span>Voyage</span>
         </a>
         <nav aria-label="Workspace">
           <a href="/">Workspace</a>
@@ -361,85 +425,50 @@ export function LiveFactoryPage() {
                 {cards.length} real records · {data.items.length} editorial items
               </span>
             </div>
-            <div className="live-stages">
-              {stages.map(([id, label], i) => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    const card = cards.find((c) => c.stage === id);
-                    if (card) choose(card.id);
-                  }}
-                >
-                  <small>{i + 1}</small>
+            <nav className="factory-dock" aria-label="Content controls">
+              {[
+                ["line", "Assembly line"],
+                ["research", "Ideas"],
+                ["operations", "Automation & media"],
+                ["deliveries", "Publishing"],
+                ["sources", "Source library"],
+              ].map(([id, label]) => (
+                <button key={id} aria-pressed={pane === id} onClick={() => setPane(id!)}>
                   {label}
-                  <b>{cards.filter((c) => c.stage === id).length}</b>
                 </button>
               ))}
+            </nav>
+            <div className="factory-pane" hidden={pane !== "line"}>
+              <StationBoard
+                cards={cards}
+                data={data}
+                ops={ops}
+                assets={assets.filter((a) => brand === "all" || a.brand === brand)}
+                selected={selected}
+                onSelect={choose}
+                onNew={() => newItem()}
+                onLibrary={() => setPane("operations")}
+              />
             </div>
             <section
-              className="live-coverflow"
-              aria-label="Content cards"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (["ArrowRight", "ArrowLeft"].includes(e.key)) {
-                  e.preventDefault();
-                  const c =
-                    cards[
-                      Math.max(
-                        0,
-                        Math.min(cards.length - 1, activeIndex + (e.key === "ArrowRight" ? 1 : -1)),
-                      )
-                    ];
-                  if (c) choose(c.id);
-                }
-              }}
+              id="inspector"
+              className="live-panel factory-inspector"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Content details"
+              hidden={!inspectorOpen}
             >
-              {cards.length ? (
-                cards.map((c, i) => (
-                  <button
-                    key={c.id}
-                    className={"live-cover " + (selected === c.id ? "selected" : "")}
-                    aria-pressed={selected === c.id}
-                    onClick={() => choose(c.id)}
-                    style={{ "--offset": i - activeIndex } as React.CSSProperties}
-                  >
-                    <span className="live-chip">
-                      {c.brand === "tideline" ? "TideLine" : "WonPlace"} · {c.stage}
-                    </span>
-                    {assets.find((a) => a.kind === "avatar" && a.brand === c.brand) && (
-                      <img
-                        className="live-page-avatar"
-                        src={
-                          "/api/content-media/" +
-                          assets.find((a) => a.kind === "avatar" && a.brand === c.brand)!.id
-                        }
-                        alt={c.brand + " page avatar"}
-                        width={36}
-                        height={36}
-                      />
-                    )}
-                    <div className="live-type-art">
-                      <span>{c.kind === "published" ? "Published source" : "Working brief"}</span>
-                      <b>{c.title}</b>
-                    </div>
-                    <p>{c.detail.slice(0, 140)}</p>
-                    <small>
-                      {c.kind === "published"
-                        ? "LinkedIn · source verified"
-                        : "Voyage · saved editorial record"}
-                    </small>
-                  </button>
-                ))
-              ) : (
-                <div className="live-empty">
-                  <h2>Your next useful piece starts here.</h2>
-                  <p>
-                    No content records in this brand yet. Create a brief from the research below.
-                  </p>
-                </div>
-              )}
-            </section>
-            <section id="inspector" className="live-panel">
+              <header className="factory-inspector-bar">
+                <strong>Content details</strong>
+                <button
+                  onClick={() => {
+                    if (mayLeave()) setInspectorOpen(false);
+                  }}
+                  aria-label="Close content details"
+                >
+                  Close ×
+                </button>
+              </header>
               {published ? (
                 <>
                   <span className="live-eyebrow">
@@ -456,8 +485,11 @@ export function LiveFactoryPage() {
                     )
                     .map((a) => (
                       <div key={a.id}>
-                        <video
+                        <MediaLoop
                           controls
+                          autoPlay
+                          muted
+                          loop
                           preload="metadata"
                           playsInline
                           src={"/api/content-media/" + a.id}
@@ -586,8 +618,11 @@ export function LiveFactoryPage() {
                         </select>
                       </label>
                       {draft.mediaAssetId && (
-                        <video
+                        <MediaLoop
                           controls
+                          autoPlay
+                          muted
+                          loop
                           preload="metadata"
                           src={"/api/content-media/" + draft.mediaAssetId}
                           style={{ width: "100%", maxWidth: 800 }}
@@ -646,6 +681,42 @@ export function LiveFactoryPage() {
                         Send back with note
                       </button>
                       {draft.changeRequest && <p>Change request: {draft.changeRequest}</p>}
+                      <label className="live-field">
+                        Existing publisher campaign
+                        <select
+                          value={campaignLink}
+                          onChange={(e) => setCampaignLink(e.target.value)}
+                        >
+                          <option value="">Select a real campaign</option>
+                          {data.brands
+                            .find((b) => b.brand === draft.brand)
+                            ?.snapshot?.campaigns.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.title}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <button
+                        disabled={dirty || busy || !draft.id || !campaignLink}
+                        onClick={async () => {
+                          try {
+                            const saved = await api({
+                              action: "link_campaign",
+                              id: draft.id,
+                              revision: draft.revision,
+                              campaignId: campaignLink,
+                            });
+                            setDraft(saved);
+                            setMessage("Linked to the existing publisher campaign.");
+                            await refresh();
+                          } catch (e) {
+                            setMessage((e as Error).message);
+                          }
+                        }}
+                      >
+                        Link saved campaign
+                      </button>
                       <p className="live-muted">{data.publishing.reason}</p>
                       {draft.activity?.map((a, i) => (
                         <p className="live-muted" key={i}>
@@ -665,8 +736,34 @@ export function LiveFactoryPage() {
                 </>
               )}
             </section>
-            <OperationsPanel itemId={draft?.id || ""} onMedia={setAssets} />
-            <div className="live-columns">
+            <div className="factory-pane" hidden={pane !== "operations"}>
+              <OperationsPanel
+                itemId={draft?.id || ""}
+                onMedia={setAssets}
+                onState={setOps}
+                brand={brand}
+                onAttach={async (assetId) => {
+                  if (!draft?.id || dirty) {
+                    setMessage("Save the selected item before attaching footage.");
+                    return;
+                  }
+                  try {
+                    const value = await api({
+                      action: "attach_media",
+                      id: draft.id,
+                      revision: draft.revision,
+                      assetId,
+                    });
+                    setDraft(value);
+                    setMessage("Verified footage attached; card advanced.");
+                    await refresh();
+                  } catch (e) {
+                    setMessage((e as Error).message);
+                  }
+                }}
+              />
+            </div>
+            <div className="live-columns factory-pane" hidden={pane !== "deliveries"}>
               <section className="live-panel">
                 <span className="live-eyebrow">STRATEGY / CURRENT PRIORITY</span>
                 <h2>Useful before promotional.</h2>
@@ -759,7 +856,7 @@ export function LiveFactoryPage() {
                 ))}
               </section>
             </div>
-            <section className="live-panel">
+            <section className="live-panel factory-pane" hidden={pane !== "research"}>
               <span className="live-eyebrow">RESEARCH / EDUCATIONAL + MARKETING</span>
               <h2>Ideas grounded in real problems.</h2>
               <p>These are research directions, not prewritten posts or customer claims.</p>
@@ -782,7 +879,7 @@ export function LiveFactoryPage() {
                 ))}
               </div>
             </section>
-            <section className="live-panel">
+            <section className="live-panel factory-pane" hidden={pane !== "sources"}>
               <span className="live-eyebrow">SOURCE LIBRARY / VERIFIED LINKS</span>
               <h2>What to learn from.</h2>
               <p>

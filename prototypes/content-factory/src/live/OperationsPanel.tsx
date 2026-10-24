@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { MediaLoop } from "./MediaLoop";
+import { useEffect, useState, useCallback } from "react";
 type Metrics = Record<string, number | null>;
 type Evidence = {
   id: string;
@@ -31,8 +32,12 @@ export type Asset = {
   avatarId: string | null;
   provenance: string;
   rights: string;
+  techniques?: string[];
+  promptStatus?: string;
+  posterAssetId?: string;
 };
 type Run = {
+  itemId?: string;
   id: string;
   step: string;
   status: string;
@@ -60,7 +65,23 @@ type Doc = {
     lessons: { runId: string; text: string; outcome: string }[];
   };
 };
-type State = {
+type Counter = { sum: number | null; reported: number; posts: number };
+type Analytics = {
+  observedPosts: number;
+  observedPlatforms: number;
+  expectedPlatforms: number;
+  definition: string;
+  metrics: Record<string, Counter>;
+  platforms: {
+    platform: string;
+    posts: number;
+    observedAt: string | null;
+    metrics: Record<string, Counter>;
+  }[];
+};
+export type State = {
+  analytics?: Record<string, Analytics>;
+  pipeline?: { eventId: string; step: string; status: string; reason: string; at: number }[];
   media: Asset[];
   research: {
     checkedAt: string;
@@ -85,11 +106,17 @@ type State = {
 export function OperationsPanel({
   itemId,
   onMedia,
+  onState,
+  onAttach,
+  brand,
 }: {
   itemId: string;
   onMedia: (assets: Asset[]) => void;
+  onState: (state: State) => void;
+  onAttach: (assetId: string) => void;
+  brand: string;
 }) {
-  const active = useRef(false);
+  const [panel, setPanel] = useState("runs");
   const [data, setData] = useState<State | null>(null),
     [status, setStatus] = useState("Reading production evidence…"),
     [step, setStep] = useState("research"),
@@ -101,18 +128,18 @@ export function OperationsPanel({
       if (!r.ok) throw Error("Production evidence is not available");
       const v: State = await r.json();
       setData(v);
-      active.current = v.runs.some((r) => r.status === "pending" || r.status === "running");
       onMedia(v.media);
+      onState(v);
       setStatus("Evidence loaded");
     } catch (e) {
       setStatus((e as Error).message);
     }
-  }, [onMedia]);
+  }, [onMedia, onState]);
   useEffect(() => {
     void read();
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible" && active.current) void read();
-    }, 15000);
+      if (document.visibilityState === "visible" && navigator.onLine) void read();
+    }, 60000);
     return () => clearInterval(timer);
   }, [read]);
   async function run() {
@@ -136,6 +163,7 @@ export function OperationsPanel({
       setBusy(false);
     }
   }
+  const totals = data?.analytics?.[brand];
   const sourceLinks = new Map<string, { title: string; url: string }>(
     [
       ...(data?.insights?.weekly || []),
@@ -146,190 +174,331 @@ export function OperationsPanel({
     ].map((s) => [s.id, s]),
   );
   return (
-    <section className="live-panel" id="production-evidence">
-      <span className="live-eyebrow">LIVE EVIDENCE / LEARNING WORKFLOW</span>
+    <section className="live-panel factory-operations" id="production-evidence">
       <div className="live-panel-head">
-        <h2>Research that earns the next step.</h2>
+        <div>
+          <span className="live-eyebrow">PRODUCTION / REAL EVIDENCE</span>
+          <h2>Keep the line moving.</h2>
+        </div>
         <button onClick={() => void read()}>Refresh evidence</button>
       </div>
-      <p aria-live="polite">{status}</p>
+      <p aria-live="polite">
+        {status} · Operator {data?.operator.available ? "connected" : "not recently connected"}
+        {data?.operator.lastSeenAt
+          ? " · " + new Date(data.operator.lastSeenAt).toLocaleString()
+          : ""}
+      </p>
+      <nav className="factory-dock" aria-label="Production details">
+        {[
+          ["runs", "Runs & steering"],
+          ["research", "Research feed"],
+          ["media", "Media & techniques"],
+          ["analytics", "Platform analytics"],
+          ["policies", "Agent instructions"],
+        ].map(([id, label]) => (
+          <button key={id} aria-pressed={panel === id} onClick={() => setPanel(id!)}>
+            {label}
+          </button>
+        ))}
+      </nav>
       {data && (
-        <>
-          <div className="live-columns">
-            <div>
-              <h3>This week in our niche</h3>
-              {data.insights ? (
-                <>
-                  <p className="live-muted">
-                    {new Date(data.insights.windowStart).toLocaleDateString()}–
-                    {new Date(data.insights.windowEnd).toLocaleDateString()} · source publication
-                    dates
+        <div className="factory-operations-body">
+          {panel === "runs" && (
+            <>
+              <details>
+                <summary>Completion receipts</summary>
+                {data.pipeline?.map((r) => (
+                  <p key={r.eventId}>
+                    <b>
+                      {r.step} · {r.status}
+                    </b>{" "}
+                    · {r.reason} · {new Date(r.at).toLocaleString()}
                   </p>
-                  {data.insights.weekly.map((s) => (
-                    <article className="live-research-card" key={s.id}>
-                      <small>
-                        {s.creator} · {new Date(s.publishedAt!).toLocaleDateString()}
-                      </small>
+                ))}
+              </details>
+              <div className="live-form">
+                <label className="live-field">
+                  Workflow step
+                  <select
+                    aria-label="Workflow step"
+                    value={step}
+                    onChange={(e) => setStep(e.target.value)}
+                  >
+                    {data.docs.map((d) => (
+                      <option key={d.step} value={d.step}>
+                        {d.step}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="live-field">
+                  Direction for this pass
+                  <textarea
+                    value={direction}
+                    onChange={(e) => setDirection(e.target.value)}
+                    placeholder="Steer this pass with the evidence or correction you want considered."
+                  />
+                </label>
+              </div>
+              <button
+                className="live-primary"
+                disabled={busy || !data.research}
+                onClick={() => void run()}
+              >
+                Run {step} pass
+              </button>
+              <p className="live-muted">
+                {itemId
+                  ? "Uses the selected saved item."
+                  : "Library-only pass; select an editorial card to move that item."}{" "}
+                Human approval and native publication receipts remain separate gates.
+              </p>
+              <div className="live-research-grid">
+                {data.runs.map((r) => (
+                  <article className="live-research-card" key={r.id}>
+                    <small>
+                      {r.step} · {r.status} · {r.requestedName}
+                    </small>
+                    <h3>
+                      {r.decision?.summary || r.error || "Waiting for the signed local worker"}
+                    </h3>
+                    {["pending", "running"].includes(r.status) && (
+                      <button
+                        onClick={async () => {
+                          const response = await fetch("/api/content-ops", {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ action: "cancel", id: r.id }),
+                          });
+                          if (!response.ok) setStatus((await response.json()).error);
+                          await read();
+                        }}
+                      >
+                        Stop this pass
+                      </button>
+                    )}
+                    {r.decision && (
+                      <details>
+                        <summary>Decision, evidence & learning</summary>
+                        <p>
+                          {r.decision.verdict} · {r.decision.cautions.join(" ")}
+                        </p>
+                        <ul>
+                          {r.decision.nextActions.map((a) => (
+                            <li key={a}>{a}</li>
+                          ))}
+                        </ul>
+                        <pre>{r.decision.draftCopy}</pre>
+                        <ol>
+                          {r.decision.shotList?.map((a) => (
+                            <li key={a}>{a}</li>
+                          ))}
+                        </ol>
+                        <p>{r.decision.learning}</p>
+                        {r.decision.evidenceIds.map((id) => {
+                          const source = sourceLinks.get(id);
+                          return source ? (
+                            <p key={id}>
+                              <a href={source.url} target="_blank" rel="noreferrer">
+                                {source.title}
+                              </a>
+                            </p>
+                          ) : (
+                            <span key={id}>{id}</span>
+                          );
+                        })}
+                      </details>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+          {panel === "research" && (
+            <>
+              <h3>This week in our niche</h3>
+              <p className="live-muted">{data.research?.coverage}</p>
+              <div className="live-research-grid">
+                {data.insights?.weekly.map((s) => (
+                  <article className="live-research-card" key={s.id}>
+                    <small>
+                      {s.creator} ·{" "}
+                      {s.publishedAt
+                        ? new Date(s.publishedAt).toLocaleDateString()
+                        : "Publication date unavailable"}
+                    </small>
+                    <h3>
+                      <a href={s.url} target="_blank" rel="noreferrer">
+                        {s.title}
+                      </a>
+                    </h3>
+                    <p>{s.metrics["views"] ?? "Unknown"} observed views</p>
+                    <details>
+                      <summary>Source scope</summary>
+                      <p>{s.scope}</p>
+                      <p>Observed {new Date(s.observedAt).toLocaleString()}</p>
+                    </details>
+                  </article>
+                ))}
+              </div>
+              <details>
+                <summary>Incumbent complaints & product proof</summary>
+                {[...(data.research?.complaints || []), ...(data.research?.features || [])].map(
+                  (f) => (
+                    <article className="live-research-card" key={f.id}>
                       <h3>
-                        <a href={s.url} target="_blank" rel="noreferrer">
-                          {s.title} ↗
+                        <a href={f.url} target="_blank" rel="noreferrer">
+                          {f.title}
                         </a>
                       </h3>
-                      <p>
-                        {s.metrics["views"] === null
-                          ? "Views unavailable"
-                          : Number(s.metrics["views"]).toLocaleString() + " observed views"}
-                      </p>
-                      <small>{s.scope}</small>
+                      <p>{f.summary}</p>
+                      <small>{f.limitation}</small>
+                    </article>
+                  ),
+                )}
+              </details>
+            </>
+          )}
+          {panel === "media" && (
+            <>
+              <h3>Real footage & production techniques</h3>
+              <p className="live-muted">
+                Private, verified files. Original and derivative identities stay linked. Prompts are
+                attributed to their source; missing prompts stay pending.
+              </p>
+              <div className="live-research-grid">
+                {data.media
+                  .filter(
+                    (a) =>
+                      a.kind !== "avatar" &&
+                      a.kind !== "poster" &&
+                      (brand === "all" || a.brand === brand),
+                  )
+                  .map((a) => (
+                    <article className="live-research-card" key={a.id}>
+                      <small>
+                        {a.brand} · {a.kind}
+                      </small>
+                      <h3>{a.title}</h3>
+                      {a.mime === "video/mp4" ? (
+                        <MediaLoop
+                          aria-label={a.title}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          controls
+                          preload="metadata"
+                          src={"/api/content-media/" + a.id}
+                          style={{ width: "100%", borderRadius: 8 }}
+                        />
+                      ) : (
+                        <img src={"/api/content-media/" + a.id} alt={a.title} />
+                      )}
+                      <details>
+                        <summary>How it was made</summary>
+                        <p>{a.provenance}</p>
+                        {a.techniques?.map((t) => (
+                          <p key={t}>{t}</p>
+                        ))}
+                        <p>{a.promptStatus || "Prompts not supplied."}</p>
+                        <p>{a.rights}</p>
+                        <a href={a.profileUrl} target="_blank" rel="noreferrer">
+                          Publisher profile
+                        </a>
+                      </details>
+                      <button
+                        disabled={!itemId || a.mime !== "video/mp4"}
+                        onClick={() => onAttach(a.id)}
+                      >
+                        Attach to selected card
+                      </button>
                     </article>
                   ))}
-                  {!data.insights.weekly.length && (
-                    <p>
-                      No verified publication in this week’s sample. Older references are not
-                      current winners.
-                    </p>
-                  )}
+              </div>
+            </>
+          )}
+          {panel === "analytics" && (
+            <>
+              <h3>Platform observations</h3>
+              {totals && (
+                <>
+                  <p>
+                    {totals.observedPosts} observed posts · {totals.observedPlatforms}/
+                    {totals.expectedPlatforms} platforms with measurements
+                  </p>
+                  <div className="live-research-grid">
+                    {totals.platforms.map((p) => (
+                      <article className="live-research-card" key={p.platform}>
+                        <h3>{p.platform}</h3>
+                        <p>{p.posts ? p.posts + " observed posts" : "No platform observations"}</p>
+                        {["views", "impressions", "reactions", "clicks"].map((k) => (
+                          <p key={k}>
+                            {k}: {p.metrics[k]?.sum ?? "Unavailable"}
+                            {p.metrics[k]?.reported
+                              ? " · " + p.metrics[k]!.reported + "/" + p.posts + " posts reporting"
+                              : ""}
+                          </p>
+                        ))}
+                        <small>
+                          {p.observedAt
+                            ? "Observed " + new Date(p.observedAt).toLocaleString()
+                            : "Awaiting an authorized source"}
+                        </small>
+                      </article>
+                    ))}
+                  </div>
+                  <details>
+                    <summary>Aggregate known counts</summary>
+                    <p>{totals.definition}</p>
+                    {Object.entries(totals.metrics).map(([k, c]) => (
+                      <p key={k}>
+                        {k}: {c.sum ?? "Unavailable"} · {c.reported}/{c.posts} observed posts
+                        reporting. Coverage is partial when platforms are missing.
+                      </p>
+                    ))}
+                  </details>
                 </>
-              ) : (
-                <p>No current research observation has arrived.</p>
               )}
-            </div>
-            <div>
-              <h3>Our posts: measured, not guessed</h3>
-              {data.insights?.own.map((s) => (
-                <article className="live-research-card" key={s.id}>
-                  <h3>
-                    <a href={s.url} target="_blank" rel="noreferrer">
-                      {s.title}
-                    </a>
-                  </h3>
-                  <p>
-                    {s.metrics["reactions"] ?? "Unknown"} reactions ·{" "}
-                    {s.metrics["reposts"] ?? "Unknown"} reposts
-                  </p>
-                  <p>
-                    Impressions: {s.metrics["impressions"] ?? "Unavailable"} · Clicks:{" "}
-                    {s.metrics["clicks"] ?? "Unavailable"}
-                  </p>
-                  <small>
-                    {s.scope} Observed {new Date(s.observedAt).toLocaleString()}.
-                  </small>
-                </article>
-              ))}
               <p>{data.research?.metricsAccess}</p>
-              <ul>
+              <div className="live-research-grid">
+                {data.insights?.own.map((s) => (
+                  <article className="live-research-card" key={s.id}>
+                    <h3>
+                      <a href={s.url} target="_blank" rel="noreferrer">
+                        {s.title}
+                      </a>
+                    </h3>
+                    <p>
+                      Reactions: {s.metrics["reactions"] ?? "Unavailable"} · Reposts:{" "}
+                      {s.metrics["reposts"] ?? "Unavailable"}
+                    </p>
+                    <p>
+                      Impressions: {s.metrics["impressions"] ?? "Unavailable"} · Clicks:{" "}
+                      {s.metrics["clicks"] ?? "Unavailable"}
+                    </p>
+                    <small>Observed {new Date(s.observedAt).toLocaleString()}</small>
+                    <details>
+                      <summary>Measurement scope</summary>
+                      <p>{s.scope}</p>
+                    </details>
+                  </article>
+                ))}
+              </div>
+              <details>
+                <summary>Aggregate coverage & limits</summary>
+                <p>
+                  {data.insights?.own.length || 0} observed posts. Missing platform denominators
+                  prevent a reliable aggregate rate or unique reach total.
+                </p>
                 {data.insights?.limitations.map((l) => (
-                  <li key={l}>{l}</li>
+                  <p key={l}>{l}</p>
                 ))}
-              </ul>
-            </div>
-          </div>
-          <h3>Incumbent complaints → product evidence</h3>
-          <p>
-            Customer feedback identifies a question to investigate. It does not establish that every
-            customer has that problem, or that a competitor lacks the feature.
-          </p>
-          <div className="live-research-grid">
-            {data.research?.complaints.map((c) => (
-              <article className="live-research-card" key={c.id}>
-                <h3>
-                  <a href={c.url} target="_blank" rel="noreferrer">
-                    {c.title}
-                  </a>
-                </h3>
-                <p>{c.summary}</p>
-                <small>
-                  {c.sourceDate
-                    ? new Date(c.sourceDate).toLocaleDateString()
-                    : "Individual review date unverified"}{" "}
-                  · {c.limitation}
-                </small>
-              </article>
-            ))}
-          </div>
-          <h3>Features worth proving on screen</h3>
-          <div className="live-research-grid">
-            {data.research?.features.map((f) => (
-              <article className="live-research-card" key={f.id}>
-                <small>{f.status}</small>
-                <h3>
-                  <a href={f.url} target="_blank" rel="noreferrer">
-                    {f.title}
-                  </a>
-                </h3>
-                <p>{f.summary}</p>
-                <small>{f.limitation}</small>
-              </article>
-            ))}
-          </div>
-          <h3>Creators to study</h3>
-          <p>{data.research?.coverage}</p>
-          {data.research?.creators.map((c) => (
-            <details key={c.id}>
-              <summary>{c.title}</summary>
-              <p>{c.summary}</p>
-              <a href={c.url} target="_blank" rel="noreferrer">
-                Creator channel ↗
-              </a>
-              <p className="live-muted">{c.limitation}</p>
-            </details>
-          ))}
-          <h3>Run a governed pass</h3>
-          <p className="live-muted">
-            Decision worker:{" "}
-            {data.operator.available
-              ? "recently connected"
-              : data.operator.lastSeenAt
-                ? "not recently connected"
-                : "not connected yet"}
-            .{" "}
-            {data.operator.lastSeenAt &&
-              "Last seen " + new Date(data.operator.lastSeenAt).toLocaleString()}
-            . Queued work waits for the signed local operator.
-          </p>
-          <p>
-            Rules validate dates, source identity, media hashes and approval state. The decision
-            worker handles judgment, records its evidence and updates the step’s living notes. A
-            pass never grants approval or sends a post.
-          </p>
-          <div className="live-form">
-            <label className="live-field">
-              Workflow step
-              <select
-                aria-label="Workflow step"
-                value={step}
-                onChange={(e) => setStep(e.target.value)}
-              >
-                {data.docs.map((d) => (
-                  <option key={d.step} value={d.step}>
-                    {d.step}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="live-field">
-              Direction for this pass
-              <textarea
-                value={direction}
-                onChange={(e) => setDirection(e.target.value)}
-                placeholder="Which gym-owner or admin problem should we investigate?"
-              />
-            </label>
-          </div>
-          <button
-            className="live-primary"
-            disabled={busy || !data.research}
-            onClick={() => void run()}
-          >
-            Run {step} pass
-          </button>
-          <p className="live-muted">
-            {itemId
-              ? "Uses the selected saved item."
-              : "No saved item selected; the pass uses the current evidence library."}
-          </p>
-          <div className="live-columns">
-            <div>
+              </details>
+            </>
+          )}
+          {panel === "policies" && (
+            <>
               <h3>Agent instructions & living notes</h3>
               {data.docs.map((d) => (
                 <details key={d.step}>
@@ -345,116 +514,9 @@ export function OperationsPanel({
                   ))}
                 </details>
               ))}
-            </div>
-            <div>
-              <h3>Decisions & experiments</h3>
-              {data.runs.map((r) => (
-                <article className="live-research-card" key={r.id}>
-                  <small>
-                    {r.step} · {r.status} · requested by {r.requestedName}
-                  </small>
-                  {r.decision ? (
-                    <>
-                      <h3>{r.decision.verdict.replaceAll("_", " ")}</h3>
-                      <p>{r.decision.summary}</p>
-                      <ul>
-                        {r.decision.nextActions.map((a) => (
-                          <li key={a}>{a}</li>
-                        ))}
-                      </ul>
-                      {r.decision.draftCopy && (
-                        <details open>
-                          <summary>Draft copy · human review required</summary>
-                          <pre>{r.decision.draftCopy}</pre>
-                          <button
-                            onClick={() => {
-                              void navigator.clipboard.writeText(r.decision!.draftCopy!);
-                            }}
-                          >
-                            Copy draft
-                          </button>
-                        </details>
-                      )}
-                      {!!r.decision.shotList?.length && (
-                        <details>
-                          <summary>Proposed shots · not recorded</summary>
-                          <ol>
-                            {r.decision.shotList.map((s) => (
-                              <li key={s}>{s}</li>
-                            ))}
-                          </ol>
-                        </details>
-                      )}
-                      <p className="live-muted">{r.decision.cautions.join(" ")}</p>
-                      <p>
-                        {r.decision.evidenceIds.map((id) => {
-                          const s = sourceLinks.get(id);
-                          return s ? (
-                            <a key={id} href={s.url} target="_blank" rel="noreferrer">
-                              {s.title} ·{" "}
-                            </a>
-                          ) : (
-                            <span key={id}>{id} · </span>
-                          );
-                        })}
-                      </p>
-                      <small>
-                        Decision engine: {r.model}. Learning: {r.decision.learning}
-                      </small>
-                    </>
-                  ) : (
-                    <p>{r.error || "Waiting for the local decision worker."}</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </div>
-          <h3>Real footage & publisher branding</h3>
-          <p>
-            Original masters remain unchanged. Every branded derivative is linked to the exact
-            publisher avatar and profile.
-          </p>
-          <div className="live-research-grid">
-            {data.media
-              .filter((a) => a.kind !== "avatar")
-              .map((a) => (
-                <article className="live-research-card" key={a.id}>
-                  <small>
-                    {a.brand} · {a.kind}
-                  </small>
-                  <h3>{a.title}</h3>
-                  {a.mime === "video/mp4" ? (
-                    <video
-                      controls
-                      preload="metadata"
-                      playsInline
-                      src={"/api/content-media/" + a.id}
-                      style={{ width: "100%", borderRadius: 8 }}
-                    />
-                  ) : (
-                    <img
-                      src={"/api/content-media/" + a.id}
-                      alt={a.title}
-                      style={{ width: "100%" }}
-                    />
-                  )}
-                  <p>{a.provenance}</p>
-                  {a.avatarId && (
-                    <img
-                      src={"/api/content-media/" + a.avatarId}
-                      alt={a.brand + " publisher avatar"}
-                      width={40}
-                      height={40}
-                    />
-                  )}
-                  <a href={a.profileUrl} target="_blank" rel="noreferrer">
-                    Verified publisher page ↗
-                  </a>
-                  <p className="live-muted">{a.rights}</p>
-                </article>
-              ))}
-          </div>
-        </>
+            </>
+          )}
+        </div>
       )}
     </section>
   );

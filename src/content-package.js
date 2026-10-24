@@ -1,0 +1,2 @@
+const fields=['title','brand','product','audience','pain','value','brief','copy','format','sourceUrls','mediaUrl','mediaAssetId','cta'];
+export async function packageFingerprint(item){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(Object.fromEntries(fields.map(k=>[k,item[k]])))));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');}
