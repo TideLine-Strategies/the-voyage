@@ -62,7 +62,7 @@ export function validateDecision(decision,input){
  if(!decision.summary.trim()||typeof decision.learning!=='string'||!decision.learning.trim()||decision.learning.length>1200||decision.evidenceIds.length>15||decision.cautions.length>8||[...decision.nextActions,...decision.cautions].some(x=>typeof x!=='string'||!x.trim()||x.length>600))throw Error('Bounded, nonempty decision text required');
  const ids=new Set([...input.research.observations,...input.research.complaints,...input.research.features,...input.research.creators].map(x=>x.id));
  if(decision.evidenceIds.some(id=>!ids.has(id))||!decision.evidenceIds.length)throw Error('Decision must cite supplied evidence');
- return {verdict:decision.verdict,summary:text(decision.summary,1800),evidenceIds:decision.evidenceIds.slice(0,15),nextActions:decision.nextActions.map(x=>text(x,600)),cautions:decision.cautions.slice(0,8).map(x=>text(x,600)),learning:text(decision.learning,1200),draftCopy:text(decision.draftCopy,6000),shotList:(Array.isArray(decision.shotList)?decision.shotList:[]).slice(0,8).map(x=>text(x,600))};
+ return {verdict:decision.verdict,summary:text(decision.summary,1800),evidenceIds:decision.evidenceIds.slice(0,15),nextActions:decision.nextActions.map(x=>text(x,600)),cautions:decision.cautions.slice(0,8).map(x=>text(x,600)),learning:text(decision.learning,1200),draftCopy:text(decision.draftCopy,6000),cta:text(decision.cta,1000),shotList:(Array.isArray(decision.shotList)?decision.shotList:[]).slice(0,8).map(x=>text(x,600))};
 }
 export async function ingestOps(env,body){
  if(body.action==='analytics_targets')return json({targets:await analyticsTargets(env)});
@@ -75,6 +75,16 @@ export async function ingestOps(env,body){
   for(const r of completed.results){const run=JSON.parse(r.data_json);if(run.itemId)await advanceDecision(env,run,run.decision,r.id);}
 
   const state=await opsState(env);if(!state.research)return json({accepted:false,reason:'No research'});
+  // Retry only transient failures; semantic evidence holds and user cancellations remain holds.
+  let retrySlots=5-state.runs.filter(r=>['pending','running'].includes(r.status)).length;
+  for(const failed of state.runs){
+   if(retrySlots<=0)break;if(failed.status!=='failed'||!failed.itemId||(failed.attempts||1)>=3||Date.now()-(failed.completedAt||0)<60000||!/timed out|status null|unavailable|network|rate limited/i.test(failed.error||''))continue;
+   const item=await readOpsDoc(env,'content_editorial',failed.itemId);if(!item||item.revision!==failed.itemRevision||item.value.stage!==failed.step)continue;
+   const blocked=await env.DB.prepare("SELECT id FROM documents WHERE collection=? AND json_extract(data_json,'$.itemId')=? AND json_extract(data_json,'$.itemRevision')=? AND json_extract(data_json,'$.step')=? AND json_extract(data_json,'$.status') IN ('pending','running','complete','cancelled') LIMIT 1").bind('content_agent_runs',failed.itemId,item.revision,failed.step).first();if(blocked)continue;
+   const old=await readOpsDoc(env,'content_agent_runs',failed.id),attempt=(failed.attempts||1)+1,id=failed.id+'-retry-'+attempt,run={...old.value,status:'pending',attempts:attempt-1,retryOf:failed.id,requestedAt:Date.now(),requestedBy:'content-operator',requestedName:'Automatic retry '+attempt,input:{...old.value.input,research:state.research,insights:state.insights}};delete run.completedAt;delete run.error;delete run.decision;delete run.claimToken;delete run.leaseUntil;
+   const queued=await env.DB.prepare('INSERT OR IGNORE INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?)').bind('content_agent_runs',id,JSON.stringify(run),Date.now()).run();retrySlots-=queued.meta.changes;
+  }
+
   // Advance saved research and writing autonomously, bounded by the existing queue.
   // Each item revision gets one attempt. Evidence blockers wait for owner steering.
   const candidates=await env.DB.prepare("SELECT e.id,e.data_json,e.revision FROM documents e WHERE e.collection=? AND json_extract(e.data_json,'$.stage') IN ('research','scripting') AND NOT EXISTS (SELECT 1 FROM documents r WHERE r.collection='content_agent_runs' AND json_extract(r.data_json,'$.itemId')=e.id AND json_extract(r.data_json,'$.itemRevision')=e.revision) ORDER BY e.updated_at LIMIT 5").bind('content_editorial').all();
@@ -91,7 +101,7 @@ export async function ingestOps(env,body){
  }
  if(body.action==='claim'){
   await put(env,'content_operator','current',{lastSeenAt:Date.now(),engine:'codex',permissions:'tool-free decision only'});
-  const rows=await env.DB.prepare("SELECT id,data_json,revision FROM documents WHERE collection=? AND (json_extract(data_json,'$.status')='pending' OR (json_extract(data_json,'$.status')='running' AND json_extract(data_json,'$.leaseUntil') < ?)) ORDER BY updated_at LIMIT 1").bind('content_agent_runs',Date.now()).all();const row=rows.results[0];if(!row)return json({job:null});const run=JSON.parse(row.data_json),claimed={...run,status:'running',claimToken:crypto.randomUUID(),leaseUntil:Date.now()+180000};
+  const rows=await env.DB.prepare("SELECT id,data_json,revision FROM documents WHERE collection=? AND (json_extract(data_json,'$.status')='pending' OR (json_extract(data_json,'$.status')='running' AND json_extract(data_json,'$.leaseUntil') < ? AND coalesce(json_extract(data_json,'$.attempts'),0)<3)) ORDER BY updated_at LIMIT 1").bind('content_agent_runs',Date.now()).all();const row=rows.results[0];if(!row)return json({job:null});const run=JSON.parse(row.data_json),claimed={...run,status:'running',claimToken:crypto.randomUUID(),leaseUntil:Date.now()+300000,attempts:(run.attempts||0)+1};
   const r=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(claimed),Date.now(),'content_agent_runs',row.id,row.revision).run();return json({job:r.meta.changes===1?{id:row.id,...claimed}:null});
  }
  if(body.action==='complete'||body.action==='fail'){

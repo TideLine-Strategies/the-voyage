@@ -11,5 +11,5 @@ try{
  const url=config.voyageOrigin+'/api/content-agent-source',body=JSON.stringify({action:'bootstrap'});const r=await fetch(url,{method:'POST',headers:await signedHeaders(config.secrets.tideline,'POST',url,'daily-review',body),body,redirect:'manual',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('Daily review was not accepted');
  if(!state.analyticsAttemptedAt||Date.now()-state.analyticsAttemptedAt>6*3600000){state.analyticsAttemptedAt=Date.now();await fs.writeFile(stateFile,JSON.stringify(state),{mode:0o600});try{execFileSync(process.execPath,['scripts/content-analytics-pass.mjs'],{stdio:'inherit',timeout:200000});}catch{console.error('Native analytics held; see the private analytics receipt/log.');}}
  try{execFileSync(process.execPath,['scripts/content-production-pass.mjs'],{stdio:'inherit',timeout:290000});}catch{console.error('Production held; see the saved station receipt.');}
- execFileSync(process.execPath,['scripts/content-agent-pass.mjs'],{stdio:'inherit',timeout:110000});
+ execFileSync(process.execPath,['scripts/content-agent-pass.mjs'],{stdio:'inherit',timeout:180000});
 }finally{await handle.close();await fs.unlink(lock).catch(()=>{});}
