@@ -61,3 +61,8 @@ test('cockpit preferences persist by company and guests cannot read metrics or c
  assert.equal((await call('wonplace','metrics','GET',null,{role:'guest'})).status,403);assert.equal((await call('wonplace','cockpit','PUT',settings,{role:'guest'})).status,403);
  assert.equal((await call('wonplace','cockpit','PUT',{...settings,focus:['personal.balance']})).status,400);
 });
+
+
+test('GA4 reports stay editor-only and in the TideLine website scope',async()=>{
+ const {call}=fixture();assert.equal((await call('tideline','ga4','GET',null,{role:'guest',id:'guest'})).status,403);assert.equal((await call('wonplace','ga4')).status,404);const response=await call('tideline','ga4');assert.equal(response.status,200);const body=await response.json();assert.equal(body.propertyId,'560552440');assert.equal(body.connected,false);assert.equal(body.status,'not_connected');assert.equal(body.totals,undefined);
+});

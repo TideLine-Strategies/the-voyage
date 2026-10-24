@@ -1,4 +1,6 @@
 import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
+import {startGA4Connection} from './company-ga4-auth.js';
+import {readGA4} from './company-ga4.js';
 import {COMPANIES} from './company-events.js';
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff'};
 const reply=(data,status=200)=>Response.json(data,{status,headers});
@@ -71,6 +73,8 @@ export async function handleCompany(request,env,actor,path,readJson) {
     if(request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'Origin not allowed'},403);
     return companyStub(env,company).fetch(request);
   }
+  if(request.method==='POST'&&operation==='ga4-connect')return company==='tideline'?startGA4Connection(request,env,actor):reply({error:'Not found'},404);
+  if(request.method==='GET'&&operation==='ga4')return company==='tideline'?reply(await readGA4(env)):reply({error:'GA4 reports belong to the TideLine website'},404);
   if(request.method==='GET'&&operation==='source')return companySource(env,company,actor);
   if(request.method==='PUT'&&['connections','financials'].includes(operation)) {
     const data=await readJson(request);if(!identifier.test(data.id||''))return reply({error:'A stable record ID is required'},400);
