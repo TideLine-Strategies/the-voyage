@@ -3,3 +3,5 @@ node_modules/
 .dev.vars*
 
 .company-release.log
+
+public/__build.json

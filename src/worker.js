@@ -1,3 +1,4 @@
+import {releaseInfo} from './release-info.js';
 import {handleOps,ingestOps} from "./content-ops.js";
 import {serveMedia,ingestMedia} from "./content-media.js";
 import {handleFactory,baselineSnapshot,factoryContext} from "./content-factory.js";
@@ -928,7 +929,7 @@ async function handleApi(request, env, actor, path) {
 export default {
   async fetch(request, env) {
     const pathName = new URL(request.url).pathname;
-    if(pathName === "/__release.json" && request.method === "GET") return Response.json({commit:env.RELEASE_COMMIT||null,product:"voyage"},{headers:{"cache-control":"no-store"}});
+    if(pathName === "/__release.json" && request.method === "GET") return releaseInfo(request,env);
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
     if(pathName === "/api/content-agent-source" && request.method === "POST") {
       let body;try{body=await readJson(request);}catch{return error("Invalid agent source",400);}

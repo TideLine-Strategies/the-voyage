@@ -1,4 +1,4 @@
-// Managed protected-PR release. A provider change is reconciled before any replay.
+// Managed current-main release. Automatic and managed builds share exact asset identity.
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {execFileSync} from 'node:child_process';import {signedHeaders} from '../src/company-ops.js';
 const commit=process.env.AGENT_RELEASE_COMMIT;assert(commit&&process.env.AGENT_RELEASE_TASK,'Managed release context required');assert.equal(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),commit);
 assert(process.argv.some(a=>['--apply','--verify','--reconcile'].includes(a)));
@@ -8,10 +8,10 @@ const cli=args=>execFileSync('node_modules/.bin/wrangler',[...args,'--profile','
 if(process.argv.includes('--apply'))assert.equal(execFileSync('git',['ls-remote','origin','refs/heads/main'],{encoding:'utf8'}).trim().split(/\s+/)[0],commit,'Only the published current main may deploy');
 if(process.argv.includes('--apply'))cli(['deploy','--keep-vars','--var','RELEASE_COMMIT:'+commit,'--message','content-factory:'+commit]);
 const deployments=JSON.parse(cli(['deployments','list','--name','the-voyage','--json'])),active=deployments.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1),version=active?.versions.find(v=>v.percentage===100)?.version_id;assert(version);
-const detail=JSON.parse(cli(['versions','view',version,'--name','the-voyage','--json']));assert.equal(detail.annotations?.['workers/message'],'content-factory:'+commit,'Active provider revision differs; reconcile without replaying deployment');
+const detail=JSON.parse(cli(['versions','view',version,'--name','the-voyage','--json']));const liveIdentity=await (await fetch(config.voyageOrigin+'/__release.json',{redirect:'manual',signal:AbortSignal.timeout(15000)})).json();assert.equal(liveIdentity.commit,commit,'Active build differs; reconcile without replaying deployment');
 if(process.argv.includes('--apply')||process.argv.includes('--reconcile')){
  for(const script of ['scripts/content-sync.mjs','scripts/content-baseline-sync.mjs','scripts/content-import-assets.mjs'])execFileSync(process.execPath,[script,...(script.endsWith('/content-sync.mjs')?['--send']:[])],{stdio:'inherit'});
- if(process.argv.includes('--apply')){for(const script of ['scripts/install-factory-native.mjs','scripts/install-content-sync.mjs','scripts/install-content-operator.mjs'])execFileSync(process.execPath,[script],{stdio:'inherit'});}
+ {for(const script of ['scripts/install-factory-native.mjs','scripts/install-content-sync.mjs','scripts/install-content-operator.mjs'])execFileSync(process.execPath,[script],{stdio:'inherit'});}
 }
 if(process.argv.includes('--verify')){
  const url=config.voyageOrigin+'/api/content-factory-source',r=await fetch(url,{headers:await signedHeaders(config.secrets.tideline,'GET',url,'factory-release'),redirect:'manual',signal:AbortSignal.timeout(15000)});assert.equal(r.status,200);const source=await r.json();assert.equal(source.baseline?.posts.length,2);

@@ -55,5 +55,8 @@
         "CompanyHub"
       ]
     }
-  ]
+  ],
+  "build": {
+    "command": "node scripts/stamp-release.mjs"
+  }
 }
