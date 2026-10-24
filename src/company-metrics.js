@@ -8,7 +8,7 @@ export const METRICS=[
  ['bills.due','Bills due','Money','money','daily','Unpaid recorded bills by due date.','ledger'],
  ['ad.spend','Ad spend','Acquisition','money','daily','Daily spend from a connected advertising measurement source.','ads'],
  ['site.visits','Site visits','Acquisition','sessions','daily','Distinct collected sessions per UTC day. Daily counts are not unique people across days.','site'],
- ['content.views','Content views','Acquisition','views','daily','Collected website page_view events per UTC day; not video plays.','site'],
+ ['content.views','Website page views','Acquisition','views','daily','Collected website page_view events per UTC day; not video plays.','site'],
  ['api.requests','API / Worker requests','Reliability','requests','rolling24h','Exact Worker request total over the preceding 24 hours, sampled at checked time; includes static assets.','cloudflare'],
  ['api.errors','Worker errors','Reliability','errors','rolling24h','Provider-reported Worker errors over the preceding 24 hours. Does not include every caught application error.','cloudflare'],
  ['api.errorRate','Worker error rate','Reliability','percent','rolling24h','Provider errors divided by requests in the same 24-hour snapshot.','cloudflare'],
@@ -51,7 +51,8 @@ export function statusFor(metric,rule,now=Date.now()){
  return hit(rule.critical)?'critical':hit(rule.warning)?'warning':'healthy';
 }
 export function buildCockpit(summary,source={},history=[],now=Date.now()){
- const settings={aim:AIM,focus:['customers.paying','api.errorRate','revenue.received'],rules:{},...(summary.cockpit||{})};
+ const defaults={tideline:{aim:'Grow qualified gym-owner conversations and received TideLine revenue.',focus:['site.visits','content.views','revenue.received']},loki:{aim:'Turn useful Loki experiences into qualified customer conversations.',focus:['loki.completed','api.errorRate','ai.spend']},voyage:{aim:'Keep customer follow-through visible and the business reliable.',focus:['voyage.events','staff.active','api.errorRate']}};
+ const settings={aim:AIM,focus:['customers.paying','api.errorRate','revenue.received'],rules:{},...(defaults[summary.company]||{}),...(summary.cockpit||{})};
  const metrics=METRICS.map(meta=>({...meta,points:[],current:null,currency:null,freshAt:null,freshFor:15*60000,coverage:meta.description,levers:[]}));
  const byId=Object.fromEntries(metrics.map(m=>[m.id,m]));
  const add=(id,points,options={})=>{const m=byId[id];m.points=points.filter(p=>Number.isFinite(p.at)&&Number.isFinite(p.value)).sort((a,b)=>a.at-b.at);Object.assign(m,options);m.current=m.points.at(-1)?.value??null;};
