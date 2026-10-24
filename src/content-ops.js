@@ -1,3 +1,5 @@
+import {analyticsTargets,platformObservations,ingestPlatformObservations} from './content-platforms.js';
+import {productionAction,productionState} from './content-production.js';
 import {ownAnalytics} from './content-analytics.js';
 import {advanceDecision,pipelineState} from './content-pipeline.js';
 import {AGENT_DOCS} from './content-agent-docs.js';
@@ -27,9 +29,9 @@ export async function opsState(env){
  const docs=await Promise.all(AGENT_DOCS.map(async d=>({...d,living:(await readOpsDoc(env,'content_agent_docs',d.step))?.value||{passes:0,lessons:[]}})));
  const operator=(await readOpsDoc(env,'content_operator','current'))?.value||null;
  const baseline=(await readOpsDoc(env,'content_baseline','linkedin'))?.value;
- const own=(research?.observations||[]).filter(o=>o.kind==='own-post').map(o=>({...o,brand:o.brand||((baseline?.posts||[]).some(p=>p.url===o.url)?'tideline':null)}));
+ const own=[...new Map([...(await platformObservations(env)),...(research?.observations||[])].filter(o=>o.kind==='own-post').sort((a,b)=>Date.parse(a.observedAt)-Date.parse(b.observedAt)).map(o=>[o.url,{...o,brand:o.brand||((baseline?.posts||[]).some(p=>p.url===o.url)?'tideline':null)}])).values()];
  const analytics=Object.fromEntries(['all','tideline','wonplace'].map(b=>[b,ownAnalytics(own,b)]));
- return {analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch(research):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
+ return {analyticsStatus:(await readOpsDoc(env,'content_analytics_status','current'))?.value||null,production:await productionState(env),analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch({...research,observations:[...research.observations.filter(o=>o.kind!=='own-post'),...own]}):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
 }
 export async function handleOps(request,env,actor,readJson){
  if(actor.role!=='edit')return json({error:'Not available to guests'},403);const url=new URL(request.url);
@@ -37,6 +39,11 @@ export async function handleOps(request,env,actor,readJson){
  if(request.method==='GET')return json(await opsState(env));
  if(request.method!=='POST'||request.headers.get('origin')!==url.origin)return json({error:'Same-origin editor action required'},403);
  let body;try{body=await readJson(request);}catch{return json({error:'Invalid request'},400);}
+ if(body.action==='cancel_production'){
+  const stored=await readOpsDoc(env,'content_production_jobs',text(body.id,200));if(!stored||stored.value.status!=='running')return json({error:'Production job is no longer running'},409);
+  const value={...stored.value,status:'cancelled',cancelledBy:actor.id,cancelledAt:Date.now()};delete value.token;delete value.item;
+  const eventId=(stored.value.mode==='dispatch'?'dispatch-':'production-')+body.id;const r=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=? AND NOT EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=?)').bind(JSON.stringify(value),Date.now(),'content_production_jobs',body.id,stored.revision,'content_pipeline_receipts',eventId).run();return json(r.meta.changes===1?{accepted:true}:{error:'Production completed before cancellation'},r.meta.changes===1?200:409);
+ }
  if(body.action==='cancel'){
   const stored=await readOpsDoc(env,'content_agent_runs',text(body.id,100));if(!stored)return json({error:'Run not found'},404);
   if(!['pending','running'].includes(stored.value.status))return json({error:'Run already finished'},409);
@@ -58,6 +65,9 @@ export function validateDecision(decision,input){
  return {verdict:decision.verdict,summary:text(decision.summary,1800),evidenceIds:decision.evidenceIds.slice(0,15),nextActions:decision.nextActions.map(x=>text(x,600)),cautions:decision.cautions.slice(0,8).map(x=>text(x,600)),learning:text(decision.learning,1200),draftCopy:text(decision.draftCopy,6000),shotList:(Array.isArray(decision.shotList)?decision.shotList:[]).slice(0,8).map(x=>text(x,600))};
 }
 export async function ingestOps(env,body){
+ if(body.action==='analytics_targets')return json({targets:await analyticsTargets(env)});
+ if(body.action==='analytics_observations'){try{return json(await ingestPlatformObservations(env,body));}catch(e){return json({error:e.message},400);}}
+ if(['production_claim','production_complete','production_fail','production_verify'].includes(body.action)){try{return json(await productionAction(env,body));}catch(e){return json({error:e.message},409);}}
  if(body.action==='research'){try{const d=researchSnapshot(body.snapshot),old=await readOpsDoc(env,'content_research','current');if(old&&Date.parse(old.value.checkedAt)>Date.parse(d.checkedAt))return json({accepted:false});await put(env,'content_research','current',d);return json({accepted:true,observations:d.observations.length});}catch(e){return json({error:e.message},400);}}
  if(body.action==='bootstrap'){
   // Recover the narrow completion-to-editorial handoff after an interrupted request.

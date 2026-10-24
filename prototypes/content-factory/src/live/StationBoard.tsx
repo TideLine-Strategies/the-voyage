@@ -74,12 +74,18 @@ export function StationBoard({
           const entries = cards.filter(
             (c) => (c.stage === "published" ? "analytics" : c.stage) === id,
           );
-          const jobs =
-            ops?.runs.filter(
+          const jobs = [
+            ...(ops?.runs || []).filter(
               (r) =>
                 r.step === (id === "filming" ? "capture" : id) &&
                 ["pending", "running"].includes(r.status),
-            ) || [];
+            ),
+            ...(ops?.production || []).filter(
+              (j) =>
+                j.mode === (id === "filming" ? "capture" : id === "posting" ? "dispatch" : id) &&
+                j.status === "running",
+            ),
+          ];
           const current = entries.find((c) => c.id === selected) || entries[0];
           const asset = current ? source(current) : id === "editing" ? orphan[0] : undefined;
           const poster =

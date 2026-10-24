@@ -639,7 +639,8 @@ export function LiveFactoryPage() {
                     <>
                       <p>
                         Review the saved text, evidence, media and next step together. Approval
-                        records your signed-in identity and becomes stale when the package changes.
+                        records your signed-in identity, becomes stale when the package changes, and
+                        queues the exact saved package for native publication.
                       </p>
                       {draft.approval ? (
                         <p className="live-success">
