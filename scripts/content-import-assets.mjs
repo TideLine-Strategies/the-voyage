@@ -3,6 +3,15 @@ const local=process.argv.includes('--local'),manifestFile=process.env.CONTENT_ME
 let origin,secret;if(local){origin=process.env.CONTENT_AGENT_LOCAL_ORIGIN||'http://127.0.0.1:17902';if(!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin))throw Error('Loopback origin required');secret=process.env.CONTENT_AGENT_LOCAL_SECRET;}else{const file=process.env.COMPANY_OPERATIONS_CONFIG;if(!file||(await fs.stat(file)).mode&0o077)throw Error('Private company configuration required');const config=JSON.parse(await fs.readFile(file,'utf8'));origin=config.voyageOrigin;secret=config.secrets.tideline;if(origin!=='https://voyage.tidelinestrats.com')throw Error('Wrong Voyage origin');}
 if(!secret)throw Error('Source signer unavailable');
 const manifest=JSON.parse(await fs.readFile(manifestFile,'utf8')),hash=b=>createHash('sha256').update(b).digest('hex');
-async function send(path,value){const body=JSON.stringify(value),url=origin+path,r=await fetch(url,{method:'POST',headers:await signedHeaders(secret,'POST',url,'content-assets',body),body,redirect:'manual',signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok)throw Error('Source import refused ('+r.status+'): '+d.error);return d;}
+async function send(path,value){
+ const body=JSON.stringify(value),url=origin+path;
+ // Declarations, hashed chunk upserts, commits and annotations are idempotent.
+ // Never use this retry helper for provider publishing or other external actions.
+ for(let attempt=0;attempt<4;attempt++){
+  try{const r=await fetch(url,{method:'POST',headers:await signedHeaders(secret,'POST',url,'content-assets',body),body,redirect:'manual',signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok){if(r.status<500)throw Object.assign(Error('Source import refused ('+r.status+'): '+d.error),{terminal:true});throw Error('Source temporarily unavailable ('+r.status+')');}return d;}
+  catch(e){if(e.terminal||attempt===3)throw e;await new Promise(resolve=>setTimeout(resolve,500*2**attempt));}
+ }
+}
+
 for(const entry of manifest.assets){const bytes=await fs.readFile(entry.path);if(bytes.length>32*1024*1024)throw Error('Asset exceeds bounded store limit');const asset={...entry,id:hash(bytes),size:bytes.length};delete asset.path;const declared=await send('/api/content-media-source',{action:'declare',id:asset.id,asset});if(!declared.ready){const chunks=[];for(let offset=0;offset<bytes.length;offset+=262144){const b=bytes.subarray(offset,offset+262144);chunks.push({index:offset/262144,data:b.toString('base64'),sha256:hash(b)});}for(let i=0;i<chunks.length;i+=4)await send('/api/content-media-source',{action:'chunks',id:asset.id,chunks:chunks.slice(i,i+4)});await send('/api/content-media-source',{action:'commit',id:asset.id});}if(entry.techniques||entry.promptStatus)await send('/api/content-media-source',{action:'annotate',id:asset.id,notes:{techniques:entry.techniques,promptStatus:entry.promptStatus}});console.log(JSON.stringify({id:asset.id,kind:asset.kind,brand:asset.brand,ready:true,bytes:bytes.length}));}
 if(process.env.CONTENT_RESEARCH_SNAPSHOT){const snapshot=JSON.parse(await fs.readFile(process.env.CONTENT_RESEARCH_SNAPSHOT,'utf8'));console.log(JSON.stringify(await send('/api/content-agent-source',{action:'research',snapshot})));}
