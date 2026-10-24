@@ -2,14 +2,14 @@
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';import {execFileSync} from 'node:child_process';
 const bin=path.join(os.homedir(),'Library/Application Support/Loki/instant-runtime/bin');
 const call=(name,args)=>{const value=JSON.parse(execFileSync(path.join(bin,name),args,{encoding:'utf8',timeout:20000,maxBuffer:300000}));if(value.ok===false)throw Error(value.blocker||'Native controller refused');return value;};
-export async function nativeSnapshots(targets,dir){
- const snapshots=[],blockers=[];let lease;
+export async function nativeSnapshots(targets,dir,project='voyage-factory-analytics'){
+ const snapshots=[],blockers=[];let lease,ownerChanged=false;
  try{
-  lease=call('agent-wall',['request','voyage-factory-completion','voyage-factory-analytics','auto']);if(lease.status!=='granted'||!lease.windowId)throw Error('Exact Safari window is queued or unavailable');
+  lease=call('agent-wall',['request','voyage-factory-completion',project,'auto']);if(lease.status!=='granted'||!lease.windowId)throw Error('Exact Safari window is queued or unavailable');
   const args=['--window-id',String(lease.windowId),'--lease',lease.id];
   const action=(cmd,extra=[])=>{const checkpoint=call('agent-wall',['checkpoint',lease.id]);if(checkpoint.yieldRequested)throw Error('Browser turn yielded to another waiting task');return call('safari-controller',[cmd,...args,...extra]);};
   let current=action('inspect').url;const stateFile=path.join(dir,'native-window.json');let old;try{old=JSON.parse(await fs.readFile(stateFile,'utf8'))}catch{}
-  if(current!=='about:blank'&&current!==(old?.lastUrl)&&!targets.some(t=>t.url===current))throw Error('Owner changed the analytics window; preserve it');
+  if(current!=='about:blank'&&current!==(old?.lastUrl)&&!targets.some(t=>t.url===current)){ownerChanged=true;throw Error('Owner changed the analytics window; preserve it');}
   for(const [index,target] of targets.slice(0,6).entries()){
    try{
     action('navigate',['--expected-url',current,'--url',target.url]);current=target.url;await fs.writeFile(stateFile,JSON.stringify({windowId:lease.windowId,lastUrl:current}),{mode:0o600});
@@ -22,5 +22,6 @@ export async function nativeSnapshots(targets,dir){
    }catch(e){blockers.push(target.url+' — '+e.message);if(/Owner changed|yielded|URL changed/.test(e.message))break;}
   }
  }catch(e){blockers.push(e.message)}finally{if(lease?.status==='granted')try{call('agent-wall',['session-release',lease.id])}catch(e){blockers.push('Lease release needs reconciliation: '+e.message)}}
+ if(ownerChanged&&project==='voyage-factory-analytics')return nativeSnapshots(targets,dir,'voyage-factory-analytics-background');
  return {snapshots,blockers};
 }

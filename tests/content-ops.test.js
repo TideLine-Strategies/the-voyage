@@ -37,3 +37,12 @@ test('bootstrap recovers persisted research completion and queues writing for th
  await ingestOps(env,{action:'bootstrap'});await ingestOps(env,{action:'bootstrap'});
  const state=await opsState(env),next=state.runs.filter(r=>r.itemId==='recover'&&r.step==='scripting');assert.equal(next.length,1);assert.equal(next[0].itemRevision,2);assert.equal(state.pipeline.filter(r=>r.status==='advanced').length,1);
 });
+test('transient writing failures retry once per attempt without bypassing cancellation or changing stage',async()=>{
+ const env=fixture(),research=researchSnapshot(snapshot());await ingestOps(env,{action:'research',snapshot:research});
+ await env.DB.prepare('INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?)').bind('content_editorial','retry-piece',JSON.stringify({title:'Real draft',brand:'tideline',stage:'scripting'}),Date.now()).run();
+ const failed={itemId:'retry-piece',itemRevision:1,step:'scripting',status:'failed',attempts:1,completedAt:Date.now()-120000,error:'Decision engine exited with status null',input:{research}};
+ await env.DB.prepare('INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?)').bind('content_agent_runs','failed-writing',JSON.stringify(failed),Date.now()).run();
+ await ingestOps(env,{action:'bootstrap'});await ingestOps(env,{action:'bootstrap'});let rows=(await opsState(env)).runs.filter(r=>r.itemId==='retry-piece');assert.equal(rows.length,2);const retry=rows.find(r=>r.status==='pending');assert.equal(retry.retryOf,'failed-writing');assert.equal(retry.attempts,1);
+ const cancelled=await handleOps(new Request(origin+'/api/content-ops',{method:'POST',headers:{origin},body:JSON.stringify({action:'cancel',id:retry.id})}),env,actor,r=>r.json());assert.equal(cancelled.status,200);
+ await ingestOps(env,{action:'bootstrap'});rows=(await opsState(env)).runs.filter(r=>r.itemId==='retry-piece');assert.equal(rows.length,2);assert.equal(rows.find(r=>r.id===retry.id).status,'cancelled');
+});

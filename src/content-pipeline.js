@@ -33,7 +33,7 @@ export async function advanceDecision(env,run,decision,runId){
  const old=await read(env,'content_editorial',itemId);if(!old)return {status:'held',reason:'Item not found'};
  const facts=[...(run.input.research?.observations||[]),...(run.input.research?.complaints||[]),...(run.input.research?.features||[]),...(run.input.research?.creators||[])];
  const evidence=decision.evidenceIds.map(id=>facts.find(s=>s.id===id)?.url).filter(Boolean);
- const patch={sourceUrls:[...new Set([...(old.value.sourceUrls||[]),...evidence])].slice(0,12),production:{...old.value.production,steps:{...old.value.production?.steps,[run.step]:{runId,at:Date.now(),summary:decision.summary,evidenceIds:decision.evidenceIds,shotList:decision.shotList||[]}}},...(run.step==='scripting'?{copy:decision.draftCopy}:{})};
+ const patch={sourceUrls:[...new Set([...(old.value.sourceUrls||[]),...evidence])].slice(0,12),production:{...old.value.production,steps:{...old.value.production?.steps,[run.step]:{runId,at:Date.now(),summary:decision.summary,evidenceIds:decision.evidenceIds,shotList:decision.shotList||[]}}},...(run.step==='scripting'?{copy:decision.draftCopy,cta:decision.cta||old.value.cta||''}:{})};
  return recordTransition(env,{eventId:'decision-'+runId,itemId,expectedRevision:revision,from:run.step,to:run.step==='research'?'scripting':'filming',patch,step:run.step,source:'signed-decision-completion',reason:run.step==='research'?'Evidence-backed research completed':'Unapproved script and shot list completed'});
 }
 export async function advanceMedia(env,asset,eventId,editorialId=asset.editorialId,expectedRevision,actor,guard=null){
