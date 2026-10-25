@@ -50,3 +50,13 @@ test('an empty or unspecified Actions history cannot report healthy CI',()=>{
  for(const recentRuns of [0,undefined]){const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns,failedRecentRuns:0}}];assert.equal(metric(buildCockpit(summary({providers}),{},[],now),'ci.failures').status,'unknown');}
  const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns:3,failedRecentRuns:0}}];assert.equal(metric(buildCockpit(summary({providers}),{},[],now),'ci.failures').status,'healthy');
 });
+test('empty current Actions history supersedes old zero-failure samples',()=>{
+ const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns:0,failedRecentRuns:0},coverage:'Latest ten runs.'}];
+ const m=metric(buildCockpit(summary({providers}),{},[{metric:'ci.failures',value:0,at:now-day}],now),'ci.failures');
+ assert.equal(m.current,null);assert.equal(m.status,'unknown');assert.equal(m.points.length,1);assert.match(m.coverage,/No recent Actions runs/);
+});
+test('a fresh provider sample updates freshness even when historical samples are old',()=>{
+ const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns:2,failedRecentRuns:0}}];
+ const m=metric(buildCockpit(summary({providers}),{},[{metric:'ci.failures',value:1,at:now-day}],now),'ci.failures');
+ assert.equal(m.current,0);assert.equal(m.freshAt,now);assert.equal(m.status,'healthy');
+});
