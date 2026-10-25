@@ -157,3 +157,22 @@ When connected, product-tagged Trakr facts feed financial chart metrics. The
 manual Voyage ledger remains a separate editor and is not silently copied or
 added to Trakr totals. Personal sheets, bank balances and payment execution are
 outside this connection. A blank business register is not a reconciled zero.
+
+### WonPlace TikTok baseline
+
+Company → WonPlace → Social reads editor-only `/api/companies/wonplace/social`.
+Only the signed WonPlace source can import the pinned `@wonplaceapp` account via
+`social` in `/api/company-events/wonplace`. Failure observations use
+`socialAttempt`; they never reset the first baseline. Native weekly dates and
+post lifetime totals are separate from website traffic and CRM conversions.
+See [the measurement-agent policy](agents/company-social.md).
+
+Install only after the matching website code is deployed, from the managed tree:
+`COMPANY_OPERATIONS_CONFIG=/private/existing-source-config.json node scripts/install-company-social-sync.mjs`.
+The standalone dependencies are pinned under `scripts/social-collector`; install
+those with `npm ci --prefix scripts/social-collector --ignore-scripts` first.
+The installer verifies source parity with the live revision and copies an
+independent runtime to `~/Library/Application Support/TideLine/Social Analytics`.
+The new LaunchAgent is `com.tideline.social-analytics` (08:15 local and RunAtLoad).
+The existing F100RD access helper is reused for its original persistent profile;
+no legacy publishing permission is granted or changed by this collector.

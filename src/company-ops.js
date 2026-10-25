@@ -1,3 +1,4 @@
+import {socialSnapshot,saveSocial,readSocial,socialAttempt,saveSocialAttempt} from './company-social.js';
 import {startTrakrConnection,disconnectTrakr} from './company-trakr.js';
 import {acquisitionReport} from './company-acquisition.js';
 import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
@@ -41,12 +42,12 @@ async function store(env,company,type,id,value,actor,expectedRevision) {
   return (prior?.revision||0)+1;
 }
 export async function companySummary(env,company,includeHistory=false) {
-  const [connections,financials,providers,live,settings]=await Promise.all([records(env.DB,company,'connections'),records(env.DB,'tideline','financials'),records(env.DB,company,'providers'),companyStub(env,company)?.snapshot(includeHistory)||null,records(env.DB,company,'cockpit')]);
-  return {cockpit:settings.find(s=>s.id==='settings')||null,company,name:COMPANIES[company],brand:'tideline',connections,financials:financials.filter(row=>row.product===company),brandFinancials:financials,providers,live,asOf:Date.now(),financialCoverage:'TideLine brand only: WonPlace, TideLine, Loki and Voyage. Records are tagged by product; personal projects and other entities are excluded. Business records entered here only. No bank or payment-provider reconciliation is connected. Expected revenue is not received revenue. Gym tuition and family balances are excluded.'};
+  const [connections,financials,providers,live,settings,social]=await Promise.all([records(env.DB,company,'connections'),records(env.DB,'tideline','financials'),records(env.DB,company,'providers'),companyStub(env,company)?.snapshot(includeHistory)||null,records(env.DB,company,'cockpit'),readSocial(env,company)]);
+  return {social,cockpit:settings.find(s=>s.id==='settings')||null,company,name:COMPANIES[company],brand:'tideline',connections,financials:financials.filter(row=>row.product===company),brandFinancials:financials,providers,live,asOf:Date.now(),financialCoverage:'TideLine brand only: WonPlace, TideLine, Loki and Voyage. Records are tagged by product; personal projects and other entities are excluded. Business records entered here only. No bank or payment-provider reconciliation is connected. Expected revenue is not received revenue. Gym tuition and family balances are excluded.'};
 }
 export async function companyContext(env,actor) {
   const summaries=await Promise.all(Object.keys(COMPANIES).map(async company=>{
-    try{const data=await companySummary(env,company);return {company,chiefAim:data.cockpit?.aim,focus:data.cockpit?.focus,thresholds:data.cockpit?.rules,asOf:data.asOf,providers:data.providers,financials:data.financials.slice(0,30),live:data.live?{asOf:data.live.asOf,activeUsers:data.live.activeUsers,events:data.live.events.slice(0,15),coverage:data.live.coverage}:null,financialCoverage:data.financialCoverage};}catch{return {company,status:'unavailable'};}
+    try{const data=await companySummary(env,company);return {company,chiefAim:data.cockpit?.aim,focus:data.cockpit?.focus,thresholds:data.cockpit?.rules,asOf:data.asOf,social:data.social?.latest?{status:data.social.status,baseline:data.social.baseline,account:data.social.latest.account,overview:data.social.latest.overview,growth:data.social.growth,coverage:data.social.latest.coverage}:data.social,providers:data.providers,financials:data.financials.slice(0,30),live:data.live?{asOf:data.live.asOf,activeUsers:data.live.activeUsers,events:data.live.events.slice(0,15),coverage:data.live.coverage}:null,financialCoverage:data.financialCoverage};}catch{return {company,status:'unavailable'};}
   }));
   const sections=summaries.map(data=>JSON.stringify(data).slice(0,5000));
   if(actor){for(const [label,read]of [['WONPLACE SOURCE DIAGNOSTICS',()=>wonplaceDiagnostics(env,actor)],['TIDELINE WEBSITE ANALYTICS',()=>tidelineAnalytics(env)],['LOKI ANALYTICS',()=>lokiAnalytics(env)]]){try{const response=await read();sections.push(label+' '+JSON.stringify(await response.json()).slice(0,5000));}catch{sections.push(label+' unavailable');}}}
@@ -68,6 +69,7 @@ export async function handleCompany(request,env,actor,path,readJson) {
   if(request.method==='POST'&&operation==='trakr-disconnect')return company==='tideline'?disconnectTrakr(request,env,actor):reply({error:'Not found'},404);
   if(request.method==='GET'&&operation==='trakr')return company==='tideline'&&env.COMPANY_HUB?reply(await companyStub(env,'tideline-finance').trakrReport()):reply({error:'Not found'},404);
   if(request.method==='POST'&&operation==='ga4-connect')return company==='tideline'?startGA4Connection(request,env,actor):reply({error:'Not found'},404);
+  if(request.method==='GET'&&operation==='social')return company==='wonplace'?reply(await readSocial(env,company)):reply({error:'TikTok account belongs to WonPlace'},404);
   if(request.method==='GET'&&operation==='ga4')return company==='tideline'?reply(await readGA4(env)):reply({error:'GA4 reports belong to the TideLine website'},404);
   if(request.method==='GET'&&operation==='acquisition')return company==='tideline'?reply(await acquisitionReport(env)):reply({error:'Acquisition belongs to TideLine'},404);
   if(request.method==='GET'&&operation==='source')return companySource(env,company,actor);
@@ -102,7 +104,7 @@ export async function ingestCompany(request,env,readJson) {
     const secret=({wonplace:env.WONPLACE_OPERATIONS_SECRET,tideline:env.TIDELINE_OPERATIONS_SECRET,loki:env.LOKI_OPERATIONS_SECRET,voyage:env.VOYAGE_OPERATIONS_SECRET})[company];
     if(!await verifySource(request,secret,''))return reply({error:'Source authentication required'},401);
     if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
-    return reply({company,live:await companyStub(env,company).snapshot(),providers:await records(env.DB,company,'providers')});
+    return reply({company,live:await companyStub(env,company).snapshot(),providers:await records(env.DB,company,'providers'),social:await readSocial(env,company)});
   }
   let data;try{data=await readJson(request);}catch{return reply({error:'Invalid event batch'},400);}
   const secret=({wonplace:env.WONPLACE_OPERATIONS_SECRET,tideline:env.TIDELINE_OPERATIONS_SECRET,loki:env.LOKI_OPERATIONS_SECRET,voyage:env.VOYAGE_OPERATIONS_SECRET})[company];
@@ -110,13 +112,15 @@ export async function ingestCompany(request,env,readJson) {
   if(!Array.isArray(data.events)||data.events.length>20||!Array.isArray(data.providers||[])||(data.providers||[]).length>10||!Array.isArray(data.financials||[])||(data.financials||[]).length>50||!Array.isArray(data.measurements||[])||(data.measurements||[]).length>100)return reply({error:'Invalid source batch'},400);
   if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
   try {
+    const social=data.social?socialSnapshot(data.social):null,attempt=data.socialAttempt?socialAttempt(data.socialAttempt):null;if(social&&attempt)throw Error('Ambiguous social input');if((social||attempt)&&company!=='wonplace')throw Error('Wrong social company');
     const providers=(data.providers||[]).map(providerSnapshot);
     const measurements=[...(data.measurements||[]).map(value=>measurement(value)),...providers.flatMap(providerMeasurements)];
     const financials=(data.financials||[]).map(value=>{if(!identifier.test(value.id||''))throw Error('Invalid financial ID');return {id:value.id,...financialRecord(value),source:'signed-import'};});
     const accepted=await companyStub(env,company).ingest(data.events,measurements);
+    if(social)await saveSocial(env,company,data.social);if(attempt)await saveSocialAttempt(env,company,attempt);
     for(const provider of providers)await store(env,company,'providers',provider.provider,provider,{id:'signed-source'});
     for(const financial of financials){const {id,...value}=financial;await store(env,'tideline','financials',id,value,{id:'signed-source'});}
-    return reply({...accepted,providers:providers.length,financials:financials.length});
+    return reply({...accepted,providers:providers.length,financials:financials.length,social:social?{handle:social.handle,observedAt:social.observedAt}:null});
   }catch{return reply({error:'Invalid company source batch or storage unavailable'},400);}
 }
 async function wonplaceDiagnostics(env,actor) {
