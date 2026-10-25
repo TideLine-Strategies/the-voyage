@@ -1,3 +1,4 @@
+import {startTrakrConnection,disconnectTrakr} from './company-trakr.js';
 import {acquisitionReport} from './company-acquisition.js';
 import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
 import {startGA4Connection} from './company-ga4-auth.js';
@@ -56,13 +57,16 @@ export async function handleCompany(request,env,actor,path,readJson) {
   const company=path[2],operation=path[3];if(!Object.hasOwn(COMPANIES,company))return reply({error:'Company not found'},404);
   if(path.length>4)return reply({error:'Not found'},404);
   if(request.method==='GET'&&!operation)return reply(await companySummary(env,company));
-  if(request.method==='GET'&&operation==='metrics'){const [summary,source]=await Promise.all([companySummary(env,company,true),companySource(env,company,actor)]);return reply(buildCockpit(summary,await source.json(),summary.live?.measurements||[]));}
+  if(request.method==='GET'&&operation==='metrics'){const [summary,source,finance]=await Promise.all([companySummary(env,company,true),companySource(env,company,actor),env.COMPANY_HUB?companyStub(env,'tideline-finance').trakrReport():null]);if(finance?.status==='connected')summary.financials=finance.financials.filter(r=>r.product===company);return reply(buildCockpit(summary,await source.json(),summary.live?.measurements||[]));}
   if(request.method==='PUT'&&operation==='cockpit'){try{const value=cockpitSettings(await readJson(request));await store(env,company,'cockpit','settings',value,actor);return reply(value);}catch(error){return reply({error:error.message},400);}}
   if(request.method==='GET'&&operation==='live') {
     if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
     if(request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'Origin not allowed'},403);
     return companyStub(env,company).fetch(request);
   }
+  if(request.method==='POST'&&operation==='trakr-connect')return company==='tideline'?startTrakrConnection(request,env,actor):reply({error:'Not found'},404);
+  if(request.method==='POST'&&operation==='trakr-disconnect')return company==='tideline'?disconnectTrakr(request,env,actor):reply({error:'Not found'},404);
+  if(request.method==='GET'&&operation==='trakr')return company==='tideline'&&env.COMPANY_HUB?reply(await companyStub(env,'tideline-finance').trakrReport()):reply({error:'Not found'},404);
   if(request.method==='POST'&&operation==='ga4-connect')return company==='tideline'?startGA4Connection(request,env,actor):reply({error:'Not found'},404);
   if(request.method==='GET'&&operation==='ga4')return company==='tideline'?reply(await readGA4(env)):reply({error:'GA4 reports belong to the TideLine website'},404);
   if(request.method==='GET'&&operation==='acquisition')return company==='tideline'?reply(await acquisitionReport(env)):reply({error:'Acquisition belongs to TideLine'},404);
