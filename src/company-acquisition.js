@@ -18,11 +18,13 @@ export async function acquisitionReport(env,now=Date.now()){
   const tables=new Set((await rows(db,"SELECT name FROM sqlite_master WHERE type='table'")).map(r=>r.name));
   const has=table=>tables.has(table);
   const intake=async(kind,table,time)=>{
-   if(!has(table))return {kind,status:'unavailable',submitted:null,sync:null};
+   if(!has(table))return {kind,status:'unavailable',submitted:null,sync:null,unlinkedOver10Minutes:null};
    const count=await one(db,`SELECT COUNT(*) total FROM ${table} WHERE ${time}>=?`,since);
-   let sync=null;
-   if(has('crm_intake_receipts'))sync=await rows(db,`SELECT COALESCE(r.status,'pending') status,COUNT(*) total FROM ${table} s LEFT JOIN crm_intake_receipts r ON r.kind=? AND r.source_id=s.${kind==='contact'?'id':'phone'} WHERE s.${time}>=? GROUP BY COALESCE(r.status,'pending')`,kind,since);
-   return {kind,status:'connected',submitted:count.total,sync};
+   let sync=null,unlinkedOver10Minutes=null;
+   if(has('crm_intake_receipts')){sync=await rows(db,`SELECT COALESCE(r.status,'pending') status,COUNT(*) total FROM ${table} s LEFT JOIN crm_intake_receipts r ON r.kind=? AND r.source_id=s.${kind==='contact'?'id':'phone'} WHERE s.${time}>=? GROUP BY COALESCE(r.status,'pending')`,kind,since);
+   unlinkedOver10Minutes=(await one(db,`SELECT COUNT(*) total FROM ${table} s LEFT JOIN crm_intake_receipts r ON r.kind=? AND r.source_id=s.${kind==='contact'?'id':'phone'} WHERE s.${time}>=? AND s.${time}<=? AND COALESCE(r.status,'pending')!='linked'`,kind,since,new Date(now-10*60000).toISOString())).total;
+   }
+   return {kind,status:'connected',submitted:count.total,sync,unlinkedOver10Minutes};
   };
   const [contacts,waitlist,traffic,conversions,documents]=await Promise.all([
    intake('contact','contact_inquiries','submitted_at'),intake('waitlist','loki_waitlist','submitted_at'),

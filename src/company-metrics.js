@@ -13,6 +13,7 @@ export const METRICS=[
  ['api.errors','Worker errors','Reliability','errors','rolling24h','Provider-reported Worker errors over the preceding 24 hours. Does not include every caught application error.','cloudflare'],
  ['api.errorRate','Worker error rate','Reliability','percent','rolling24h','Provider errors divided by requests in the same 24-hour snapshot.','cloudflare'],
  ['api.upstream','Upstream calls','Cost','calls','rolling24h','Worker subrequests over the preceding 24 hours, not billable units or remaining quota.','cloudflare'],
+ ['crm.unlinked','Overdue CRM handoffs','Reliability','submissions','rolling30d','Contact and waitlist submissions from the last 30 days still without a linked CRM receipt after ten minutes. Target: zero. Inspect Sales for source receipts; these are not qualified leads.','crm'],
  ['ci.failures','Failed checks','Reliability','checks','recent10','Failures among the most recent ten CI runs. Old failures may already have a passing successor.','github'],
  ['ai.requests','AI requests','Cost','requests','rolling30d','Recorded provider execution receipts over the last 30 days.','ai'],
  ['ai.tokens','AI tokens','Cost','tokens','rolling30d','Input plus output tokens present in execution receipts. Missing token counts are not measured spend.','ai'],
@@ -23,7 +24,7 @@ export const METRICS=[
  ['loki.completed','Loki audits completed','Usage','audits','rolling30d','Retained completed audits over the last 30 days.','loki'],
  ['voyage.events','CRM activity','Usage','events','daily','Recorded Voyage usage events per UTC day.','voyage']
 ].map(([id,label,group,unit,window,description,source])=>({id,label,group,unit,window,description,source}));
-export const DEFAULT_RULES={'api.errorRate':{direction:'above',warning:1,critical:5},'api.errors':{direction:'above',warning:1,critical:10},'ci.failures':{direction:'above',warning:1,critical:3},'incidents.errors':{direction:'above',warning:1,critical:5}};
+export const DEFAULT_RULES={'crm.unlinked':{direction:'above',warning:1,critical:3},'api.errorRate':{direction:'above',warning:1,critical:5},'api.errors':{direction:'above',warning:1,critical:10},'ci.failures':{direction:'above',warning:1,critical:3},'incidents.errors':{direction:'above',warning:1,critical:5}};
 export function cockpitSettings(data){
  const aim=String(data.aim||AIM).trim();if(!aim||aim.length>240)throw Error('Chief aim must be 1–240 characters');
  const focus=data.focus||['customers.paying','api.errorRate','revenue.received'];if(!Array.isArray(focus)||focus.length<1||focus.length>3||new Set(focus).size!==focus.length||focus.some(id=>!METRICS.some(m=>m.id===id)))throw Error('Choose one to three distinct focus metrics');
@@ -64,6 +65,14 @@ export function buildCockpit(summary,source={},history=[],now=Date.now()){
  if(providers.some(p=>p.provider==='cloudflare'&&p.status==='ok'&&p.metrics.requests===0))byId['api.errorRate'].current=null;
  if(providers.some(p=>p.provider==='github'&&p.status==='ok'&&(!Number.isInteger(p.metrics.recentRuns)||p.metrics.recentRuns<=0))){byId['ci.failures'].current=null;byId['ci.failures'].coverage+=' No recent Actions runs are available; historical samples do not establish current CI health.';}
  for(const meta of metrics){if(meta.unit==='money'&&['ad.spend','ai.spend'].includes(meta.id)){const currencies=[...new Set(meta.points.map(p=>p.currency))];if(currencies.length===1)meta.currency=currencies[0];else if(currencies.length>1){meta.points=[];meta.current=null;meta.coverage+=' Multiple currencies cannot be combined.';}}}
+ const acquisition=summary.acquisition;
+ if(summary.company==='tideline'&&acquisition?.status==='connected'){
+  const inputs=[acquisition.contacts,acquisition.waitlist];
+  if(inputs.every(row=>row?.status==='connected'&&Number.isSafeInteger(row.unlinkedOver10Minutes)&&row.unlinkedOver10Minutes>=0)){
+   const at=Date.parse(acquisition.asOf);if(Number.isFinite(at))add('crm.unlinked',[{at,value:inputs.reduce((n,row)=>n+row.unlinkedOver10Minutes,0)}],{freshAt:at,coverage:'Last 30 days. Ten-minute delivery target; contact and waitlist are alternative intake paths. Counts are source-to-CRM handoffs, not qualified leads or received revenue.'});
+  }
+ }
+ byId['crm.unlinked'].levers.push({label:'Open CRM accounts',url:'/?view=accounts'});
  const ledger=summary.financials||[];
  for(const [id,status]of [['revenue.received','received'],['revenue.expected','expected'],['expenses.paid','paid'],['bills.due','due']]){
   const rows=ledger.filter(r=>r.status===status&&r.date>=new Date(now-30*86400000).toISOString().slice(0,10)),currencies=[...new Set(rows.map(r=>r.currency))];
