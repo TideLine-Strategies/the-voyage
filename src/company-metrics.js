@@ -1,6 +1,8 @@
 // Explicit units and windows prevent rolling provider totals being sold as per-minute traffic.
 export const AIM='Grow paying WonPlace customers while keeping service reliable and costs controlled.';
 export const METRICS=[
+ ['social.tiktok.followers','TikTok followers','Social','followers','gauge','Observed account followers. Baseline includes the former floordstudios audience; change is account growth, not customer attribution.','tiktok'],
+ ['social.tiktok.views','TikTok video views','Social','views','platform7d','Views in the latest available seven native TikTok reporting days. Includes legacy content; separate from website page views.','tiktok'],
  ['customers.paying','Paying customers','Growth','customers','gauge','A billing-provider count of active paying WonPlace organizations.','billing'],
  ['revenue.received','Revenue received','Money','money','daily','Recorded received revenue by receipt date; expected revenue is excluded.','ledger'],
  ['revenue.expected','Revenue expected','Money','money','daily','Recorded expected revenue; this is not cash received.','ledger'],
@@ -73,6 +75,15 @@ export function buildCockpit(summary,source={},history=[],now=Date.now()){
   }
  }
  byId['crm.unlinked'].levers.push({label:'Open CRM accounts',url:'/?view=accounts'});
+ const social=summary.social;
+ if(summary.company==='wonplace'&&social?.latest){
+  const latest=social.latest,coverage=latest.coverage+' Native report: '+latest.overview.start+' through '+latest.overview.end+'.';
+  add('social.tiktok.followers',(social.history||[]).filter(r=>Number.isSafeInteger(r.followers)).map(r=>({at:r.at,value:r.followers})),{freshAt:latest.observedAt,freshFor:36*3600000,coverage});
+  add('social.tiktok.views',[{at:latest.observedAt,value:latest.overview.videoViews}],{freshAt:latest.observedAt,freshFor:36*3600000,coverage});
+  if(latest.account.followers===null)byId['social.tiktok.followers'].current=null;
+  if(social.status==='refresh_failed')for(const id of ['social.tiktok.followers','social.tiktok.views']){byId[id].freshFor=0;byId[id].coverage+=' Most recent native refresh failed; earlier evidence retained.';}
+  for(const id of ['social.tiktok.followers','social.tiktok.views'])byId[id].levers.push({label:'Open TikTok Studio',url:social.analyticsUrl});
+ }
  const ledger=summary.financials||[];
  for(const [id,status]of [['revenue.received','received'],['revenue.expected','expected'],['expenses.paid','paid'],['bills.due','due']]){
   const rows=ledger.filter(r=>r.status===status&&r.date>=new Date(now-30*86400000).toISOString().slice(0,10)),currencies=[...new Set(rows.map(r=>r.currency))];
