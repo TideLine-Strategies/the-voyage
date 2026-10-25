@@ -1,4 +1,5 @@
 // Installs a bounded, read-only provider collector. No new tokens or cloud billing.
+import {copyCompanyDependencies} from './company-runtime.mjs';
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';import {execFileSync} from 'node:child_process';
 const config=process.env.COMPANY_OPERATIONS_CONFIG;
 if(!config||(await fs.stat(config)).mode&0o077)throw Error('Private existing company configuration required');
@@ -8,7 +9,7 @@ const root=path.join(os.homedir(),'Library/Application Support/TideLine/Company 
 for(const dir of ['src','scripts'])await fs.mkdir(path.join(root,dir),{recursive:true,mode:0o700});
 for(const file of ['scripts/company-sync.mjs','scripts/company-sync-all.mjs','src/company-signing.js'])await fs.copyFile(file,path.join(root,file));
 // An independent runtime snapshot survives managed integration cleanup; never symlink mutable dependencies.
-await fs.cp('node_modules',path.join(root,'node_modules'),{recursive:true});
+await copyCompanyDependencies('node_modules',path.join(root,'node_modules'));
 await fs.writeFile(path.join(root,'package.json'),'{"type":"module"}',{mode:0o600});
 const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const log=path.join(root,'sync.log'),err=path.join(root,'sync-error.log');
