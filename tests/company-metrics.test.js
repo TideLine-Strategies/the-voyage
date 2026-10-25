@@ -60,3 +60,11 @@ test('a fresh provider sample updates freshness even when historical samples are
  const m=metric(buildCockpit(summary({providers}),{},[{metric:'ci.failures',value:1,at:now-day}],now),'ci.failures');
  assert.equal(m.current,0);assert.equal(m.freshAt,now);assert.equal(m.status,'healthy');
 });
+test('CRM delivery target counts overdue source handoffs only, with unavailable data unknown',()=>{
+ const row={status:'connected',unlinkedOver10Minutes:0};const acquisition={status:'connected',asOf:new Date(now).toISOString(),contacts:row,waitlist:row};
+ const build=a=>buildCockpit(summary({company:'tideline',acquisition:a}),{},[],now);
+ assert.equal(metric(build(acquisition),'crm.unlinked').status,'healthy');
+ const overdue={...acquisition,contacts:{...row,unlinkedOver10Minutes:3}};assert.equal(metric(build(overdue),'crm.unlinked').status,'critical');assert.ok(build(overdue).signals.some(s=>s.id==='crm.unlinked'));
+ assert.equal(metric(build({...acquisition,waitlist:{...row,unlinkedOver10Minutes:null}}),'crm.unlinked').status,'unknown');
+ assert.equal(metric(buildCockpit(summary({company:'wonplace',acquisition}),{},[],now),'crm.unlinked').status,'unknown');
+});
