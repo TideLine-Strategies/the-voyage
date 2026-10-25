@@ -1,3 +1,4 @@
+import {finishTrakrConnection} from './company-trakr.js';
 import {finishGA4Connection} from './company-ga4-auth.js';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { timingSafeEqual, randomBytes, createHash } from 'node:crypto';
@@ -24,6 +25,7 @@ async function limit(db,bucket,max){
 }
 export async function handleAccountAuth(request,env,{audit,readJson,verifyGoogle=googleMember,exchange=runtimeFetch}){
  const path=new URL(request.url).pathname;
+ if(path==='/auth/trakr/callback')return finishTrakrConnection(request,env);
  if(path==='/auth/ga4/callback')return finishGA4Connection(request,env,{exchange});
  if(path==='/auth/form.js'&&request.method==='GET')return new Response(accountFormScript,{headers:{'content-type':'text/javascript','cache-control':'no-store'}});
  if(path==='/auth/password'||path==='/auth/recover'||path==='/auth/mfa')return handlePassword(request,env,{audit,readJson,exchange});

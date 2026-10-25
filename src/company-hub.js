@@ -1,3 +1,4 @@
+import {readTrakrReport} from './company-trakr.js';
 import { DurableObject } from 'cloudflare:workers';
 import { companyEvent, snapshotFrom } from './company-events.js';
 export class CompanyHub extends DurableObject {
@@ -6,6 +7,7 @@ export class CompanyHub extends DurableObject {
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, at INTEGER NOT NULL, data TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS measurements (metric TEXT NOT NULL, at INTEGER NOT NULL, currency TEXT NOT NULL DEFAULT \'\', value REAL NOT NULL, PRIMARY KEY(metric,at,currency))');
   }
+  async trakrReport(){return this.ctx.blockConcurrencyWhile(async()=>{try{return await readTrakrReport(this.env);}catch{return {source:'Trakr Pro',status:'unavailable',financials:null};}});}
   snapshot(includeHistory=false) {
     const rows=this.ctx.storage.sql.exec('SELECT data FROM events WHERE at>? ORDER BY seq LIMIT 2000',Date.now()-7*86400000).toArray();
     const measurements=includeHistory?this.ctx.storage.sql.exec('SELECT metric,at,currency,value FROM measurements WHERE at>? ORDER BY at LIMIT 10000',Date.now()-30*86400000).toArray():[];
