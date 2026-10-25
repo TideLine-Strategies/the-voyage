@@ -1,3 +1,4 @@
+import {acquisitionReport} from './company-acquisition.js';
 import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
 import {startGA4Connection} from './company-ga4-auth.js';
 import {readGA4} from './company-ga4.js';
@@ -6,19 +7,8 @@ const headers={'cache-control':'private, no-store','x-content-type-options':'nos
 const reply=(data,status=200)=>Response.json(data,{status,headers});
 const identifier=/^[a-zA-Z0-9_.:-]{1,100}$/;
 export function companyStub(env,company) {return env.COMPANY_HUB?.get(env.COMPANY_HUB.idFromName(company));}
-export async function signedHeaders(secret,method,url,actor,body='') {
-  const time=String(Date.now()),path=new URL(url).pathname+new URL(url).search;
-  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-  const signature=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode([method,path,time,actor,body].join('\n')));
-  return {'content-type':'application/json','x-voyage-time':time,'x-voyage-actor':actor,'x-voyage-signature':[...new Uint8Array(signature)].map(x=>x.toString(16).padStart(2,'0')).join('')};
-}
-export async function verifySource(request,secret,body) {
-  if(typeof secret!=='string'||secret.length<32)return false;
-  const time=request.headers.get('x-voyage-time'),actor=request.headers.get('x-voyage-actor'),sig=request.headers.get('x-voyage-signature')||'';
-  if(!time||!Number.isFinite(Number(time))||Math.abs(Date.now()-Number(time))>60000||!actor||!/^[a-zA-Z0-9 _.-]{1,200}$/.test(actor)||!/^[a-f0-9]{64}$/.test(sig))return false;
-  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['verify']);
-  return crypto.subtle.verify('HMAC',key,Uint8Array.from(sig.match(/../g),x=>parseInt(x,16)),new TextEncoder().encode([request.method,new URL(request.url).pathname+new URL(request.url).search,time,actor,body].join('\n')));
-}
+export {signedHeaders,verifySource} from './company-signing.js';
+import {signedHeaders,verifySource} from './company-signing.js';
 export function safeLink(value) {
   const url=new URL(value);
   if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw Error('Use an HTTPS source link without credentials or query parameters');
@@ -75,6 +65,7 @@ export async function handleCompany(request,env,actor,path,readJson) {
   }
   if(request.method==='POST'&&operation==='ga4-connect')return company==='tideline'?startGA4Connection(request,env,actor):reply({error:'Not found'},404);
   if(request.method==='GET'&&operation==='ga4')return company==='tideline'?reply(await readGA4(env)):reply({error:'GA4 reports belong to the TideLine website'},404);
+  if(request.method==='GET'&&operation==='acquisition')return company==='tideline'?reply(await acquisitionReport(env)):reply({error:'Acquisition belongs to TideLine'},404);
   if(request.method==='GET'&&operation==='source')return companySource(env,company,actor);
   if(request.method==='PUT'&&['connections','financials'].includes(operation)) {
     const data=await readJson(request);if(!identifier.test(data.id||''))return reply({error:'A stable record ID is required'},400);
