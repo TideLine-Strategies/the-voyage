@@ -46,3 +46,7 @@ test('website defaults focus on acquisition without overwriting saved product se
  assert.deepEqual(buildCockpit(summary({company:'tideline',cockpit:saved}),{},[],now).settings,saved);
  assert.deepEqual(buildCockpit(summary(),{},[],now).settings.focus,['customers.paying','api.errorRate','revenue.received']);
 });
+test('an empty or unspecified Actions history cannot report healthy CI',()=>{
+ for(const recentRuns of [0,undefined]){const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns,failedRecentRuns:0}}];assert.equal(metric(buildCockpit(summary({providers}),{},[],now),'ci.failures').status,'unknown');}
+ const providers=[{provider:'github',status:'ok',checkedAt:now,metrics:{recentRuns:3,failedRecentRuns:0}}];assert.equal(metric(buildCockpit(summary({providers}),{},[],now),'ci.failures').status,'healthy');
+});
