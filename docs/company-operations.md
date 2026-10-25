@@ -109,3 +109,28 @@ a real signed-in WonPlace page/action appearing in Voyage's WonPlace feed, no
 appearance in TideLine/Loki/Voyage scopes, the same original Spring incident ID in
 both apps (or a verified empty permitted incident queue), and a product-tagged business record staying out of personal sources.
 An HTTP 200 or local simulation does not prove these production flows.
+
+## Company connections — October 25, 2026
+
+The managed Company connections release installs `com.tideline.company-analytics`.
+It runs the existing bounded GitHub/Cloudflare collector every 15 minutes while
+this Mac is awake. Each product retains its own signing key and exact resource
+mapping. The runtime is an independent dependency snapshot, not a mutable
+worktree symlink. Provider failures write unavailable status; they do not renew
+an old successful measurement. Sleep or lost CLI access can still make data stale.
+`~/Library/Application Support/TideLine/Company Analytics/last-sync.json` records
+collector completion; verify provider status and timestamps independently in Voyage.
+
+`GET /api/companies/tideline/acquisition` is editor-only. It reads source
+submissions, CRM intake receipts, anonymous conversion events, and immutable
+CRM links without sending messages, retrying writes, or exposing personal fields.
+Sales shows contact and waitlist as alternative paths. Period source counts are
+separate from all-time linked CRM stages and won contracts. Unknown schema/data
+remains unavailable. Won contract value never becomes received revenue.
+
+Financial source decision: Trakr Pro, with an explicitly separate TideLine
+business spreadsheet and read-only, revocable OAuth scope. Personal ledgers are
+outside this connection. Financial connection is not complete until source-side
+release, owner sign-in/consent, business ledger verification and live reporting pass.
+LinkedIn Page analytics still requires an authorized Page admin session; TikTok
+requires a confirmed business account. Public post observations are not reach analytics.
