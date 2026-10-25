@@ -9,7 +9,7 @@ const secret='company-integration-test-00000000000000',origin='https://voyage.ex
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');sqlite.exec(fs.readFileSync('migrations/0001_initial.sql','utf8'));
  const DB={prepare(sql){let args=[];return {bind(...values){args=values;return this;},async run(){return {meta:{changes:sqlite.prepare(sql).run(...args).changes}};},async all(){return {results:sqlite.prepare(sql).all(...args)};},async first(){return sqlite.prepare(sql).get(...args)||null;}};}};
- const buckets=new Map();const env={DB,WONPLACE_OPERATIONS_SECRET:secret,TIDELINE_OPERATIONS_SECRET:secret+'tideline',COMPANY_HUB:{idFromName:name=>name,get:id=>({snapshot:async()=>snapshotFrom(buckets.get(id)||[]),ingest:async events=>{buckets.set(id,[...(buckets.get(id)||[]),...events.map(e=>companyEvent(e))]);return {accepted:events.length};},fetch:async()=>new Response('stream')})}};
+ const buckets=new Map();const env={DB,WONPLACE_OPERATIONS_SECRET:secret,TIDELINE_OPERATIONS_SECRET:secret+'tideline',COMPANY_HUB:{idFromName:name=>name,get:id=>({trakrReport:async()=>({status:'not_connected',financials:null}),snapshot:async()=>snapshotFrom(buckets.get(id)||[]),ingest:async events=>{buckets.set(id,[...(buckets.get(id)||[]),...events.map(e=>companyEvent(e))]);return {accepted:events.length};},fetch:async()=>new Response('stream')})}};
  const call=(company,operation='',method='GET',body=null,actor={role:'edit',id:'QS'})=>{const path='/api/companies/'+company+(operation?'/'+operation:'');const request=new Request(origin+path,{method,headers:{origin},...(body?{body:JSON.stringify(body)}:{})});return handleCompany(request,env,actor,path.split('/').filter(Boolean),r=>r.json());};
  return {env,call,sqlite};
 }

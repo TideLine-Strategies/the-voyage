@@ -134,3 +134,26 @@ outside this connection. Financial connection is not complete until source-side
 release, owner sign-in/consent, business ledger verification and live reporting pass.
 LinkedIn Page analytics still requires an authorized Page admin session; TikTok
 requires a confirmed business account. Public post observations are not reach analytics.
+
+### Trakr Pro connection contract
+
+The Company Finance inspector starts a named owner-only connection using Trakr's
+existing OAuth server, dynamic client registration, exact registered callback,
+authorization code + S256 PKCE, browser-bound single-use state and explicit
+`trakr:business:tideline:read` consent. Only the verified TideLine owner account
+can connect or disconnect; existing Company editors may read approved business
+facts. The source issuer/resource and business workspace identity are pinned.
+
+Access/rotating refresh tokens are AES-GCM encrypted in the private existing D1
+store using the existing reporting encryption key with distinct authenticated
+context. Tokens never appear in UI, source reports or logs. A dedicated finance
+instance of the existing CompanyHub serializes refreshes; compare-and-swap
+protects a changed connection from an old refresh. Grants can be revoked in
+Trakr or disconnected from Company. Reports retain source timestamps, five-minute
+cache coverage and explicit stale/needs-setup states. Source reads use fixed
+hosts, bounded responses and manual redirects.
+
+When connected, product-tagged Trakr facts feed financial chart metrics. The
+manual Voyage ledger remains a separate editor and is not silently copied or
+added to Trakr totals. Personal sheets, bank balances and payment execution are
+outside this connection. A blank business register is not a reconciled zero.
