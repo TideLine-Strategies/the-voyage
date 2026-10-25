@@ -39,6 +39,8 @@ export function measurement(value,now=Date.now()){
 }
 export function providerMeasurements(p){
  if(p.status!=='ok')return [];
+ // An empty Actions history is missing evidence, not a passing check.
+ if(p.provider==='github'&&(!Number.isInteger(p.metrics.recentRuns)||p.metrics.recentRuns<=0))return [];
  const keys=p.provider==='cloudflare'?{'api.requests':'requests','api.errors':'errors','api.upstream':'subrequests'}:p.provider==='github'?{'ci.failures':'failedRecentRuns'}:{};
  const rows=Object.entries(keys).filter(([,key])=>Number.isFinite(p.metrics[key])).map(([metric,key])=>({metric,value:p.metrics[key],at:p.checkedAt}));
  if(p.provider==='cloudflare'&&p.metrics.requests>0&&Number.isFinite(p.metrics.errors))rows.push({metric:'api.errorRate',value:100*p.metrics.errors/p.metrics.requests,at:p.checkedAt});return rows;
