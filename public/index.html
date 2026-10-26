@@ -471,7 +471,7 @@ dialog.wide{width:min(860px,calc(100% - 24px))}
 body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#aAddContact,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
 /* Vendors are for editors only; the Worker refuses guest reads and writes. */
 body.guest .nav[data-view="cadence"],body.guest #view-cadence,body.guest .nav[data-view="vendors"],body.guest #view-vendors,body.guest .nav[data-view="deals"],body.guest #view-deals,body.guest #view-deal,body.guest #aDealsSec{display:none!important}
-body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
+body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important}
 .usec{margin-top:22px}.usec h2{font-size:16px;margin:0 0 4px}.usec .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
 .ucols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .ubar{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) 6.5rem;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);font-size:14px}
@@ -525,6 +525,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
     <button class="nav" data-view="company" id="companyNav">Company</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
+    <button class="nav" data-view="tickets">Company tickets</button>
     <button class="nav" data-view="calendar">Calendar</button>
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
@@ -743,6 +744,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
       </div>
     </section>
 
+    <section id="view-tickets" hidden><div class="head"><div><h1>Company tickets</h1><p>WonPlace reports, read directly from the original records.</p></div></div><div id="companyTickets"></div></section>
     <section id="view-admin" hidden>
       <button class="back" id="adBack">‹ Back to Profile</button>
       <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
@@ -1099,6 +1101,7 @@ body.guest .nav[data-view="admin"],body.guest #view-admin{display:none!important
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/voyage-db.js"></script>
+<script src="/company-tickets.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
 <script src="/content.js"></script>
@@ -3008,6 +3011,8 @@ const SOON={
 window.addEventListener("voyage-company-account",event=>{if(guest||typeof event.detail!=="string")return;const account=opps.find(o=>o.id===event.detail);if(account)openAccount(account.id,"accounts");});
 window.addEventListener("voyage-content-navigate",event=>{if(guest)return;const {view:next,contentItem}=event.detail||{};if(!["dash","accounts","company","content"].includes(next))return;go(next);if(next==="content"&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem||""))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Do not invent claims, media or analytics. Do not publish."}));});
 function go(v){
+  if(v==="tickets"&&guest)return;
+  $("view-tickets").hidden=v!=="tickets";if(v==="tickets")window.loadCompanyTickets();
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   if((v==="company"||v==="content")&&guest)return;
   $("view-content").hidden=v!=="content";
