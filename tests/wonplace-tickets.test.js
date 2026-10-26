@@ -28,3 +28,11 @@ test('reject arbitrary routes and stream authenticated attachment downloads',asy
  const response=await handleWonPlaceTickets(req(),env,actor,['api','tickets',id,'attachments','0'],async()=>new Response('image-bytes',{headers:{'content-disposition':'attachment; filename="screen.png"'}}));
  assert.equal(await response.text(),'image-bytes');assert.equal(response.headers.get('content-type'),'application/octet-stream');assert.match(response.headers.get('content-disposition'),/attachment/);
 });
+
+test('Worker without AbortSignal.timeout still reaches the signed source',async()=>{
+ const original=AbortSignal.timeout;
+ try{AbortSignal.timeout=undefined;let reached=false;
+ const result=await handleWonPlaceTickets(new Request('https://voyage.example/api/tickets'),{WONPLACE_TICKETS_ORIGIN:'https://wonplace.example',WONPLACE_TICKETS_SECRET:'a'.repeat(64)},{id:'quan',role:'edit'},['api','tickets'],async()=>{reached=true;return Response.json({items:[],nextOffset:null});});
+ assert.equal(reached,true);assert.equal(result.status,200);
+ }finally{AbortSignal.timeout=original;}
+});
