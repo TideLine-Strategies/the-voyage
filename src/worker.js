@@ -1,3 +1,4 @@
+import { handleWonPlaceTickets } from "./wonplace-tickets.js";
 import {releaseInfo} from './release-info.js';
 import {handleOps,ingestOps} from "./content-ops.js";
 import {serveMedia,ingestMedia} from "./content-media.js";
@@ -835,6 +836,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
+  if (path[1] === "tickets") return handleWonPlaceTickets(request, env, actor, path);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
   if (path.length === 3 && path[1] === "muninn" && path[2] === "context" && method === "GET") {
