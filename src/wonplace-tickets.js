@@ -20,7 +20,8 @@ export async function handleWonPlaceTickets(request,env,actor,path,transport=fet
  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(env.WONPLACE_TICKETS_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
  const signature=[...new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(text)))].map(x=>x.toString(16).padStart(2,'0')).join('');
  try{
-  const upstream=await transport(target.toString(),{method:request.method,headers:{'content-type':'application/json','x-voyage-time':time,'x-voyage-actor':identity,'x-voyage-signature':signature},...(body?{body}:{}),redirect:'error',signal:AbortSignal.timeout(15000)});
+  const upstream=await transport(target.toString(),{method:request.method,headers:{'content-type':'application/json','x-voyage-time':time,'x-voyage-actor':identity,'x-voyage-signature':signature},...(body?{body}:{}),redirect:'manual',...(typeof AbortSignal!=='undefined'&&typeof AbortSignal.timeout==='function'?{signal:AbortSignal.timeout(15000)}:{})});
+  if(upstream.status>=300&&upstream.status<400)return reply({error:'WonPlace ticket source redirected unexpectedly. No save was confirmed.'},502);
   const headers=new Headers(JSON_HEADERS);
   if(suffix[1]==='attachments'&&upstream.ok){headers.set('content-type','application/octet-stream');headers.set('content-disposition',upstream.headers.get('content-disposition')||'attachment');return new Response(upstream.body,{status:upstream.status,headers});}
   if(!(upstream.headers.get('content-type')||'').includes('application/json'))return reply({error:'WonPlace tickets are temporarily unavailable.'},503);
