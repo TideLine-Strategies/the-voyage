@@ -35,6 +35,9 @@ try{
  t=await ticket('DELETE','/'+ticketId,{expectedRevision:issue.revision});issue=(await t.json()).issue;assert.equal(issue.deleted,true);
  t=await ticket('PATCH','/'+ticketId,{restore:true,expectedRevision:issue.revision});assert.equal((await t.json()).issue.deleted,false);
  assert.equal((await mf.dispatchFetch(ticketUrl+'/'+ticketId+'?company=wonplace',{method:'PATCH',headers:{...headers,origin:'https://evil.example'},body:'{}'})).status,403);
+ const handoff=await mf.dispatchFetch(origin+'/api/ticket-handoff',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({company:'wonplace',id:ticketId,source:'company',agent:'codex'})});assert.equal(handoff.status,200);const handoffData=await handoff.json();assert.equal(handoffData.payload.id,ticketId);assert.match(handoffData.payload.prompt,/Runtime ticket acceptance/);assert(handoffData.signature);
+ const sweepUrl=origin+'/api/company-ticket-sweep/wonplace',sweep=await mf.dispatchFetch(sweepUrl,{headers:await signedHeaders(secret,'GET',sweepUrl,'Muninn')});assert.equal(sweep.status,200);assert.equal((await sweep.json()).tickets.length,1);assert.equal((await mf.dispatchFetch(sweepUrl)).status,401);
+ console.log(JSON.stringify({ticketHandoffSigned:true,dailySweepSource:true,anonymousSweepDenied:true}));
  console.log(JSON.stringify({ticketLifecycle:true,screenshotRoundtrip:true,ticketProductIsolation:true,conflictProtection:true,crossOriginWritesDenied:true}));
  await db.prepare('UPDATE members SET active=0 WHERE id=?').bind('QS').run();assert.equal((await mf.dispatchFetch(origin+'/api/companies/wonplace/live',{headers:{...headers,upgrade:'websocket'}})).status,403);
  socket.close();console.log(JSON.stringify({accepted:true,realDurableObject:true,pushedWebSocketUpdate:true,independentProductScopes:true,anonymousDenied:true,revokedMembershipDenied:true}));
