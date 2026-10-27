@@ -1,4 +1,5 @@
-import {handoffPackage,signedTicketRead} from "./ticket-handoffs.js";
+import {handleTicketQueue,sourceTicketQueue,sourceTicketSweep} from "./ticket-job-queue.js";
+import {signedTicketRead} from "./ticket-handoffs.js";
 import { handleCompanyTickets } from "./company-tickets.js";
 import { handleWonPlaceTickets } from "./wonplace-tickets.js";
 import {releaseInfo} from './release-info.js';
@@ -838,7 +839,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "me" && method === "GET") return reply(actor);
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
-  if(path.length===2&&path[1]==="ticket-handoff"&&method==="POST")return handoffPackage(env,actor,await readJson(request));
+  if(path[1]==="ticket-handoff")return handleTicketQueue(request,env,actor,path,readJson);
   if (path[1] === "company-tickets") return handleCompanyTickets(request, env, actor, path);
   if (path[1] === "tickets") return handleWonPlaceTickets(request, env, actor, path);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
@@ -958,6 +959,8 @@ export default {
       try{const snapshot=baselineSnapshot(body);const result=await env.DB.prepare("INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?) ON CONFLICT(collection,id) DO UPDATE SET data_json=excluded.data_json,revision=documents.revision+1,updated_at=excluded.updated_at WHERE json_extract(documents.data_json,'$.checkedAt') <= json_extract(excluded.data_json,'$.checkedAt')").bind("content_baseline","linkedin",JSON.stringify(snapshot),Date.now()).run();return reply({accepted:result.meta.changes===1,posts:snapshot.posts.length});}catch{return error("Invalid source baseline",400);}
     }
     if (pathName.startsWith("/api/content-source/")) return ingestContent(request,env,readJson);
+    if(pathName.startsWith("/api/company-ticket-sweep/"))return sourceTicketSweep(request,env);
+    if(pathName.startsWith("/api/company-ticket-jobs/"))return sourceTicketQueue(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-sweep/")||pathName.startsWith("/api/company-ticket-image/"))return signedTicketRead(request,env);
     if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);

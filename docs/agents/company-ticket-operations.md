@@ -10,7 +10,7 @@ with summaries. Company triage is linked to the original record.
 At 09:00 America/Chicago (catch up after wake), read all four product scopes.
 Keep missing sources explicit. Connected zero-open counts mean no active work, not missing data. Include the 20 most recently resolved tickets as review evidence, without counting them as open. A manual --correction run uses its own deduplicated subject/state; the regular daily send remains once per day. Exclude trash; deduplicate linked Spring reports;
 flag unresolved original reports whose Company triage is marked resolved.
-Use the existing read-only Muninn LLM to assess priority, impact, blockers,
+Use the authenticated Codex CLI in a tools-disabled, read-only Muninn review runner; accept only a completed model turn, not a process-exit assumption. Use this LLM to assess priority, impact, blockers,
 aging/unassigned work and next actions. Counts and recipient selection are
 deterministic. Append actual source counts separately from AI assessment.
 Do not infer severity, revenue loss, payment readiness, customer identities or
@@ -26,7 +26,7 @@ when a verified operating constraint changes; do not rewrite historical evidence
 
 ## Coding handoffs
 
-Buttons prepare current evidence, then an explicit Launch queues Codex or Claude.
+Buttons prepare current evidence, then an explicit Launch queues Codex or Claude through the authenticated CRM API; the owner Mac polls the signed queue. Browser-to-localhost access is not required. Only the verified Quan and Cody owner emails may enqueue or cancel work; ordinary CRM editors can copy prompts. Claims are atomic, recheck owner access, expire after 24 hours and never automatically re-launch an uncertain worker.
 Copy prompt works independently of the local helper. Handoffs use short-lived
 signed packages, replay protection, repository allowlists and exact source image
 reads. Download real screenshots before launching. Keep prompt text on stdin.
@@ -44,3 +44,9 @@ Botler for a real owner gate or recurring failed delivery; deduplicate alerts.
 This workflow runs on the owner Mac and requires its existing logged-in Mail,
 Codex/Claude and Muninn sessions. Never copy cookies, extract credentials, change
 accounts, or claim a local schedule is a cloud service.
+
+Claude execution uses its normal vendor credential store, not the stale global
+CLAUDE_CODE_OAUTH_TOKEN override. Owner sign-in/refresh remains a real handoff.
+The worker publishes only authenticated CLI capabilities and does not claim
+queued Claude jobs until that login is available. No provider credentials are
+printed, copied into CRM records or stored in LaunchAgent plists.
