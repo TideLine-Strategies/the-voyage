@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {unzipSync,strFromU8} from 'fflate';
 import {build} from 'esbuild';
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 import {signedHeaders} from '../src/company-ops.js';
@@ -42,6 +43,16 @@ try{
  const queueUrl=origin+'/api/company-ticket-jobs/wonplace',claimBody=JSON.stringify({action:'claim',runtimeId,jobId}),claimed=await mf.dispatchFetch(queueUrl,{method:'POST',headers:await signedHeaders(secret,'POST',queueUrl,'Mac worker',claimBody),body:claimBody});assert.equal(claimed.status,200);assert((await claimed.json()).envelope.signature);
  assert.equal((await mf.dispatchFetch(queueUrl,{method:'POST',headers:await signedHeaders(secret,'POST',queueUrl,'Mac worker',claimBody),body:claimBody})).status,409);
  const queuedState=await(await mf.dispatchFetch(origin+'/api/ticket-handoff/'+jobId+'?company=wonplace',{headers})).json();assert.equal(queuedState.job.state,'claimed');
+
+ // Cody's personal Claude export uses only his authenticated CRM access, not a Mac worker token.
+ const codyToken='b'.repeat(64),codyHash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(codyToken)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+ await db.prepare('INSERT INTO members VALUES(?,?,?,?,?)').bind('CK','Test Cody','edit',1,'c.knudsen@tidelinestrats.com').run();await db.prepare('INSERT INTO sessions VALUES(?,?,?)').bind(codyHash,'CK',Date.now()+60000).run();
+ const portableUrl=origin+'/api/ticket-handoff/portable?company=wonplace&id='+ticketId+'&source=company';
+ assert.equal((await mf.dispatchFetch(portableUrl)).status,403);
+ const portable=await mf.dispatchFetch(portableUrl,{headers:{cookie:'voyage_session='+codyToken}});assert.equal(portable.status,200);const exported=unzipSync(new Uint8Array(await portable.arrayBuffer()));assert.equal(Buffer.from(exported['screenshots/01.png']).toString('base64'),bytes);assert.match(strFromU8(exported['TASK.md']),/Runtime ticket acceptance/);assert.match(strFromU8(exported['README.md']),/own Claude subscription/);
+ assert.equal((await db.prepare("SELECT count(*) n FROM documents WHERE collection='company_ticket_jobs'").first()).n,1,'Personal export does not launch or enqueue a worker');
+ await db.prepare('UPDATE members SET active=0 WHERE id=?').bind('CK').run();assert.equal((await mf.dispatchFetch(portableUrl,{headers:{cookie:'voyage_session='+codyToken}})).status,403);
+ console.log(JSON.stringify({codyPersonalClaude:true,actualScreenshotsInZip:true,noWorkerLaunch:true,revokedCodyDenied:true}));
  console.log(JSON.stringify({sameOriginCodingQueue:true,ownerVerified:true,atomicWorkerClaim:true}));
  console.log(JSON.stringify({ticketHandoffSigned:true,dailySweepSource:true,anonymousSweepDenied:true}));
  console.log(JSON.stringify({ticketLifecycle:true,screenshotRoundtrip:true,ticketProductIsolation:true,conflictProtection:true,crossOriginWritesDenied:true}));

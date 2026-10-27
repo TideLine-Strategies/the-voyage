@@ -1,4 +1,5 @@
 import {handoffPackage,ticketSweep} from './ticket-handoffs.js';
+import {portableClaudeTask} from './ticket-portable.js';
 import {verifySource} from './company-signing.js';
 const products=['wonplace','voyage','tideline','loki'],repos=['wonplace','voyage'],collection='company_ticket_jobs',runtimeCollection='company_ticket_runtime';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -12,6 +13,7 @@ const publicJob=j=>({id:j.id,company:j.company,ticket:j.ticket,agent:j.agent,sta
 export async function handleTicketQueue(request,env,actor,path,readJson){
  if(actor.role!=='edit')return reply({error:'Editors only'},403);
  const url=new URL(request.url),company=url.searchParams.get('company');
+ if(path[2]==='portable'&&request.method==='GET')return portableClaudeTask(env,actor,{company,id:url.searchParams.get('id'),source:url.searchParams.get('source')});
  if(path.length===2&&request.method==='GET'&&products.includes(company)&&uuid.test(url.searchParams.get('ticket')||''))return reply({jobs:await codingJobs(env,company,url.searchParams.get('ticket'))});
  if(path[2]==='status'&&request.method==='GET'){
   const workers=await Promise.all(repos.map(c=>stored(env,runtimeCollection,c))),worker=workers.filter(Boolean).sort((a,b)=>b.lastSeen-a.lastSeen)[0],digest=await stored(env,runtimeCollection,'digest');return reply({worker:worker&&{lastSeen:worker.lastSeen,available:Date.now()-worker.lastSeen<90000,agents:worker.agents||[],products:repos},dailyReview:{hour:9,timezone:'America/Chicago',last:digest&&{day:digest.day,status:digest.status,messageId:digest.messageId||null}}});
