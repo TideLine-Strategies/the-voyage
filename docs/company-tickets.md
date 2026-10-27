@@ -103,3 +103,5 @@ and Cody can enqueue/cancel coding workers; ordinary editors can copy prompts.
 Each ticket shows recent coding task states. A queued request can be cancelled
 before claim; uncertain launches remain explicit and are never auto-replayed.
 The daily review includes coding-job state alongside ticket evidence.
+
+Fix with Claude uses **your own computer and Claude Code account**. Download the task ZIP, extract it, select the matching repository in Claude Desktop’s Code tab with Worktree enabled, then paste TASK.md and attach screenshots/. Terminal users can use the README’s `claude --worktree --add-dir` instructions. No owner-Mac login is required. Downloading starts no repair and marks no ticket resolved; add the eventual PR and checks back to Company. Fix with Codex continues to queue the shared owner Mac worker.

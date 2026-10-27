@@ -50,3 +50,7 @@ CLAUDE_CODE_OAUTH_TOKEN override. Owner sign-in/refresh remains a real handoff.
 The worker publishes only authenticated CLI capabilities and does not claim
 queued Claude jobs until that login is available. No provider credentials are
 printed, copied into CRM records or stored in LaunchAgent plists.
+
+## Personal Claude Code handoff
+
+Fix with Claude opens a personal-computer handoff, never a shared-Mac launch. Cody uses his own Claude subscription and repository access. Download a private ZIP containing TASK.md, README.md and every saved screenshot, including the original Spring report linked to Company triage. It needs no owner-Mac Claude login or source-launch signature. Keep downloads read-only: no coding queue entry, ticket-stage update or launch claim. The user opens their repository with Worktree enabled, supplies TASK.md and screenshots, reviews the PR and records verification on the ticket. Do not claim execution on Cody’s machine without an actual result. Reject incomplete/invalid image bundles; filenames are generated, never attachment-controlled paths. Bound images at 6 MiB each, 13 files and 20 MiB total.
