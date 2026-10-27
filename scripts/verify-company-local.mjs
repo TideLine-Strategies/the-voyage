@@ -7,9 +7,9 @@ const secret='local-integration-only-00000000000000000',origin='http://localhost
 const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:result.outputFiles[0].text,compatibilityDate:'2026-09-29',compatibilityFlags:['nodejs_compat'],durableObjects:{COMPANY_HUB:{className:'CompanyHub',useSQLite:true}},d1Databases:{DB:'test'},bindings:{WONPLACE_OPERATIONS_SECRET:secret,TIDELINE_OPERATIONS_SECRET:secret+'tideline'}}));
 try{
  const db=await mf.getD1Database('DB');
- await db.exec('CREATE TABLE documents(collection TEXT,id TEXT,data_json TEXT,updated_at INTEGER,revision INTEGER DEFAULT 1,PRIMARY KEY(collection,id)); CREATE TABLE members(id TEXT PRIMARY KEY,name TEXT,role TEXT,active INTEGER); CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,member_id TEXT,expires_at INTEGER);');
+ await db.exec('CREATE TABLE documents(collection TEXT,id TEXT,data_json TEXT,updated_at INTEGER,revision INTEGER DEFAULT 1,PRIMARY KEY(collection,id)); CREATE TABLE members(id TEXT PRIMARY KEY,name TEXT,role TEXT,active INTEGER,email TEXT); CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,member_id TEXT,expires_at INTEGER);');
  const token='a'.repeat(64),hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))].map(x=>x.toString(16).padStart(2,'0')).join('');
- await db.prepare('INSERT INTO members VALUES(?,?,?,?)').bind('QS','Test Owner','edit',1).run();await db.prepare('INSERT INTO sessions VALUES(?,?,?)').bind(hash,'QS',Date.now()+60000).run();
+ await db.prepare('INSERT INTO members VALUES(?,?,?,?,?)').bind('QS','Test Owner','edit',1,'q.stewart@tidelinestrats.com').run();await db.prepare('INSERT INTO sessions VALUES(?,?,?)').bind(hash,'QS',Date.now()+60000).run();
  assert.equal((await mf.dispatchFetch(origin+'/api/companies/wonplace')).status,403);
  const headers={cookie:'voyage_session='+token,origin};
  const upgrade=await mf.dispatchFetch(origin+'/api/companies/wonplace/live',{headers:{...headers,upgrade:'websocket'}});assert.equal(upgrade.status,101);const socket=upgrade.webSocket;
@@ -37,6 +37,12 @@ try{
  assert.equal((await mf.dispatchFetch(ticketUrl+'/'+ticketId+'?company=wonplace',{method:'PATCH',headers:{...headers,origin:'https://evil.example'},body:'{}'})).status,403);
  const handoff=await mf.dispatchFetch(origin+'/api/ticket-handoff',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({company:'wonplace',id:ticketId,source:'company',agent:'codex'})});assert.equal(handoff.status,200);const handoffData=await handoff.json();assert.equal(handoffData.payload.id,ticketId);assert.match(handoffData.payload.prompt,/Runtime ticket acceptance/);assert(handoffData.signature);
  const sweepUrl=origin+'/api/company-ticket-sweep/wonplace',sweep=await mf.dispatchFetch(sweepUrl,{headers:await signedHeaders(secret,'GET',sweepUrl,'Muninn')});assert.equal(sweep.status,200);assert.equal((await sweep.json()).tickets.length,1);assert.equal((await mf.dispatchFetch(sweepUrl)).status,401);
+ const jobId='22222222-2222-4222-8222-222222222222',runtimeId='33333333-3333-4333-8333-333333333333';
+ const queued=await mf.dispatchFetch(origin+'/api/ticket-handoff',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({action:'queue',requestId:jobId,company:'wonplace',id:ticketId,source:'company',agent:'codex'})});assert.equal(queued.status,202);
+ const queueUrl=origin+'/api/company-ticket-jobs/wonplace',claimBody=JSON.stringify({action:'claim',runtimeId,jobId}),claimed=await mf.dispatchFetch(queueUrl,{method:'POST',headers:await signedHeaders(secret,'POST',queueUrl,'Mac worker',claimBody),body:claimBody});assert.equal(claimed.status,200);assert((await claimed.json()).envelope.signature);
+ assert.equal((await mf.dispatchFetch(queueUrl,{method:'POST',headers:await signedHeaders(secret,'POST',queueUrl,'Mac worker',claimBody),body:claimBody})).status,409);
+ const queuedState=await(await mf.dispatchFetch(origin+'/api/ticket-handoff/'+jobId+'?company=wonplace',{headers})).json();assert.equal(queuedState.job.state,'claimed');
+ console.log(JSON.stringify({sameOriginCodingQueue:true,ownerVerified:true,atomicWorkerClaim:true}));
  console.log(JSON.stringify({ticketHandoffSigned:true,dailySweepSource:true,anonymousSweepDenied:true}));
  console.log(JSON.stringify({ticketLifecycle:true,screenshotRoundtrip:true,ticketProductIsolation:true,conflictProtection:true,crossOriginWritesDenied:true}));
  await db.prepare('UPDATE members SET active=0 WHERE id=?').bind('QS').run();assert.equal((await mf.dispatchFetch(origin+'/api/companies/wonplace/live',{headers:{...headers,upgrade:'websocket'}})).status,403);

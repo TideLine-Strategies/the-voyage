@@ -1,10 +1,12 @@
+import {randomBytes} from 'node:crypto';
 import {createServer} from 'node:http';
 import {spawn,execFileSync} from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {launchArgs} from './ticket-coding-plan.mjs';
+import {startTicketPolling} from './ticket-worker-poll.mjs';
+import {launchArgs,codingEnv} from './ticket-coding-plan.mjs';
 import {signedHeaders,verifySource} from '../src/company-signing.js';
 const origin='https://voyage.tidelinestrats.com',port=38918;
 const home=os.homedir(),runtime=process.env.TICKET_OPERATIONS_HOME||path.dirname(path.dirname(fileURLToPath(import.meta.url))),stateRoot=path.join(runtime,'state');
@@ -17,13 +19,17 @@ function respond(res,status,data){res.writeHead(status,{'content-type':'applicat
 const alive=pid=>{try{process.kill(pid,0);return true;}catch{return false;}};
 async function body(req){let size=0,all='';for await(const c of req){size+=c.length;if(size>100000)throw Error('Handoff too large');all+=c;}return JSON.parse(all);}
 
+const workerToken=randomBytes(32).toString('hex');
+let authChecked=0,authAgents=[];
+function availableAgents(){if(Date.now()-authChecked<60000)return authAgents;authChecked=Date.now();authAgents=['codex','claude'].filter(agent=>{try{if(agent==='codex'){execFileSync('codex',['login','status'],{stdio:'ignore',env:codingEnv(agent),timeout:10000});return true;}const d=JSON.parse(execFileSync('claude',['auth','status','--json'],{encoding:'utf8',stdio:['ignore','pipe','ignore'],env:codingEnv(agent),timeout:10000}));return d.loggedIn===true;}catch{return false;}});return authAgents;}
 let launchBusy=false;
 createServer(async(req,res)=>{
  let ownsLaunch=false;
  if(req.headers.origin!==origin||req.headers.host!=='127.0.0.1:'+port||req.socket.remoteAddress!=='127.0.0.1'){respond(res,403,{error:'Local Voyage origin required'});return;}
  if(req.method==='OPTIONS'){respond(res,200,{ok:true});return;}
  try{
-  if(req.method==='GET'&&req.url==='/health'){let digest=null;try{digest=await get(path.join(runtime,'last-digest.json'));}catch{}respond(res,200,{service:'tideline-ticket-operations',repositories:Object.keys(repos),dailyReview:{hour:9,timezone:'America/Chicago',coverage:'Owner Mac awake, native Mail and Muninn connector required',last:digest&&{day:digest.day,status:digest.status,messageId:digest.messageId}},agents:['codex','claude'].filter(name=>{try{execFileSync('/usr/bin/which',[name],{stdio:'ignore'});return true;}catch{return false;}})});return;}
+  if(req.method==='GET'&&req.url==='/health'){let digest=null;try{digest=await get(path.join(runtime,'last-digest.json'));}catch{}respond(res,200,{service:'tideline-ticket-operations',repositories:Object.keys(repos),dailyReview:{hour:9,timezone:'America/Chicago',coverage:'Owner Mac awake, native Mail and Muninn connector required',last:digest&&{day:digest.day,status:digest.status,messageId:digest.messageId}},agents:availableAgents()});return;}
+  if(req.headers['x-ticket-worker']!==workerToken){respond(res,403,{error:'Owner Mac queue worker authentication required'});return;}
   if(req.method==='GET'&&/^\/jobs\/[0-9a-f-]{36}$/i.test(req.url)){const job=await get(path.join(stateRoot,req.url.split('/')[2]+'.json'));if(!job){respond(res,404,{error:'Job not found'});return;}let task=null;if(job.task)try{const q=JSON.parse(execFileSync('agent-workspace',['queue',job.task],{encoding:'utf8',timeout:10000}));task={id:q.id,state:q.state,stage:q.stage};}catch{}respond(res,200,{jobId:job.id,status:job.status,task});return;}
   if(req.method!=='POST'||req.url!=='/handoff'){respond(res,404,{error:'Not found'});return;}
   if(launchBusy){respond(res,409,{error:'Another handoff is being admitted. Retry after it finishes.'});return;}launchBusy=true;ownsLaunch=true;
@@ -42,10 +48,10 @@ createServer(async(req,res)=>{
    const chunks=[];let size=0;for await(const c of r.body){size+=c.byteLength;if(size>6*1024*1024)throw Error('Screenshot too large for coding handoff');chunks.push(c);}const bytes=Buffer.concat(chunks);if(!(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||(bytes[0]===255&&bytes[1]===216)||bytes.toString('ascii',0,6).startsWith('GIF8')||(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP')))throw Error('Attachment is not a supported screenshot; use Copy prompt to inspect it manually.');const file=path.join(work,'screenshot-'+index+'.png');await fs.writeFile(file,bytes,{mode:0o600});images.push(file);
   }
   const args=launchArgs(p,repos[p.company]);if(p.agent==='codex'&&images.length)args.splice(args.length-1,0,...images.flatMap(f=>['--image',f]));
-  const child=spawn('agent-workspace',args,{cwd:home,stdio:['pipe','pipe','pipe'],env:{...process.env,CLAUDECODE:undefined}}),job={id:p.nonce,ticket:p.id,company:p.company,source:p.source,agent:p.agent,requestedBy:p.actor,pid:child.pid,status:'queued',at:Date.now(),task:null};await put(nonceFile,job);
+  const child=spawn('agent-workspace',args,{cwd:home,stdio:['pipe','pipe','pipe'],env:codingEnv(p.agent)}),job={id:p.nonce,ticket:p.id,company:p.company,source:p.source,agent:p.agent,requestedBy:p.actor,pid:child.pid,status:'queued',at:Date.now(),task:null};await put(nonceFile,job);
   const out=await fs.open(path.join(work,'agent.log'),'a',0o600);let logged=0;const log=c=>{if(logged>2000000)return;logged+=c.length;void out.write(c).catch(()=>{});};child.stdout.on('data',log);child.stderr.on('data',c=>{const match=String(c).match(/Queued task ([a-f0-9]{12})/);if(match){job.task=match[1];job.status='running';void put(nonceFile,job);}log(c);});
   child.on('error',()=>{job.status='launcher_failed';void put(nonceFile,job);});child.on('exit',code=>{job.status=code===0?'worker_exited':'worker_failed';job.exitCode=code;void put(nonceFile,job);void out.close().catch(()=>{});});
   child.stdin.on('error',()=>{});child.stdin.end(p.prompt+'\n\nAttached local screenshots (read these before deciding on a repair):\n'+images.join('\n')+'\n\nUse resource-run for heavy checks. This is a supervised isolated workspace; commit scoped work and submit using AGENT_WORKSPACE_SESSION. Routine deployment goes through the coordinator; never push main or deploy directly. Record exact verification and unresolved owner gates.');
   respond(res,202,{jobId:job.id,status:job.status,message:'Coding agent queued in a managed isolated workspace. A queue entry is not a completed fix.'});
  }catch(error){respond(res,400,{error:error.message});}finally{if(ownsLaunch)launchBusy=false;}
-}).listen(port,'127.0.0.1',()=>console.log('Ticket operations listening on 127.0.0.1:'+port));
+}).listen(port,'127.0.0.1',()=>{console.log('Ticket operations listening on 127.0.0.1:'+port);void startTicketPolling({root:runtime,config,workerToken,agents:availableAgents}).catch(()=>console.error('Ticket queue worker could not initialize'));});
