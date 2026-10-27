@@ -1,3 +1,4 @@
+import { ContentPresentation, type PresentedContent } from "./ContentPresentation";
 import { MediaLoop } from "./MediaLoop";
 import { StationBoard } from "./StationBoard";
 import { OperationsPanel, type Asset, type State } from "./OperationsPanel";
@@ -147,6 +148,7 @@ async function api(body?: unknown) {
   return value;
 }
 export function LiveFactoryPage() {
+  const [presentation, setPresentation] = useState<PresentedContent | null>(null);
   const [campaignLink, setCampaignLink] = useState("");
   const [pane, setPane] = useState("line");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -299,6 +301,46 @@ export function LiveFactoryPage() {
     setDirty(false);
     setNote("");
   }
+  function present(id: string) {
+    if (!mayLeave()) return;
+    const item = data?.items.find((i) => i.id === id),
+      post = posts.find((p) => p.id === id);
+    const asset =
+      assets.find(
+        (a) =>
+          a.id === id ||
+          a.id === item?.mediaAssetId ||
+          a.id === item?.production?.captureAssetId ||
+          a.id === post?.mediaAssetId,
+      ) || assets.find((a) => a.postId === id && a.kind === "original" && a.mime === "video/mp4");
+    if (!item && !post && !asset) return;
+    const stage = item?.stage || (post ? "published" : "editing");
+    const poster = assets.find((a) => a.kind === "poster" && a.originalId === asset?.id);
+    setInspectorOpen(false);
+    if (item || post) {
+      setSelected(id);
+      setDraft(item || null);
+      setDirty(false);
+      setNote("");
+    }
+    setPresentation({
+      id,
+      title: item?.title || post?.title || asset!.title,
+      brand: item?.brand || post?.brand || asset?.brand || "tideline",
+      stage,
+      copy: item?.copy || post?.text || "",
+      detail: item?.value || item?.pain || "",
+      brief: item?.brief || "",
+      sourceUrls: item?.sourceUrls || (post ? [post.url] : []),
+      editable: !!item,
+      ...(asset?.mime === "video/mp4" && !["research", "scripting", "filming"].includes(stage)
+        ? { src: "/api/content-media/" + asset.id }
+        : {}),
+      ...(asset?.mime.startsWith("image/") ? { poster: "/api/content-media/" + asset.id } : {}),
+      ...(poster ? { poster: "/api/content-media/" + poster.id } : {}),
+      ...(asset ? { provenance: asset.provenance } : {}),
+    });
+  }
   function pick(id: string) {
     if (!mayLeave()) return;
     setSelected(id);
@@ -375,685 +417,716 @@ export function LiveFactoryPage() {
     </label>
   );
   return (
-    <div className="live-shell">
-      <aside className="live-sidebar">
-        <a className="live-logo" href="/">
-          <i className="factory-voyage-mark" />
-          <span>Voyage</span>
-        </a>
-        <nav aria-label="Workspace">
-          <a href="/">Workspace</a>
-          <a href="/?view=accounts">Accounts</a>
-          <a aria-current="page" href="/factory/">
-            Content
+    <>
+      {presentation && (
+        <ContentPresentation
+          content={presentation}
+          onClose={() => setPresentation(null)}
+          onDetails={() => {
+            const id = presentation.id;
+            setPresentation(null);
+            if (data?.items.some((i) => i.id === id) || posts.some((p) => p.id === id)) choose(id);
+            else setPane("operations");
+          }}
+        />
+      )}
+      <div className="live-shell">
+        <aside className="live-sidebar">
+          <a className="live-logo" href="/">
+            <i className="factory-voyage-mark" />
+            <span>Voyage</span>
           </a>
-          <a href="/?view=company">Company</a>
-        </nav>
-        <small>
-          TideLine Strategies
-          <br />
-          Gym operations first.
-          <br />
-          Real evidence, useful content.
-        </small>
-      </aside>
-      <main className="live-main">
-        <header className="live-header">
-          <div>
-            <span className="live-eyebrow">TIDELINE / CONTENT OPERATIONS</span>
-            <h1>Content factory.</h1>
-            <p>Help gym owners solve the work around the class.</p>
-            {ops?.cadence && (
-              <p className="live-muted">
-                3 pieces / week · Mon / Wed / Fri · Central · {ops.cadence.started}/3 started this
-                week · {ops.cadence.awaitingReview} awaiting approval
-              </p>
-            )}
-          </div>
-          <div>
-            <button
-              onClick={() => {
-                if (mayLeave()) {
-                  setDirty(false);
-                  setDraft(null);
-                  void refresh();
-                }
-              }}
-            >
-              Refresh sources
-            </button>
-            <button
-              disabled={!ops || busy}
-              aria-pressed={ops?.control?.paused || false}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const paused = !ops?.control?.paused;
-                  const r = await fetch("/api/content-ops", {
-                    method: "POST",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({ action: "set_paused", paused }),
-                  });
-                  if (!r.ok) throw Error("Could not change production state");
-                  setOps((s) => (s ? { ...s, control: { paused } } : s));
-                  setMessage(
-                    paused
-                      ? "Production paused. Running work finishes at its next checkpoint."
-                      : "Production resumed. Human approval remains required.",
-                  );
-                } catch (e) {
-                  setMessage((e as Error).message);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {ops?.control?.paused ? "▶ Resume production" : "Ⅱ Pause production"}
-            </button>
-            <button className="live-primary" disabled={!data} onClick={() => newItem()}>
-              New brief
-            </button>
-          </div>
-        </header>
-        <div className="live-status" role="status">
-          {message}
-        </div>
-        {!data ? (
-          <section className="live-panel">
-            <p>Content requires your approved TideLine sign-in.</p>
-            <a href="/login">Sign in</a>
-          </section>
-        ) : (
-          <>
-            <div className="live-toolbar">
-              <div role="group" aria-label="Brand filter">
-                {["all", "tideline", "wonplace"].map((b) => (
-                  <button
-                    key={b}
-                    aria-pressed={brand === b}
-                    onClick={() => {
-                      if (mayLeave()) {
-                        setBrand(b);
-                        setSelected("");
-                        setDraft(null);
-                        setDirty(false);
-                      }
-                    }}
-                  >
-                    {b === "all" ? "Both brands" : b === "tideline" ? "TideLine" : "WonPlace"}
-                  </button>
-                ))}
-              </div>
-              <label className="live-selector">
-                Select content
-                <select
-                  aria-label="Select content"
-                  value={selected}
-                  onChange={(e) => choose(e.target.value)}
-                >
-                  <option value="">Choose a record</option>
-                  {cards.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span>
-                {cards.length} real records · {data.items.length} editorial items
-              </span>
-            </div>
-            <nav className="factory-dock" aria-label="Content controls">
-              {[
-                ["line", "Assembly line"],
-                ["published", "Published videos"],
-                ["research", "Ideas"],
-                ["operations", "Automation & media"],
-                ["deliveries", "Publishing"],
-                ["sources", "Source library"],
-              ].map(([id, label]) => (
-                <button key={id} aria-pressed={pane === id} onClick={() => setPane(id!)}>
-                  {label}
-                </button>
-              ))}
-            </nav>
-            <div className="factory-pane" hidden={pane !== "line"}>
-              <StationBoard
-                cards={cards}
-                data={data}
-                ops={ops}
-                assets={assets.filter((a) => brand === "all" || a.brand === brand)}
-                selected={selected}
-                onSelect={pick}
-                onInspect={choose}
-                onNew={() => newItem()}
-                onLibrary={() => setPane("operations")}
-              />
-            </div>
-            {pane === "published" && (
-              <section className="live-panel factory-published" aria-label="Published videos">
-                <header>
-                  <h2>Published videos</h2>
-                  <p>
-                    Actual posted cuts, linked to their native posts. New drafts remain in the
-                    assembly line.
-                  </p>
-                </header>
-                <div className="factory-published-grid">
-                  {cards
-                    .filter((c) => c.kind === "published")
-                    .map((c) => {
-                      const post = posts.find((p) => p.id === c.id);
-                      const a = assets.find(
-                        (a) =>
-                          (a.id === post?.mediaAssetId || a.postId === c.id) &&
-                          a.mime === "video/mp4",
-                      );
-                      return (
-                        <article key={c.id}>
-                          <h3>{c.title}</h3>
-                          {a ? (
-                            <MediaLoop
-                              controls
-                              src={"/api/content-media/" + a.id}
-                              aria-label={c.title + " published video"}
-                            />
-                          ) : (
-                            <p>Posted video not yet imported.</p>
-                          )}
-                          <p>
-                            {c.brand} · {post?.platform} ·{" "}
-                            {ops?.insights?.own.find((o) => o.url === post?.url)?.metrics[
-                              "reactions"
-                            ] ?? "—"}{" "}
-                            observed reactions
-                          </p>
-                          <p>{a?.provenance}</p>
-                          <a href={post?.url} target="_blank" rel="noreferrer">
-                            View native post ↗
-                          </a>
-                          <button
-                            onClick={() => {
-                              choose(c.id);
-                            }}
-                          >
-                            Details & analytics
-                          </button>
-                        </article>
-                      );
-                    })}
-                </div>
-              </section>
-            )}
-            <section
-              id="inspector"
-              className="live-panel factory-inspector"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Content details"
-              hidden={!inspectorOpen}
-            >
-              <header className="factory-inspector-bar">
-                <strong>Content details</strong>
-                <button
-                  onClick={() => {
-                    if (mayLeave()) setInspectorOpen(false);
-                  }}
-                  aria-label="Close content details"
-                >
-                  Close ×
-                </button>
-              </header>
-              {published ? (
-                <>
-                  <span className="live-eyebrow">
-                    PUBLISHED · {published.platform || "linkedin"} · {published.brand || "tideline"}
-                  </span>
-                  <h2>{published.title}</h2>
-                  <pre>{published.text}</pre>
-                  {assets
-                    .filter(
-                      (a) =>
-                        (a.id === published.mediaAssetId || a.postId === published.id) &&
-                        a.mime === "video/mp4",
-                    )
-                    .slice(0, 1)
-                    .map((a) => (
-                      <div key={a.id}>
-                        <MediaLoop
-                          controls
-                          autoPlay
-                          muted
-                          loop
-                          preload="metadata"
-                          playsInline
-                          src={"/api/content-media/" + a.id}
-                          style={{ width: "100%", maxWidth: 850, borderRadius: 12 }}
-                        />
-                        <p className="live-muted">{a.provenance}</p>
-                      </div>
-                    ))}
-                  <a href={published.url} target="_blank" rel="noreferrer">
-                    Open the actual published post ↗
-                  </a>
-                  <p className="live-muted">
-                    Observed {published.observedAt}. {published.note} These are source posts, not
-                    new AI drafts.
-                  </p>
-                </>
-              ) : draft ? (
-                <>
-                  <div className="live-panel-head">
-                    <div>
-                      <span className="live-eyebrow">
-                        {draft.id ? "SAVED EDITORIAL WORK" : "NEW BRIEF"} ·{" "}
-                        {dirty ? "UNSAVED CHANGES" : "UP TO DATE"}
-                      </span>
-                      <h2>{draft.title || "New content brief"}</h2>
-                      {draft.id && (
-                        <a
-                          href={"/?view=content&contentItem=" + encodeURIComponent(draft.id)}
-                          onClick={(e) => {
-                            if (!mayLeave()) e.preventDefault();
-                          }}
-                        >
-                          Ask Muninn about this item ↗
-                        </a>
-                      )}
-                    </div>
-                    <button
-                      className="live-primary"
-                      disabled={busy || !dirty}
-                      onClick={() => void command("save")}
-                    >
-                      Save changes
-                    </button>
-                  </div>
-                  <div className="live-tabs" role="tablist">
-                    {["brief", "copy", "review"].map((t) => (
-                      <button
-                        role="tab"
-                        aria-selected={tab === t}
-                        key={t}
-                        onClick={() => setTab(t)}
-                      >
-                        {t === "brief"
-                          ? "Brief & evidence"
-                          : t === "copy"
-                            ? "Post & media"
-                            : "Human review"}
-                      </button>
-                    ))}
-                  </div>
-                  {tab === "brief" ? (
-                    <div className="live-form">
-                      {field("title", "Title")}
-                      <label className="live-field">
-                        Publishing brand
-                        <select
-                          aria-label="Publishing brand"
-                          value={draft.brand}
-                          onChange={(e) => edit("brand", e.target.value)}
-                        >
-                          <option value="tideline">TideLine</option>
-                          <option value="wonplace">WonPlace</option>
-                        </select>
-                      </label>
-                      {field("product", "Product or service")}
-                      {field("audience", "Who this helps")}
-                      {field("pain", "Specific operating problem", true)}
-                      {field("value", "What they can use immediately", true)}
-                      {field("brief", "Evidence or recording needed", true)}
-                      <label className="live-field">
-                        Evidence URLs (one per line)
-                        <textarea
-                          value={draft.sourceUrls.join("\n")}
-                          onChange={(e) =>
-                            edit("sourceUrls", e.target.value.split("\n").filter(Boolean))
-                          }
-                        />
-                      </label>
-                      <label className="live-field">
-                        Stage
-                        <select
-                          aria-label="Stage"
-                          value={draft.stage}
-                          onChange={(e) => edit("stage", e.target.value)}
-                        >
-                          {stages
-                            .filter(([id]) => id !== "published")
-                            .map(([id, l]) => (
-                              <option key={id} value={id}>
-                                {l}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                      {field("accountId", "Related CRM account ID (optional)")}
-                    </div>
-                  ) : tab === "copy" ? (
-                    <>
-                      {field("format", "Format")}
-                      {field("copy", "Final post copy — written and reviewed by your team", true)}
-                      <label className="live-field">
-                        Verified publisher-branded footage
-                        <select
-                          aria-label="Verified footage"
-                          value={draft.mediaAssetId || ""}
-                          onChange={(e) => edit("mediaAssetId", e.target.value)}
-                        >
-                          <option value="">Choose verified footage</option>
-                          {assets
-                            .filter((a) => a.kind === "branded" && a.brand === draft.brand)
-                            .map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.title}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                      {draft.mediaAssetId && (
-                        <MediaLoop
-                          controls
-                          autoPlay
-                          muted
-                          loop
-                          preload="metadata"
-                          src={"/api/content-media/" + draft.mediaAssetId}
-                          style={{ width: "100%", maxWidth: 800 }}
-                        />
-                      )}
-                      {field("mediaUrl", "Real media or recording URL")}
-                      {field("cta", "Useful next step / call to action", true)}
-                      <p className="live-muted">
-                        No generated copy, scenes, people or product screens are prefilled. Use real
-                        approved recordings and redact family information.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p>
-                        Review the saved text, evidence, media and next step together. Approval
-                        records your signed-in identity, becomes stale when the package changes, and
-                        queues the exact saved package for native publication.
-                      </p>
-                      {draft.approval ? (
-                        <p className="live-success">
-                          Approved by {draft.approval.name} ·{" "}
-                          {new Date(draft.approval.at).toLocaleString()}
-                        </p>
-                      ) : (
-                        <p>
-                          {draft.approvalStale
-                            ? "Previous approval is stale."
-                            : "This package has not been approved."}
-                        </p>
-                      )}
-                      <button
-                        disabled={
-                          busy ||
-                          dirty ||
-                          !draft.id ||
-                          draft.stage !== "approval" ||
-                          !draft.copy ||
-                          !draft.value ||
-                          !draft.cta ||
-                          !draft.sourceUrls.length ||
-                          !draft.product ||
-                          (Boolean(draft.mediaAssetId) && !draft.mediaRightsVerified)
-                        }
-                        onClick={() => void command("approve")}
-                      >
-                        Approve saved package
-                      </button>
-                      <label className="live-field">
-                        Request changes
-                        <textarea value={note} onChange={(e) => setNote(e.target.value)} />
-                      </label>
-                      <button
-                        disabled={busy || dirty || !note.trim() || !draft.id}
-                        onClick={() => void command("request_changes")}
-                      >
-                        Send back with note
-                      </button>
-                      {draft.changeRequest && <p>Change request: {draft.changeRequest}</p>}
-                      <label className="live-field">
-                        Existing publisher campaign
-                        <select
-                          value={campaignLink}
-                          onChange={(e) => setCampaignLink(e.target.value)}
-                        >
-                          <option value="">Select a real campaign</option>
-                          {data.brands
-                            .find((b) => b.brand === draft.brand)
-                            ?.snapshot?.campaigns.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.title}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                      <button
-                        disabled={dirty || busy || !draft.id || !campaignLink}
-                        onClick={async () => {
-                          try {
-                            const saved = await api({
-                              action: "link_campaign",
-                              id: draft.id,
-                              revision: draft.revision,
-                              campaignId: campaignLink,
-                            });
-                            setDraft(saved);
-                            setMessage("Linked to the existing publisher campaign.");
-                            await refresh();
-                          } catch (e) {
-                            setMessage((e as Error).message);
-                          }
-                        }}
-                      >
-                        Link saved campaign
-                      </button>
-                      <p className="live-muted">{data.publishing.reason}</p>
-                      {draft.activity?.map((a, i) => (
-                        <p className="live-muted" key={i}>
-                          {a.name} · {a.action} · {new Date(a.at).toLocaleString()}
-                        </p>
-                      ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h2>Select a post or create a brief.</h2>
-                  <p>
-                    Published sources stay unchanged. Research becomes a working brief only when you
-                    choose it.
-                  </p>
-                </>
+          <nav aria-label="Workspace">
+            <a href="/">Workspace</a>
+            <a href="/?view=accounts">Accounts</a>
+            <a aria-current="page" href="/factory/">
+              Content
+            </a>
+            <a href="/?view=company">Company</a>
+          </nav>
+          <small>
+            TideLine Strategies
+            <br />
+            Gym operations first.
+            <br />
+            Real evidence, useful content.
+          </small>
+        </aside>
+        <main className="live-main">
+          <header className="live-header">
+            <div>
+              <span className="live-eyebrow">TIDELINE / CONTENT OPERATIONS</span>
+              <h1>Content factory.</h1>
+              <p>Help gym owners solve the work around the class.</p>
+              {ops?.cadence && (
+                <p className="live-muted">
+                  3 pieces / week · Mon / Wed / Fri · Central · {ops.cadence.started}/3 started this
+                  week · {ops.cadence.awaitingReview} awaiting approval
+                </p>
               )}
-            </section>
-            <div className="factory-pane" hidden={pane !== "operations"}>
-              <OperationsPanel
-                itemId={draft?.id || ""}
-                onMedia={setAssets}
-                onState={setOps}
-                brand={brand}
-                onAttach={async (assetId) => {
-                  if (!draft?.id || dirty) {
-                    setMessage("Save the selected item before attaching footage.");
-                    return;
-                  }
-                  try {
-                    const value = await api({
-                      action: "attach_media",
-                      id: draft.id,
-                      revision: draft.revision,
-                      assetId,
-                    });
-                    setDraft(value);
-                    setMessage("Verified footage attached; card advanced.");
-                    await refresh();
-                  } catch (e) {
-                    setMessage((e as Error).message);
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  if (mayLeave()) {
+                    setDirty(false);
+                    setDraft(null);
+                    void refresh();
                   }
                 }}
-              />
+              >
+                Refresh sources
+              </button>
+              <button
+                disabled={!ops || busy}
+                aria-pressed={ops?.control?.paused || false}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    const paused = !ops?.control?.paused;
+                    const r = await fetch("/api/content-ops", {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ action: "set_paused", paused }),
+                    });
+                    if (!r.ok) throw Error("Could not change production state");
+                    setOps((s) => (s ? { ...s, control: { paused } } : s));
+                    setMessage(
+                      paused
+                        ? "Production paused. Running work finishes at its next checkpoint."
+                        : "Production resumed. Human approval remains required.",
+                    );
+                  } catch (e) {
+                    setMessage((e as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {ops?.control?.paused ? "▶ Resume production" : "Ⅱ Pause production"}
+              </button>
+              <button className="live-primary" disabled={!data} onClick={() => newItem()}>
+                New brief
+              </button>
             </div>
-            <div className="live-columns factory-pane" hidden={pane !== "deliveries"}>
-              <section className="live-panel">
-                <span className="live-eyebrow">STRATEGY / CURRENT PRIORITY</span>
-                <h2>Useful before promotional.</h2>
-                <p>{data.research.positioning}</p>
-                <p>{data.research.mix}</p>
-                <ul>
-                  {data.research.guardrails.map((s) => (
-                    <li key={s}>{s}</li>
+          </header>
+          <div className="live-status" role="status">
+            {message}
+          </div>
+          {!data ? (
+            <section className="live-panel">
+              <p>Content requires your approved TideLine sign-in.</p>
+              <a href="/login">Sign in</a>
+            </section>
+          ) : (
+            <>
+              <div className="live-toolbar">
+                <div role="group" aria-label="Brand filter">
+                  {["all", "tideline", "wonplace"].map((b) => (
+                    <button
+                      key={b}
+                      aria-pressed={brand === b}
+                      onClick={() => {
+                        if (mayLeave()) {
+                          setBrand(b);
+                          setSelected("");
+                          setDraft(null);
+                          setDirty(false);
+                        }
+                      }}
+                    >
+                      {b === "all" ? "Both brands" : b === "tideline" ? "TideLine" : "WonPlace"}
+                    </button>
                   ))}
-                </ul>
-                <h3>Ready-to-use worksheets</h3>
-                <p>
-                  <a href="/factory-tools/front-desk-handoff.csv" download>
-                    Front-desk handoff &amp; question audit
-                  </a>
-                  <br />
-                  <a href="/factory-tools/parent-update.txt" download>
-                    Coach-to-parent update worksheet
-                  </a>
-                  <br />
-                  <a href="/factory-tools/trial-follow-up.csv" download>
-                    Trial-family follow-up tracker
-                  </a>
-                </p>
-                <p className="live-muted">
-                  Blank operational tools you can use today. Store completed family records in your
-                  approved system.
-                </p>
-                <h3>Search language</h3>
-                {Object.entries(data.research.keywords).map(([k, v]) => (
-                  <details key={k}>
-                    <summary>
-                      {k === "gymOwners"
-                        ? "Gym owners"
-                        : k === "adminStaff"
-                          ? "Admin staff"
-                          : "Future partners"}
-                    </summary>
-                    <p>{v.join(" · ")}</p>
-                  </details>
+                </div>
+                <label className="live-selector">
+                  Select content
+                  <select
+                    aria-label="Select content"
+                    value={selected}
+                    onChange={(e) => choose(e.target.value)}
+                  >
+                    <option value="">Choose a record</option>
+                    {cards.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span>
+                  {cards.length} real records · {data.items.length} editorial items
+                </span>
+              </div>
+              <nav className="factory-dock" aria-label="Content controls">
+                {[
+                  ["line", "Assembly line"],
+                  ["published", "Published videos"],
+                  ["research", "Ideas"],
+                  ["operations", "Automation & media"],
+                  ["deliveries", "Publishing"],
+                  ["sources", "Source library"],
+                ].map(([id, label]) => (
+                  <button key={id} aria-pressed={pane === id} onClick={() => setPane(id!)}>
+                    {label}
+                  </button>
                 ))}
-              </section>
-              <section className="live-panel">
-                <span className="live-eyebrow">MEASUREMENT / ACTUAL EVIDENCE</span>
-                <h2>Build the baseline.</h2>
-                <p>
-                  {posts.length} verified source posts. Reach, saves, watch time and attributed
-                  revenue are unavailable until measured.
-                </p>
-                <p>
-                  Measure useful conversations, requested walkthroughs and accounts with an agreed
-                  next step. Reactions and followers are not leads.
-                </p>
-                <a href="/?view=accounts">Open Accounts and record a real next step ↗</a>
-                <h3>Current publishing queue</h3>
-                {data.brands.map((b) => (
-                  <details key={b.brand}>
-                    <summary>
-                      {b.brand === "wonplace" ? "WonPlace" : "TideLine"} ·{" "}
-                      {b.stale ? "source needs refresh" : "source current"}
-                    </summary>
-                    {b.snapshot ? (
-                      b.snapshot.campaigns.map((c, i) => (
-                        <div key={i}>
-                          <b>{c.title}</b>
-                          <p>
-                            Queue snapshot: {c.sourceStatus}. LinkedIn baseline above is
-                            independently observed.
-                          </p>
-                          {c.deliveries.map((d, j) => (
-                            <p key={j}>
-                              {d.platform} · {d.state}
-                              {d.url && (
-                                <>
-                                  {" "}
-                                  ·{" "}
-                                  <a href={d.url} target="_blank" rel="noreferrer">
-                                    Receipt
-                                  </a>
-                                </>
+              </nav>
+              <div className="factory-pane" hidden={pane !== "line"}>
+                <StationBoard
+                  cards={cards}
+                  data={data}
+                  ops={ops}
+                  assets={assets.filter((a) => brand === "all" || a.brand === brand)}
+                  selected={selected}
+                  onSelect={pick}
+                  onInspect={choose}
+                  onPresent={present}
+                  onNew={() => newItem()}
+                  onLibrary={() => setPane("operations")}
+                />
+              </div>
+              {pane === "published" && (
+                <section className="live-panel factory-published" aria-label="Published videos">
+                  <header>
+                    <h2>Published videos</h2>
+                    <p>
+                      Actual posted cuts, linked to their native posts. New drafts remain in the
+                      assembly line.
+                    </p>
+                  </header>
+                  <div className="factory-published-grid">
+                    {cards
+                      .filter((c) => c.kind === "published")
+                      .map((c) => {
+                        const post = posts.find((p) => p.id === c.id);
+                        const a = assets.find(
+                          (a) =>
+                            (a.id === post?.mediaAssetId || a.postId === c.id) &&
+                            a.mime === "video/mp4",
+                        );
+                        return (
+                          <article key={c.id}>
+                            <h3>
+                              <button
+                                className="presentation-title-link"
+                                onClick={() => present(c.id)}
+                              >
+                                {c.title}
+                              </button>
+                            </h3>
+                            <div className="published-preview-target">
+                              {a ? (
+                                <MediaLoop
+                                  controls
+                                  src={"/api/content-media/" + a.id}
+                                  aria-label={c.title + " published video"}
+                                />
+                              ) : (
+                                <p>Posted video not yet imported.</p>
                               )}
+                              <button
+                                className="concept-preview-hit"
+                                aria-label={"Present " + c.title}
+                                onClick={() => present(c.id)}
+                              />
+                            </div>
+                            <p>
+                              {c.brand} · {post?.platform} ·{" "}
+                              {ops?.insights?.own.find((o) => o.url === post?.url)?.metrics[
+                                "reactions"
+                              ] ?? "—"}{" "}
+                              observed reactions
                             </p>
-                          ))}
+                            <p>{a?.provenance}</p>
+                            <a href={post?.url} target="_blank" rel="noreferrer">
+                              View native post ↗
+                            </a>
+                            <button
+                              onClick={() => {
+                                choose(c.id);
+                              }}
+                            >
+                              Details & analytics
+                            </button>
+                          </article>
+                        );
+                      })}
+                  </div>
+                </section>
+              )}
+              <section
+                id="inspector"
+                className="live-panel factory-inspector"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Content details"
+                hidden={!inspectorOpen}
+              >
+                <header className="factory-inspector-bar">
+                  <strong>Content details</strong>
+                  <button
+                    onClick={() => {
+                      if (mayLeave()) setInspectorOpen(false);
+                    }}
+                    aria-label="Close content details"
+                  >
+                    Close ×
+                  </button>
+                </header>
+                {published ? (
+                  <>
+                    <span className="live-eyebrow">
+                      PUBLISHED · {published.platform || "linkedin"} ·{" "}
+                      {published.brand || "tideline"}
+                    </span>
+                    <h2>{published.title}</h2>
+                    <pre>{published.text}</pre>
+                    {assets
+                      .filter(
+                        (a) =>
+                          (a.id === published.mediaAssetId || a.postId === published.id) &&
+                          a.mime === "video/mp4",
+                      )
+                      .slice(0, 1)
+                      .map((a) => (
+                        <div key={a.id}>
+                          <MediaLoop
+                            controls
+                            autoPlay
+                            muted
+                            loop
+                            preload="metadata"
+                            playsInline
+                            src={"/api/content-media/" + a.id}
+                            style={{ width: "100%", maxWidth: 850, borderRadius: 12 }}
+                          />
+                          <p className="live-muted">{a.provenance}</p>
                         </div>
-                      ))
+                      ))}
+                    <a href={published.url} target="_blank" rel="noreferrer">
+                      Open the actual published post ↗
+                    </a>
+                    <p className="live-muted">
+                      Observed {published.observedAt}. {published.note} These are source posts, not
+                      new AI drafts.
+                    </p>
+                  </>
+                ) : draft ? (
+                  <>
+                    <div className="live-panel-head">
+                      <div>
+                        <span className="live-eyebrow">
+                          {draft.id ? "SAVED EDITORIAL WORK" : "NEW BRIEF"} ·{" "}
+                          {dirty ? "UNSAVED CHANGES" : "UP TO DATE"}
+                        </span>
+                        <h2>{draft.title || "New content brief"}</h2>
+                        {draft.id && (
+                          <a
+                            href={"/?view=content&contentItem=" + encodeURIComponent(draft.id)}
+                            onClick={(e) => {
+                              if (!mayLeave()) e.preventDefault();
+                            }}
+                          >
+                            Ask Muninn about this item ↗
+                          </a>
+                        )}
+                      </div>
+                      <button
+                        className="live-primary"
+                        disabled={busy || !dirty}
+                        onClick={() => void command("save")}
+                      >
+                        Save changes
+                      </button>
+                    </div>
+                    <div className="live-tabs" role="tablist">
+                      {["brief", "copy", "review"].map((t) => (
+                        <button
+                          role="tab"
+                          aria-selected={tab === t}
+                          key={t}
+                          onClick={() => setTab(t)}
+                        >
+                          {t === "brief"
+                            ? "Brief & evidence"
+                            : t === "copy"
+                              ? "Post & media"
+                              : "Human review"}
+                        </button>
+                      ))}
+                    </div>
+                    {tab === "brief" ? (
+                      <div className="live-form">
+                        {field("title", "Title")}
+                        <label className="live-field">
+                          Publishing brand
+                          <select
+                            aria-label="Publishing brand"
+                            value={draft.brand}
+                            onChange={(e) => edit("brand", e.target.value)}
+                          >
+                            <option value="tideline">TideLine</option>
+                            <option value="wonplace">WonPlace</option>
+                          </select>
+                        </label>
+                        {field("product", "Product or service")}
+                        {field("audience", "Who this helps")}
+                        {field("pain", "Specific operating problem", true)}
+                        {field("value", "What they can use immediately", true)}
+                        {field("brief", "Evidence or recording needed", true)}
+                        <label className="live-field">
+                          Evidence URLs (one per line)
+                          <textarea
+                            value={draft.sourceUrls.join("\n")}
+                            onChange={(e) =>
+                              edit("sourceUrls", e.target.value.split("\n").filter(Boolean))
+                            }
+                          />
+                        </label>
+                        <label className="live-field">
+                          Stage
+                          <select
+                            aria-label="Stage"
+                            value={draft.stage}
+                            onChange={(e) => edit("stage", e.target.value)}
+                          >
+                            {stages
+                              .filter(([id]) => id !== "published")
+                              .map(([id, l]) => (
+                                <option key={id} value={id}>
+                                  {l}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        {field("accountId", "Related CRM account ID (optional)")}
+                      </div>
+                    ) : tab === "copy" ? (
+                      <>
+                        {field("format", "Format")}
+                        {field("copy", "Final post copy — written and reviewed by your team", true)}
+                        <label className="live-field">
+                          Verified publisher-branded footage
+                          <select
+                            aria-label="Verified footage"
+                            value={draft.mediaAssetId || ""}
+                            onChange={(e) => edit("mediaAssetId", e.target.value)}
+                          >
+                            <option value="">Choose verified footage</option>
+                            {assets
+                              .filter((a) => a.kind === "branded" && a.brand === draft.brand)
+                              .map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.title}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        {draft.mediaAssetId && (
+                          <MediaLoop
+                            controls
+                            autoPlay
+                            muted
+                            loop
+                            preload="metadata"
+                            src={"/api/content-media/" + draft.mediaAssetId}
+                            style={{ width: "100%", maxWidth: 800 }}
+                          />
+                        )}
+                        {field("mediaUrl", "Real media or recording URL")}
+                        {field("cta", "Useful next step / call to action", true)}
+                        <p className="live-muted">
+                          No generated copy, scenes, people or product screens are prefilled. Use
+                          real approved recordings and redact family information.
+                        </p>
+                      </>
                     ) : (
-                      <p>No snapshot imported.</p>
+                      <>
+                        <p>
+                          Review the saved text, evidence, media and next step together. Approval
+                          records your signed-in identity, becomes stale when the package changes,
+                          and queues the exact saved package for native publication.
+                        </p>
+                        {draft.approval ? (
+                          <p className="live-success">
+                            Approved by {draft.approval.name} ·{" "}
+                            {new Date(draft.approval.at).toLocaleString()}
+                          </p>
+                        ) : (
+                          <p>
+                            {draft.approvalStale
+                              ? "Previous approval is stale."
+                              : "This package has not been approved."}
+                          </p>
+                        )}
+                        <button
+                          disabled={
+                            busy ||
+                            dirty ||
+                            !draft.id ||
+                            draft.stage !== "approval" ||
+                            !draft.copy ||
+                            !draft.value ||
+                            !draft.cta ||
+                            !draft.sourceUrls.length ||
+                            !draft.product ||
+                            (Boolean(draft.mediaAssetId) && !draft.mediaRightsVerified)
+                          }
+                          onClick={() => void command("approve")}
+                        >
+                          Approve saved package
+                        </button>
+                        <label className="live-field">
+                          Request changes
+                          <textarea value={note} onChange={(e) => setNote(e.target.value)} />
+                        </label>
+                        <button
+                          disabled={busy || dirty || !note.trim() || !draft.id}
+                          onClick={() => void command("request_changes")}
+                        >
+                          Send back with note
+                        </button>
+                        {draft.changeRequest && <p>Change request: {draft.changeRequest}</p>}
+                        <label className="live-field">
+                          Existing publisher campaign
+                          <select
+                            value={campaignLink}
+                            onChange={(e) => setCampaignLink(e.target.value)}
+                          >
+                            <option value="">Select a real campaign</option>
+                            {data.brands
+                              .find((b) => b.brand === draft.brand)
+                              ?.snapshot?.campaigns.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.title}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <button
+                          disabled={dirty || busy || !draft.id || !campaignLink}
+                          onClick={async () => {
+                            try {
+                              const saved = await api({
+                                action: "link_campaign",
+                                id: draft.id,
+                                revision: draft.revision,
+                                campaignId: campaignLink,
+                              });
+                              setDraft(saved);
+                              setMessage("Linked to the existing publisher campaign.");
+                              await refresh();
+                            } catch (e) {
+                              setMessage((e as Error).message);
+                            }
+                          }}
+                        >
+                          Link saved campaign
+                        </button>
+                        <p className="live-muted">{data.publishing.reason}</p>
+                        {draft.activity?.map((a, i) => (
+                          <p className="live-muted" key={i}>
+                            {a.name} · {a.action} · {new Date(a.at).toLocaleString()}
+                          </p>
+                        ))}
+                      </>
                     )}
-                  </details>
-                ))}
+                  </>
+                ) : (
+                  <>
+                    <h2>Select a post or create a brief.</h2>
+                    <p>
+                      Published sources stay unchanged. Research becomes a working brief only when
+                      you choose it.
+                    </p>
+                  </>
+                )}
               </section>
-            </div>
-            <section className="live-panel factory-pane" hidden={pane !== "research"}>
-              <span className="live-eyebrow">RESEARCH / EDUCATIONAL + MARKETING</span>
-              <h2>Ideas grounded in real problems.</h2>
-              <p>These are research directions, not prewritten posts or customer claims.</p>
-              <div className="live-research-grid">
-                {data.research.briefs.map((b) => (
-                  <article className="live-research-card" key={b.id}>
-                    <small>
-                      {b.category} · {b.product}
-                    </small>
-                    <h3>{b.title}</h3>
-                    <p>{b.pain}</p>
-                    <b>Give them this now</b>
-                    <p>{b.value}</p>
-                    <details>
-                      <summary>Evidence needed</summary>
-                      <p>{b.evidenceNeeded}</p>
+              <div className="factory-pane" hidden={pane !== "operations"}>
+                <OperationsPanel
+                  itemId={draft?.id || ""}
+                  onMedia={setAssets}
+                  onPresent={present}
+                  onState={setOps}
+                  brand={brand}
+                  onAttach={async (assetId) => {
+                    if (!draft?.id || dirty) {
+                      setMessage("Save the selected item before attaching footage.");
+                      return;
+                    }
+                    try {
+                      const value = await api({
+                        action: "attach_media",
+                        id: draft.id,
+                        revision: draft.revision,
+                        assetId,
+                      });
+                      setDraft(value);
+                      setMessage("Verified footage attached; card advanced.");
+                      await refresh();
+                    } catch (e) {
+                      setMessage((e as Error).message);
+                    }
+                  }}
+                />
+              </div>
+              <div className="live-columns factory-pane" hidden={pane !== "deliveries"}>
+                <section className="live-panel">
+                  <span className="live-eyebrow">STRATEGY / CURRENT PRIORITY</span>
+                  <h2>Useful before promotional.</h2>
+                  <p>{data.research.positioning}</p>
+                  <p>{data.research.mix}</p>
+                  <ul>
+                    {data.research.guardrails.map((s) => (
+                      <li key={s}>{s}</li>
+                    ))}
+                  </ul>
+                  <h3>Ready-to-use worksheets</h3>
+                  <p>
+                    <a href="/factory-tools/front-desk-handoff.csv" download>
+                      Front-desk handoff &amp; question audit
+                    </a>
+                    <br />
+                    <a href="/factory-tools/parent-update.txt" download>
+                      Coach-to-parent update worksheet
+                    </a>
+                    <br />
+                    <a href="/factory-tools/trial-follow-up.csv" download>
+                      Trial-family follow-up tracker
+                    </a>
+                  </p>
+                  <p className="live-muted">
+                    Blank operational tools you can use today. Store completed family records in
+                    your approved system.
+                  </p>
+                  <h3>Search language</h3>
+                  {Object.entries(data.research.keywords).map(([k, v]) => (
+                    <details key={k}>
+                      <summary>
+                        {k === "gymOwners"
+                          ? "Gym owners"
+                          : k === "adminStaff"
+                            ? "Admin staff"
+                            : "Future partners"}
+                      </summary>
+                      <p>{v.join(" · ")}</p>
                     </details>
-                    <button onClick={() => newItem(b)}>Start this brief</button>
-                  </article>
-                ))}
+                  ))}
+                </section>
+                <section className="live-panel">
+                  <span className="live-eyebrow">MEASUREMENT / ACTUAL EVIDENCE</span>
+                  <h2>Build the baseline.</h2>
+                  <p>
+                    {posts.length} verified source posts. Reach, saves, watch time and attributed
+                    revenue are unavailable until measured.
+                  </p>
+                  <p>
+                    Measure useful conversations, requested walkthroughs and accounts with an agreed
+                    next step. Reactions and followers are not leads.
+                  </p>
+                  <a href="/?view=accounts">Open Accounts and record a real next step ↗</a>
+                  <h3>Current publishing queue</h3>
+                  {data.brands.map((b) => (
+                    <details key={b.brand}>
+                      <summary>
+                        {b.brand === "wonplace" ? "WonPlace" : "TideLine"} ·{" "}
+                        {b.stale ? "source needs refresh" : "source current"}
+                      </summary>
+                      {b.snapshot ? (
+                        b.snapshot.campaigns.map((c, i) => (
+                          <div key={i}>
+                            <b>{c.title}</b>
+                            <p>
+                              Queue snapshot: {c.sourceStatus}. LinkedIn baseline above is
+                              independently observed.
+                            </p>
+                            {c.deliveries.map((d, j) => (
+                              <p key={j}>
+                                {d.platform} · {d.state}
+                                {d.url && (
+                                  <>
+                                    {" "}
+                                    ·{" "}
+                                    <a href={d.url} target="_blank" rel="noreferrer">
+                                      Receipt
+                                    </a>
+                                  </>
+                                )}
+                              </p>
+                            ))}
+                          </div>
+                        ))
+                      ) : (
+                        <p>No snapshot imported.</p>
+                      )}
+                    </details>
+                  ))}
+                </section>
               </div>
-            </section>
-            <section className="live-panel factory-pane" hidden={pane !== "sources"}>
-              <span className="live-eyebrow">SOURCE LIBRARY / VERIFIED LINKS</span>
-              <h2>What to learn from.</h2>
-              <p>
-                High reach, useful education and relevant industry research are different signals.
-                Counts are dated snapshots; results do not transfer automatically to TideLine.
-              </p>
-              <div className="live-research-grid">
-                {data.research.sources.map((s) => (
-                  <article className="live-research-card" key={s.id}>
-                    <small>{s.kind}</small>
-                    <h3>
-                      <a href={s.url} target="_blank" rel="noreferrer">
-                        {s.title} ↗
-                      </a>
-                    </h3>
-                    <p>{s.learning}</p>
-                    {s.engagement ? (
-                      <p>
-                        {Object.entries(s.engagement)
-                          .filter(([k]) => k !== "basis")
-                          .map(([k, v]) => `${Number(v).toLocaleString()} ${k}`)
-                          .join(" · ")}
-                        <br />
-                        <small>{s.engagement["basis"]}</small>
-                      </p>
-                    ) : (
-                      <p className="live-muted">Engagement unavailable · relevance example</p>
-                    )}
-                    <small>
-                      Checked {s.checkedAt}. {s.limitation}
-                    </small>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-      </main>
-    </div>
+              <section className="live-panel factory-pane" hidden={pane !== "research"}>
+                <span className="live-eyebrow">RESEARCH / EDUCATIONAL + MARKETING</span>
+                <h2>Ideas grounded in real problems.</h2>
+                <p>These are research directions, not prewritten posts or customer claims.</p>
+                <div className="live-research-grid">
+                  {data.research.briefs.map((b) => (
+                    <article className="live-research-card" key={b.id}>
+                      <small>
+                        {b.category} · {b.product}
+                      </small>
+                      <h3>{b.title}</h3>
+                      <p>{b.pain}</p>
+                      <b>Give them this now</b>
+                      <p>{b.value}</p>
+                      <details>
+                        <summary>Evidence needed</summary>
+                        <p>{b.evidenceNeeded}</p>
+                      </details>
+                      <button onClick={() => newItem(b)}>Start this brief</button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+              <section className="live-panel factory-pane" hidden={pane !== "sources"}>
+                <span className="live-eyebrow">SOURCE LIBRARY / VERIFIED LINKS</span>
+                <h2>What to learn from.</h2>
+                <p>
+                  High reach, useful education and relevant industry research are different signals.
+                  Counts are dated snapshots; results do not transfer automatically to TideLine.
+                </p>
+                <div className="live-research-grid">
+                  {data.research.sources.map((s) => (
+                    <article className="live-research-card" key={s.id}>
+                      <small>{s.kind}</small>
+                      <h3>
+                        <a href={s.url} target="_blank" rel="noreferrer">
+                          {s.title} ↗
+                        </a>
+                      </h3>
+                      <p>{s.learning}</p>
+                      {s.engagement ? (
+                        <p>
+                          {Object.entries(s.engagement)
+                            .filter(([k]) => k !== "basis")
+                            .map(([k, v]) => `${Number(v).toLocaleString()} ${k}`)
+                            .join(" · ")}
+                          <br />
+                          <small>{s.engagement["basis"]}</small>
+                        </p>
+                      ) : (
+                        <p className="live-muted">Engagement unavailable · relevance example</p>
+                      )}
+                      <small>
+                        Checked {s.checkedAt}. {s.limitation}
+                      </small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </main>
+      </div>
+    </>
   );
 }

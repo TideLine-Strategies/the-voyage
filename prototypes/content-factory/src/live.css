@@ -1685,3 +1685,581 @@ body {
     padding: 3px 5px;
   }
 }
+.concept-preview-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: inherit;
+  cursor: zoom-in;
+}
+.concept-preview-hit:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: -4px;
+}
+.published-preview-target {
+  position: relative;
+}
+.factory-published-grid p {
+  overflow-wrap: anywhere;
+}
+.presentation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #060c19d9;
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  animation: factory-enter 0.18s ease;
+}
+.content-presentation {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  width: min(1120px, 100%);
+  height: min(920px, calc(100dvh - 36px));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 35px 110px #0007;
+  overflow: hidden;
+  animation: presentation-arrive 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.presentation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 15px 22px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.presentation-header h2 {
+  font-size: 19px;
+  margin: 4px 0 0;
+  line-height: 1.2;
+}
+.presentation-header .live-eyebrow {
+  font-size: 9px;
+}
+.presentation-header button {
+  white-space: nowrap;
+}
+.presentation-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  flex: 1;
+  min-height: 0;
+}
+.presentation-screen {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 17px;
+  min-height: 0;
+  min-width: 0;
+}
+.presentation-phone {
+  height: calc(100% - 75px);
+  max-width: 100%;
+  aspect-ratio: 9/16;
+  background: #070b12;
+  position: relative;
+  border: 1px solid #8994ab66;
+  outline: 5px solid #1a2232;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px #0003;
+  color: #fff;
+  flex: none;
+}
+.presentation-footage,
+.presentation-footage > video,
+.presentation-footage > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.presentation-draft {
+  height: 100%;
+  padding: 25% 14% 35%;
+  background: radial-gradient(ellipse at top, #244359, #101c30 65%);
+  overflow: hidden;
+}
+.presentation-draft > span {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: #9ecce6;
+}
+.presentation-draft h3 {
+  font-size: clamp(15px, 2vw, 25px);
+  line-height: 1.2;
+}
+.presentation-draft p {
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.presentation-draft small {
+  font-size: 9px;
+  color: #afbed0;
+  display: block;
+  margin-top: 20px;
+}
+.presentation-transport {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  flex-wrap: wrap;
+}
+.presentation-transport button {
+  font-size: 10px;
+  padding: 6px 8px;
+}
+.presentation-transport input {
+  width: 80px;
+  min-width: 35px;
+  flex: 1;
+  max-width: 150px;
+  accent-color: var(--red);
+  padding: 0;
+}
+.presentation-transport small {
+  font-size: 9px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.presentation-disclaimer {
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--muted);
+  max-width: 420px;
+}
+.presentation-details {
+  min-height: 0;
+  overflow: auto;
+  padding: 23px;
+  border-left: 1px solid var(--line);
+}
+.presentation-details h3 {
+  font-size: 21px;
+  margin: 8px 0 20px;
+}
+.presentation-details h4,
+.presentation-details summary {
+  font-size: 12px;
+  margin: 0 0 8px;
+  font-weight: 650;
+}
+.presentation-details p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 0;
+}
+.presentation-details section,
+.presentation-details details {
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.presentation-details dl {
+  display: flex;
+  gap: 30px;
+}
+.presentation-details dt {
+  font-size: 10px;
+  color: var(--muted);
+}
+.presentation-details dd {
+  margin: 4px 0;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.presentation-details a {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  margin: 10px 0;
+}
+.presentation-details > button {
+  margin: 15px 0 10px;
+}
+.presentation-details .presentation-gate {
+  font-size: 10px;
+  color: var(--muted);
+}
+.tiktok-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+  text-shadow: 0 1px 3px #000;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    inset 0 60px 60px -40px #0008,
+    inset 0 -130px 90px -30px #0009;
+}
+.hud-status {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px 0;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 15px 12px;
+  font-size: 12px;
+}
+.hud-top > span:first-child {
+  font-size: 8px;
+  border: 1px solid #fff9;
+  padding: 2px 3px;
+  border-radius: 3px;
+}
+.hud-top > b {
+  border-bottom: 2px solid #fff;
+  padding-bottom: 5px;
+}
+.tiktok-hud svg {
+  width: 25px;
+  height: 25px;
+  flex: none;
+}
+.hud-top svg {
+  width: 19px;
+  height: 19px;
+}
+.hud-rail {
+  position: absolute;
+  right: 9px;
+  bottom: 93px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  align-items: center;
+  width: 33px;
+}
+.hud-rail > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.hud-rail small {
+  font-size: 8px;
+}
+.hud-avatar {
+  border: 1px dashed #fff;
+  border-radius: 50%;
+  width: 31px;
+  height: 31px;
+  justify-content: center;
+  position: relative;
+  font-size: 13px;
+}
+.hud-avatar i {
+  position: absolute;
+  bottom: -6px;
+  background: #101c2b;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  width: 13px;
+  height: 13px;
+  text-align: center;
+  line-height: 11px;
+  font-style: normal;
+}
+.hud-record {
+  width: 29px;
+  height: 29px;
+  border: 4px double #fff9;
+  border-radius: 50%;
+  justify-content: center;
+  font-size: 12px;
+}
+.hud-caption {
+  position: absolute;
+  left: 12px;
+  right: 53px;
+  bottom: 74px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.hud-caption > b {
+  font-size: 11px;
+}
+.hud-caption p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 5px 0;
+  white-space: pre-wrap;
+}
+.hud-caption small {
+  font-size: 8px;
+}
+.hud-bottom {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #ffffff70;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 48px;
+  background: #080c17c9;
+  font-size: 21px;
+}
+.hud-bottom > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.hud-bottom small {
+  font-size: 7px;
+  margin-top: 4px;
+}
+.hud-create {
+  border: 1px solid #fff;
+  border-radius: 5px;
+  width: 31px;
+  height: 23px;
+  justify-content: center;
+}
+.hud-home-indicator {
+  position: absolute;
+  bottom: 5px;
+  left: 35%;
+  right: 35%;
+  height: 3px;
+  border-radius: 3px;
+  background: #fffc;
+}
+@keyframes presentation-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 650px) {
+  .presentation-backdrop {
+    padding: 6px;
+  }
+  .content-presentation {
+    height: calc(100dvh - 12px);
+    border-radius: 12px;
+  }
+  .presentation-header {
+    padding: 10px 12px;
+  }
+  .presentation-header h2 {
+    font-size: 14px;
+  }
+  .presentation-header button {
+    font-size: 10px;
+    padding: 5px;
+  }
+  .presentation-workspace {
+    grid-template-columns: 1fr;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .presentation-screen {
+    height: calc(100dvh - 165px);
+    min-height: 350px;
+    flex: none;
+    padding: 10px;
+    gap: 8px;
+  }
+  .presentation-phone {
+    height: calc(100% - 67px);
+    border-radius: 16px;
+  }
+  .presentation-details {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 17px;
+  }
+  .presentation-details h3 {
+    font-size: 17px;
+    margin-bottom: 12px;
+  }
+  .presentation-transport {
+    gap: 5px;
+  }
+  .presentation-transport button {
+    font-size: 9px;
+    padding: 5px;
+  }
+  .presentation-disclaimer {
+    font-size: 8px;
+  }
+  .hud-top {
+    font-size: 10px;
+    padding-top: 10px;
+  }
+  .hud-rail {
+    bottom: 87px;
+    gap: 9px;
+  }
+  .hud-caption {
+    font-size: 9px;
+  }
+  .hud-caption > b {
+    font-size: 10px;
+  }
+  .hud-rail svg {
+    width: 22px;
+    height: 22px;
+  }
+  .hud-status {
+    font-size: 8px;
+  }
+  .presentation-draft p {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .presentation-backdrop,
+  .content-presentation {
+    animation: none !important;
+  }
+}
+.presentation-title-link {
+  border: 0 !important;
+  background: transparent !important;
+  font: inherit !important;
+  color: inherit !important;
+  text-align: left;
+  padding: 0 !important;
+  cursor: zoom-in;
+}
+/* One full-surface hit target avoids competing click layers on short portrait cards. */
+.concept-preview-hit {
+  z-index: 4;
+}
+.concept-card-select[aria-hidden="true"],
+.concept-card-caption[aria-hidden="true"] {
+  pointer-events: none;
+}
+/* HUD coordinates scale with the portrait, including compact phone previews. */
+.presentation-phone {
+  container-type: inline-size;
+}
+.hud-status {
+  padding: 3cqw 5cqw 0;
+  font-size: 2.8cqw;
+  line-height: 1.2;
+}
+.hud-top {
+  gap: 4cqw;
+  padding: 4.5cqw 3.5cqw;
+  font-size: 3.7cqw;
+  white-space: nowrap;
+}
+.hud-top > span:first-child {
+  font-size: 2.5cqw;
+  padding: 0.6cqw 1cqw;
+}
+.hud-top > b {
+  padding-bottom: 1.5cqw;
+}
+.hud-top svg {
+  width: 6cqw;
+  height: 6cqw;
+}
+.hud-rail {
+  right: 2.8cqw;
+  bottom: 29cqw;
+  gap: 3.7cqw;
+  width: 10cqw;
+}
+.hud-rail > div {
+  gap: 1cqw;
+}
+.hud-rail svg {
+  width: 7.8cqw;
+  height: 7.8cqw;
+}
+.hud-rail small {
+  font-size: 2.5cqw;
+  line-height: 1.2;
+}
+.hud-avatar {
+  width: 9.7cqw;
+  height: 9.7cqw;
+  font-size: 4cqw;
+}
+.hud-avatar i {
+  bottom: -1.8cqw;
+  width: 4cqw;
+  height: 4cqw;
+  font-size: 3cqw;
+  line-height: 3.5cqw;
+}
+.hud-record {
+  width: 9cqw;
+  height: 9cqw;
+  border-width: 1.2cqw;
+  font-size: 3.7cqw;
+}
+.hud-caption {
+  left: 3.7cqw;
+  right: 16.5cqw;
+  bottom: 23cqw;
+  font-size: 3.1cqw;
+}
+.hud-caption > b {
+  font-size: 3.5cqw;
+}
+.hud-caption p {
+  margin: 1.5cqw 0;
+}
+.hud-caption small {
+  font-size: 2.5cqw;
+}
+.hud-bottom {
+  bottom: 4.4cqw;
+  height: 15cqw;
+  font-size: 6.5cqw;
+}
+.hud-bottom small {
+  font-size: 2.2cqw;
+  margin-top: 1.2cqw;
+}
+.hud-create {
+  width: 9.7cqw;
+  height: 7.2cqw;
+  border-radius: 1.5cqw;
+}
+.hud-home-indicator {
+  bottom: 1.5cqw;
+  height: 0.9cqw;
+}

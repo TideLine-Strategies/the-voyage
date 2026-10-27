@@ -126,12 +126,14 @@ export function OperationsPanel({
   onMedia,
   onState,
   onAttach,
+  onPresent,
   brand,
 }: {
   itemId: string;
   onMedia: (assets: Asset[]) => void;
   onState: (state: State) => void;
   onAttach: (assetId: string) => void;
+  onPresent: (assetId: string) => void;
   brand: string;
 }) {
   const [panel, setPanel] = useState("runs");
@@ -420,22 +422,33 @@ export function OperationsPanel({
                       <small>
                         {a.brand} · {a.kind}
                       </small>
-                      <h3>{a.title}</h3>
-                      {a.mime === "video/mp4" ? (
-                        <MediaLoop
-                          aria-label={a.title}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          controls
-                          preload="metadata"
-                          src={"/api/content-media/" + a.id}
-                          style={{ width: "100%", borderRadius: 8 }}
+                      <h3>
+                        <button className="presentation-title-link" onClick={() => onPresent(a.id)}>
+                          {a.title}
+                        </button>
+                      </h3>
+                      <div className="published-preview-target">
+                        {a.mime === "video/mp4" ? (
+                          <MediaLoop
+                            aria-label={a.title}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            controls
+                            preload="metadata"
+                            src={"/api/content-media/" + a.id}
+                            style={{ width: "100%", borderRadius: 8 }}
+                          />
+                        ) : (
+                          <img src={"/api/content-media/" + a.id} alt={a.title} />
+                        )}
+                        <button
+                          className="concept-preview-hit"
+                          aria-label={"Present " + a.title}
+                          onClick={() => onPresent(a.id)}
                         />
-                      ) : (
-                        <img src={"/api/content-media/" + a.id} alt={a.title} />
-                      )}
+                      </div>
                       <details>
                         <summary>How it was made</summary>
                         <p>{a.provenance}</p>

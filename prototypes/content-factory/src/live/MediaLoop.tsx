@@ -6,8 +6,10 @@ export function MediaLoop(props: React.VideoHTMLAttributes<HTMLVideoElement>) {
     const video = ref.current;
     if (!video) return;
     let visible = false;
+    let covered = false;
     const sync = () => {
-      if (visible && document.visibilityState === "visible") void video.play().catch(() => {});
+      if (visible && !covered && document.visibilityState === "visible")
+        void video.play().catch(() => {});
       else video.pause();
     };
     const observer = new IntersectionObserver(
@@ -18,9 +20,15 @@ export function MediaLoop(props: React.VideoHTMLAttributes<HTMLVideoElement>) {
       { threshold: 0.05 },
     );
     observer.observe(video);
+    const cover = (e: Event) => {
+      covered = Boolean((e as CustomEvent).detail.open);
+      sync();
+    };
+    document.addEventListener("factory-presentation", cover);
     document.addEventListener("visibilitychange", sync);
     return () => {
       observer.disconnect();
+      document.removeEventListener("factory-presentation", cover);
       document.removeEventListener("visibilitychange", sync);
       video.pause();
     };

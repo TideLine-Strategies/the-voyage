@@ -39,6 +39,7 @@ export function StationBoard({
   selected,
   onSelect,
   onInspect,
+  onPresent,
   onNew,
   onLibrary,
 }: {
@@ -49,6 +50,7 @@ export function StationBoard({
   selected: string;
   onSelect: (id: string) => void;
   onInspect: (id: string) => void;
+  onPresent: (id: string) => void;
   onNew: () => void;
   onLibrary: () => void;
 }) {
@@ -113,13 +115,11 @@ export function StationBoard({
     setFocus(id);
     const c = all.find((c) => stageOf(c) === id);
     if (c) pick(c);
-    strip.current
-      ?.querySelector('[data-stage="' + id + '"]')
-      ?.scrollIntoView({
-        block: "nearest",
-        inline: "center",
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-      });
+    strip.current?.querySelector('[data-stage="' + id + '"]')?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
   };
   const activeItem = data.items.find((i) => i.id === active?.id),
     activeAsset = active && getAsset(active),
@@ -233,7 +233,9 @@ export function StationBoard({
             running =
               ops?.runs.some((r) => r.step === id && ["pending", "running"].includes(r.status)) ||
               ops?.production?.some(
-                (j) => j.mode === (id === "filming" ? "capture" : id === "posting" ? "dispatch" : id) && j.status === "running",
+                (j) =>
+                  j.mode === (id === "filming" ? "capture" : id === "posting" ? "dispatch" : id) &&
+                  j.status === "running",
               );
           return (
             <article
@@ -250,21 +252,32 @@ export function StationBoard({
               }
               aria-label={label + " station"}
             >
-              {entries.slice(1, 3).map((c, n) => (
-                <button
-                  key={c.id}
-                  className="concept-back-card"
-                  style={{ "--stack": n + 1 } as CSSProperties}
-                  onClick={() => pick(c)}
-                  aria-label={"Select " + c.title}
-                >
-                  <span>{c.title}</span>
-                </button>
-              ))}
+              {entries
+                .filter((c) => c.id !== current?.id)
+                .slice(0, 2)
+                .map((c, n) => (
+                  <button
+                    key={c.id}
+                    className="concept-back-card"
+                    style={{ "--stack": n + 1 } as CSSProperties}
+                    onClick={() => {
+                      onPresent(c.id);
+                    }}
+                    aria-label={"Select " + c.title}
+                  >
+                    <span>{c.title}</span>
+                  </button>
+                ))}
               <div className="concept-portrait" data-selected={focus === id}>
                 <button
                   className="concept-card-select"
-                  onClick={() => (current ? pick(current) : focusStation(id))}
+                  tabIndex={current ? -1 : 0}
+                  aria-hidden={Boolean(current)}
+                  onClick={() => {
+                    if (current) {
+                      onPresent(current.id);
+                    } else focusStation(id);
+                  }}
                   aria-label={current ? "Select " + current.title : label + " station ready"}
                 >
                   <span className="concept-brand">{current?.brand || label}</span>
@@ -279,10 +292,21 @@ export function StationBoard({
                   </span>
                 </button>
                 <div className="concept-preview">{preview(current, id)}</div>
+                {current && (
+                  <button
+                    className="concept-preview-hit"
+                    aria-label={"Present " + current.title}
+                    onClick={() => {
+                      onPresent(current.id);
+                    }}
+                  />
+                )}
                 <button
                   className="concept-card-caption"
+                  tabIndex={current ? -1 : 0}
+                  aria-hidden={Boolean(current)}
                   onClick={() =>
-                    current ? pick(current) : id === "research" ? onNew() : onLibrary()
+                    current ? onPresent(current.id) : id === "research" ? onNew() : onLibrary()
                   }
                 >
                   <small>{current?.kind === "library" ? "SOURCE LIBRARY" : label}</small>
@@ -398,8 +422,18 @@ export function StationBoard({
         </section>
         <section className="cockpit-review live-panel">
           <span className="live-eyebrow">HUMAN IN THE LOOP</span>
-          <h2>{active?.stage === "published" ? "Published source" : activeItem?.stage === "approval" ? "Ready for review" : "Approval checkpoint"}</h2>
-          <p>{active?.stage === "published" ? "Preserved native post. New edits become a separate draft." : "Quan or Cody approves the exact final version."}</p>
+          <h2>
+            {active?.stage === "published"
+              ? "Published source"
+              : activeItem?.stage === "approval"
+                ? "Ready for review"
+                : "Approval checkpoint"}
+          </h2>
+          <p>
+            {active?.stage === "published"
+              ? "Preserved native post. New edits become a separate draft."
+              : "Quan or Cody approves the exact final version."}
+          </p>
           <div className="review-checklist">
             <span data-done={!!activeAsset}>
               Final video <b>{activeAsset ? "✓" : "Pending"}</b>
@@ -411,7 +445,12 @@ export function StationBoard({
               </b>
             </span>
             <span data-done={!!activeItem?.approval}>
-              Human approval <b>{active?.stage === "published" ? "Historical source" : activeItem?.approval?.name || "Required"}</b>
+              Human approval{" "}
+              <b>
+                {active?.stage === "published"
+                  ? "Historical source"
+                  : activeItem?.approval?.name || "Required"}
+              </b>
             </span>
           </div>
           <button
