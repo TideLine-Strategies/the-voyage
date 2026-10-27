@@ -1,26 +1,56 @@
-# WonPlace company ticket workspace
+# Company → Tickets
 
-Company tickets is an editor-only Voyage view of WonPlace's original staff issue records. Open the page or click Refresh to fetch one bounded page. There are no timers or automatic subscriptions. A page includes up to 100 issues, with previous/next navigation. Details, attachments, and status updates use the original source ticket UUID, never a duplicate CRM note.
+Tickets live in the Company canvas and inherit its product selector. The old
+`?view=tickets` entry opens this tab. The main CRM navigation has no extra ticket
+page. Editors can create and edit engineering tickets for TideLine, WonPlace,
+Loki and Voyage. Guests cannot read tickets or image bytes.
 
-The source integration is implemented in the WonPlace companion PR (`server/voyage-tickets.js` and `docs/voyage-ticket-connection.md`). Both releases and server configuration must be present before the workspace connects. Missing configuration displays an explicit connection error. This does not depend on the pending analytics dashboard PR.
+Fields: title, description/acceptance criteria, bug/feature/task/incident,
+backlog/open/in progress/blocked/in review/resolved, priority, owner, due date,
+labels, reproduction steps, expected/actual results, environment and HTTPS
+issue/PR/release links. Notes record author and time. Activity records changes.
+Search and status filters operate on all loaded pages; urgent tickets sort first.
 
-Configure these server-side values through the existing Cloudflare secret/config workflow:
+WonPlace originals are read through the existing signed ticket connection.
+Triage creates one Company engineering ticket per original report, using the
+source UUID and a sourceId link. Workspace descriptions, notes, status and trash
+are separate from originals and say so in the interface. Original report status
+can still be changed explicitly through its original revision-checked API.
+Deleting a Company ticket moves it into recoverable trash; restoring preserves
+notes and screenshots. It never deletes the original staff report.
 
-- Voyage: `WONPLACE_TICKETS_ORIGIN=https://premieros-preview.signallabs.workers.dev` and secret `WONPLACE_TICKETS_SECRET`.
-- WonPlace: matching `VOYAGE_TICKETS_SECRET`, exact `VOYAGE_TICKETS_ORG`, and `VOYAGE_TICKETS_AUTH_ID` for an active permitted source staff identity.
+Screenshots use existing D1 documents storage, split from ticket metadata, with
+PNG/JPEG/WebP byte signatures, a streamed request cap, 1 MiB per file, 10 files
+per ticket, private no-store responses and authenticated viewing/downloads.
+Screenshot removal deletes the stored image payload. Product and parent ticket
+references are checked before image access. No new paid storage, public bucket,
+credential, migration or external issue service is required.
 
-The source validates that identity's current organization and permissions on every request. The secret only authenticates the narrow ticket route. Browser sessions are not sent to WonPlace, and the secret is never sent to the browser. Attachment responses stream as authenticated downloads. Status changes include the PostgreSQL revision to reject conflicts/replays and record the signed Voyage member ID in the WonPlace audit trail. An ambiguous network failure never reports a successful save; refresh the source record before retrying.
+All workspace writes require the expected revision. Child image changes and
+parent revision updates use one atomic conditional D1 batch. Stale edits return
+409 and the browser retains the draft. Creation uses a client-generated stable
+UUID so an uncertain retry cannot create duplicate tickets. Notes are capped at
+200 and the recent activity trail at 300 entries per ticket. Writes require the
+existing editor membership and same-origin protection. Never put credentials,
+private customer exports or payment details into engineering screenshots.
 
-Current coverage: all pages/statuses of `premier_staff_issue`. Separate parent beta feedback, assignment, additional comments, and general company project management are not implemented by this change. Existing source history and attachments remain in WonPlace.
+Validation: SQLite tests for CRUD, concurrent revisions, notes, trash/restore,
+source ID deduplication, product isolation and image removal. Real workerd/D1
+acceptance exercises image bytes, cookie authorization, origin rejection and
+revision checks. Release additionally requires authenticated visual and live
+create/edit/note/image/trash/restore verification, then removes acceptance image
+bytes and leaves its clearly marked acceptance ticket in trash.
 
-## Quan, Cody and Instinct
+## Existing WonPlace source connection
 
-Quan and Cody use their own existing editor sessions and the same Company tickets workspace. Guest access is denied. Instinct's official site describes website/computer use, but a public API/custom MCP integration was not verified. No third-party Instinct login, token, or permissions have been created by this change. Provision and verify each agent's individually attributable access before relying on it for business work.
+Keep the existing server-side configuration: Voyage `WONPLACE_TICKETS_ORIGIN`
+points to the intended WonPlace origin, with `WONPLACE_TICKETS_SECRET` matched
+by WonPlace `VOYAGE_TICKETS_SECRET`. WonPlace also pins `VOYAGE_TICKETS_ORG`
+and `VOYAGE_TICKETS_AUTH_ID` to an active permitted staff identity. The source
+rechecks organization and permissions on every request. No browser cookie or
+secret is forwarded to the other service. Preserve tenant boundaries and signed
+member audit attribution in the original status updates. An ambiguous source
+save requires rereading the original revision before another attempt.
 
-A first read-only acceptance instruction is: “Open Voyage → Company tickets and summarize the open WonPlace issues, including ticket IDs. Do not change any records.” Verify the signed-in identity, actual source IDs, and report output separately for each agent. Do not share the server-to-server secret with either agent. Ticket access does not confer payment, production deployment, or external-send permission.
-
-## Validation
-
-Local unit tests cover guest denial, missing configuration, request signing, original actor identity, cookie exclusion, upstream conflicts/errors, and attachment streaming. Source-side tests cover tenant/permission boundaries, expired/tampered signatures, pagination, attachment redaction, stale writes and audit attribution. A synthetic in-memory end-to-end contract test exercised both real handlers together without writing customer data.
-
-Authenticated live UI acceptance remains necessary after both releases/configuration and Cloudflare quota recovery. No new production ticket or fake customer data was created during implementation.
+This source covers premier_staff_issue, not separate parent beta feedback.
+No Instinct account or third-party agent credentials are provisioned here.

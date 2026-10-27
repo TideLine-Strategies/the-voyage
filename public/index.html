@@ -525,7 +525,6 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
     <button class="nav" data-view="company" id="companyNav">Company</button>
     <button class="nav" data-view="vendors">Vendors</button>
     <button class="nav" data-view="activity">Activity</button>
-    <button class="nav" data-view="tickets">Company tickets</button>
     <button class="nav" data-view="calendar">Calendar</button>
     <button class="nav" data-view="stages">Stages</button>
     <button class="nav" data-view="deals">Deals<span class="nbadge" id="dealBadge" hidden></span></button>
@@ -588,7 +587,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
     <section id="view-content" hidden aria-label="Content"><iframe id="contentFactory" title="Content Factory" data-src="/factory/?embedded=1"></iframe></section>
     <section id="view-company" hidden aria-label="Company performance canvas">
       <header class="canvas-header"><div><span class="canvas-kicker">TIDELINE / COMPANY</span><h1>Performance canvas</h1></div><div class="canvas-header-actions"><select id="companySelect" aria-label="Product analytics"><option value="tideline">TideLine website</option><option value="wonplace">WonPlace</option><option value="loki">Loki</option><option value="voyage">Voyage</option></select><button class="btn" id="canvasFocus" aria-pressed="false">Focus chart</button><button class="btn" id="canvasSettings">Workspace settings</button><button class="btn" id="companyRefresh">Refresh</button></div></header>
-      <nav class="canvas-views" aria-label="Company tools"><button data-canvas-open="overview" aria-current="page">Overview</button><button data-canvas-open="website">Website</button><button data-canvas-open="social">Social</button><button data-canvas-open="sales">Sales</button><button data-canvas-open="finance">Finance</button><button data-canvas-open="activity">Activity</button><button data-canvas-open="connections">Sources <span id="canvasSourceCount"></span></button><span id="companyStatus" role="status"></span></nav>
+      <nav class="canvas-views" aria-label="Company tools"><button data-canvas-open="overview" aria-current="page">Overview</button><button data-canvas-open="website">Website</button><button data-canvas-open="social">Social</button><button data-canvas-open="sales">Sales</button><button data-canvas-open="finance">Finance</button><button data-canvas-open="activity">Activity</button><button data-canvas-open="tickets">Tickets</button><button data-canvas-open="connections">Sources <span id="canvasSourceCount"></span></button><span id="companyStatus" role="status"></span></nav>
       <div id="canvasWorkspace" class="canvas-workspace" data-layout="overview">
         <section id="opsFocus" class="canvas-focus" aria-label="Focus measurements"></section>
         <section id="opsChartPanel" class="canvas-cell canvas-plot-cell" aria-label="Measurement chart">
@@ -744,7 +743,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
       </div>
     </section>
 
-    <section id="view-tickets" hidden><div class="head"><div><h1>Company tickets</h1><p>WonPlace reports, read directly from the original records.</p></div></div><div id="companyTickets"></div></section>
+
     <section id="view-admin" hidden>
       <button class="back" id="adBack">‹ Back to Profile</button>
       <div class="head"><div><h1>Admin</h1><div class="sub">How The Voyage is being used, who has access, and what needs attention. Only Quan and Cody can see this page.</div></div><button class="btn" id="uRefresh">Refresh</button></div>
@@ -1101,6 +1100,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
 <div class="toast" id="toast" role="status"></div>
 
 <script src="/voyage-db.js"></script>
+<link rel="stylesheet" href="/company-tickets.css">
 <script src="/company-tickets.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
@@ -3012,14 +3012,14 @@ window.addEventListener("voyage-company-account",event=>{if(guest||typeof event.
 window.addEventListener("voyage-content-navigate",event=>{if(guest)return;const {view:next,contentItem}=event.detail||{};if(!["dash","accounts","company","content"].includes(next))return;go(next);if(next==="content"&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem||""))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Do not invent claims, media or analytics. Do not publish."}));});
 function go(v){
   if(v==="tickets"&&guest)return;
-  $("view-tickets").hidden=v!=="tickets";if(v==="tickets")window.loadCompanyTickets();
+  const ticketRoute=v==="tickets";if(ticketRoute)v="company";
   if(v==="oden"){openChat();track("action","Opened Muninn");return}
   if((v==="company"||v==="content")&&guest)return;
   $("view-content").hidden=v!=="content";
   if(v==="content")window.VoyageContent.open();else window.VoyageContent.close();
   $("view-company").hidden=v!=="company";
   document.body.classList.toggle("company-canvas-active",v==="company");
-  if(v==="company")window.VoyageCompany.open();else window.VoyageCompany.close();
+  if(v==="company"){window.VoyageCompany.open();if(ticketRoute)window.VoyageCockpit.openTickets();}else window.VoyageCompany.close();
   view=v;track("view");const navV=v==="account"?acctFrom:v==="admin"?"profile":v==="deal"?"deals":v;
   document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("on",x.dataset.view===(navV==="notes"?"activity":navV)));
   $("view-dash").hidden=v!=="dash";$("view-activity").hidden=v!=="activity";$("view-stages").hidden=v!=="stages";$("view-accounts").hidden=v!=="accounts";$("view-vendors").hidden=v!=="vendors";$("view-calendar").hidden=v!=="calendar";$("view-cadence").hidden=v!=="cadence";$("view-deals").hidden=v!=="deals";$("view-deal").hidden=v!=="deal";$("view-admin").hidden=v!=="admin";$("view-profile").hidden=v!=="profile";$("view-notes").hidden=v!=="notes";$("view-team").hidden=v!=="team";$("view-account").hidden=v!=="account";$("view-soon").hidden=!SOON[v];
@@ -3167,7 +3167,7 @@ render();renderActs();renderItems();
     acts=snap.docs.map(d=>d.data());renderActs();renderAccount();loaded("activity");
   },failed);
 const requestedView=new URLSearchParams(location.search).get("view");
-  if(["accounts","company","content"].includes(requestedView)&&(!guest||requestedView==="accounts"))go(requestedView);
+  if(["accounts","company","content","tickets"].includes(requestedView)&&(!guest||requestedView==="accounts"))go(requestedView);
   const contentItem=new URLSearchParams(location.search).get("contentItem");
   if(!guest&&requestedView==="content"&&contentItem&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Suggest the next useful step for gym owners and admin staff. Do not invent claims, media or analytics. Do not publish."}));
 })();
