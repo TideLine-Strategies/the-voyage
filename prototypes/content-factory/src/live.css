@@ -832,3 +832,856 @@ body {
     max-width: 235px;
   }
 }
+
+.factory-published {
+  min-height: 0;
+  overflow: auto;
+}
+.factory-published-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+.factory-published-grid article {
+  min-width: 0;
+}
+.factory-published-grid video {
+  width: 100%;
+  height: min(48vh, 420px);
+  object-fit: contain;
+  background: #080d19;
+  border-radius: 12px;
+}
+.factory-published-grid p {
+  font-size: 12px;
+  color: var(--muted);
+}
+/* Concept C: a portrait coverflow with the working cockpit within reach. */
+.concept-c {
+  gap: 8px;
+  min-height: 600px;
+}
+.concept-c .factory-station-picker {
+  gap: 8px;
+}
+.concept-c .factory-station-picker button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 2px;
+  color: var(--text);
+}
+.concept-c .factory-station-picker button[aria-pressed="true"] {
+  background: var(--card);
+  box-shadow: inset 0 -2px var(--stage-color);
+}
+.concept-c .factory-station-picker button > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.concept-c .factory-station-picker b {
+  display: block;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.concept-c .factory-station-picker small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.concept-c .factory-station-picker em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 10px;
+}
+.stage-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--stage-color);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--stage-color) 35%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.concept-coverflow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(118px, 1fr));
+  gap: 3px;
+  perspective: 1300px;
+  align-items: center;
+  min-height: 0;
+  flex: 1;
+  padding: 17px 12px 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  isolation: isolate;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.concept-lane {
+  min-width: 0;
+  position: relative;
+  perspective: 950px;
+  scroll-snap-align: center;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 2px;
+}
+.concept-lane[data-focused="true"] {
+  z-index: 5;
+}
+.concept-portrait {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9/16;
+  max-height: 340px;
+  min-height: 210px;
+  border: 1px solid color-mix(in srgb, var(--stage-color) 65%, var(--line));
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow:
+    0 12px 24px #080e2533,
+    0 2px 4px #080e2533;
+  transform: rotateY(var(--card-turn)) translateZ(var(--card-depth)) scale(0.91);
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.3s;
+  transform-style: preserve-3d;
+}
+.concept-portrait[data-selected="true"] {
+  transform: rotateY(0) translateZ(36px) scale(1.02);
+  border-color: var(--stage-color);
+  box-shadow:
+    0 15px 35px #080e2540,
+    0 0 0 2px color-mix(in srgb, var(--stage-color) 22%, transparent);
+}
+.concept-card-select {
+  position: absolute;
+  z-index: 3;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 9px !important;
+  width: 100%;
+  border: 0 !important;
+  background: linear-gradient(#080d1966, transparent) !important;
+  border-radius: 0 !important;
+  text-align: left;
+  height: 48px;
+}
+.concept-brand,
+.concept-state {
+  align-self: flex-start;
+  max-width: 75%;
+  font-size: 9px !important;
+  line-height: 1.5;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: var(--stage-color);
+  color: #fff;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.concept-state {
+  background: #17203a9c;
+  color: #fff;
+}
+.concept-state[data-running="true"] {
+  animation: factory-pulse 1.5s infinite;
+}
+.concept-preview {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.concept-preview > video,
+.concept-preview > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #080e1b;
+}
+.concept-card-caption {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0;
+  width: 100%;
+  text-align: left;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(transparent, #091022dc 32%, #091022fa) !important;
+  padding: 30px 11px 13px !important;
+  color: #fff !important;
+  display: block;
+}
+.concept-card-caption small {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: #cbd4e8;
+}
+.concept-card-caption h3 {
+  font-size: clamp(12px, 1.1vw, 18px);
+  line-height: 1.15;
+  margin: 5px 0;
+}
+.concept-card-caption > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.45;
+  color: #d6ddec;
+}
+.concept-back-card {
+  position: absolute;
+  inset: 9% auto 13% calc(12px * var(--stack));
+  width: 96%;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--stage-color) 24%, var(--panel)),
+    var(--card)
+  );
+  border: 1px solid color-mix(in srgb, var(--stage-color) 45%, var(--line));
+  transform: rotateY(-29deg) translateX(calc(10px * var(--stack)))
+    scale(calc(1 - var(--stack) * 0.035));
+  z-index: -1;
+  border-radius: 10px;
+  overflow: hidden;
+  color: var(--muted);
+  padding: 10px;
+  text-align: right;
+}
+.concept-back-card span {
+  writing-mode: vertical-rl;
+  font-size: 10px;
+  float: right;
+  max-height: 80%;
+  overflow: hidden;
+}
+.concept-lane-controls {
+  height: 25px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.concept-lane-controls select {
+  width: 95%;
+  font-size: 9px;
+  padding: 3px;
+  min-height: 0;
+}
+.concept-lane-controls small {
+  font-size: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+.cockpit-source-feed,
+.cockpit-script {
+  height: 100%;
+  padding: 46px 12px 90px;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--stage-color) 15%, var(--panel)),
+    var(--panel)
+  );
+  font-size: 10px;
+  overflow: hidden;
+}
+.cockpit-source-feed > small,
+.cockpit-script > small {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--stage-color);
+}
+.cockpit-source-feed > div {
+  height: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(#000 70%, transparent);
+}
+.cockpit-source-feed p {
+  padding: 7px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cockpit-source-feed b {
+  font-size: 9px;
+}
+.cockpit-source-feed time {
+  font-size: 8px;
+  color: var(--muted);
+}
+.cockpit-script p {
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.cockpit-source-feed > div {
+  animation: source-drift 28s linear infinite alternate;
+}
+.cockpit-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 25px;
+  text-align: center;
+  background: radial-gradient(
+    ellipse at 50% 30%,
+    color-mix(in srgb, var(--stage-color) 20%, var(--panel)),
+    var(--panel)
+  );
+  font-size: 11px;
+}
+.cockpit-empty > span {
+  font-size: 32px;
+  color: var(--stage-color);
+}
+.cockpit-empty p {
+  color: var(--muted);
+  font-size: 10px;
+  margin: 0;
+}
+.cockpit-empty b {
+  font-size: 12px;
+}
+.concept-learning-loop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  color: var(--muted);
+  font-size: 11px;
+  flex: none;
+}
+.concept-learning-loop span {
+  color: #6395c8;
+  font-size: 22px;
+  line-height: 1;
+}
+.concept-learning-loop:before,
+.concept-learning-loop:after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, #6395c888);
+}
+.concept-learning-loop:after {
+  transform: rotate(180deg);
+}
+.concept-cockpit {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 1fr;
+  gap: 10px;
+  flex: none;
+  height: clamp(210px, 27vh, 275px);
+  min-height: 0;
+}
+.concept-cockpit > .live-panel {
+  margin: 0;
+  padding: 14px;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.concept-cockpit h2 {
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.2;
+}
+.concept-cockpit p {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.5;
+}
+.concept-cockpit .live-eyebrow {
+  font-size: 8px;
+  color: var(--muted);
+}
+.cockpit-working > header {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+.cockpit-working > header > div {
+  min-width: 0;
+}
+.cockpit-working > header h2 {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 31vw;
+}
+.cockpit-working button {
+  font-size: 10px;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+.cockpit-working nav {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+.cockpit-working nav button {
+  text-transform: capitalize;
+  border: 0;
+  background: transparent;
+}
+.cockpit-working nav button[aria-pressed="true"] {
+  color: var(--red);
+  background: var(--red-bg);
+}
+.cockpit-detail {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.cockpit-detail > p {
+  white-space: pre-wrap;
+}
+.cockpit-detail > small {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-top: 5px;
+}
+.cockpit-detail time {
+  font-size: 9px;
+  color: var(--muted);
+  float: right;
+}
+.cockpit-working footer {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.cockpit-agent {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.cockpit-agent i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.cockpit-agent i[data-running="true"] {
+  background: var(--green);
+  animation: factory-pulse 1.5s infinite;
+}
+.review-checklist {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+  min-height: 0;
+}
+.review-checklist span {
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+  color: var(--muted);
+}
+.review-checklist b {
+  font-weight: 500;
+}
+.review-checklist [data-done="true"] b {
+  color: var(--green);
+}
+.cockpit-review > .live-primary {
+  font-size: 11px;
+  padding: 8px;
+}
+.cockpit-review > small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.cockpit-counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cockpit-counters > div {
+  background: var(--card);
+  padding: 9px;
+  border-radius: 8px;
+}
+.cockpit-counters b {
+  font-size: 23px;
+  line-height: 1;
+  display: block;
+}
+.cockpit-counters small {
+  font-size: 9px;
+  color: var(--muted);
+  display: block;
+  margin-top: 4px;
+}
+.cockpit-platforms {
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+}
+.cockpit-platforms p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+  text-transform: capitalize;
+}
+.cockpit-platforms p > span {
+  flex: 1;
+}
+.cockpit-platforms small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.cockpit-analytics > small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.cockpit-analytics > button {
+  align-self: flex-start;
+  font-size: 10px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+}
+.factory-published {
+  flex: 1;
+}
+.concept-c .factory-station-picker {
+  display: grid !important;
+}
+@keyframes source-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50px);
+  }
+}
+@media (min-width: 1200px) and (min-height: 850px) {
+  .concept-portrait {
+    max-height: 390px;
+  }
+  .concept-c {
+    min-height: 650px;
+  }
+}
+@media (max-width: 1000px) {
+  .concept-coverflow {
+    grid-template-columns: repeat(7, 160px);
+    gap: 10px;
+  }
+  .concept-cockpit {
+    grid-template-columns: 1.5fr 1fr;
+  }
+  .cockpit-analytics {
+    display: none !important;
+  }
+  .concept-c .factory-station-picker small {
+    display: none;
+  }
+  .concept-c .factory-station-picker b {
+    font-size: 10px;
+  }
+  .concept-c .factory-station-picker button {
+    gap: 4px;
+  }
+  .stage-number {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  .concept-c {
+    min-height: 580px;
+  }
+}
+@media (max-width: 650px) {
+  .concept-c {
+    min-height: 0;
+    height: 100%;
+    gap: 5px;
+  }
+  .concept-coverflow {
+    grid-template-columns: repeat(7, 160px);
+    padding: 10px 8px 4px;
+    flex: 1;
+    min-height: 245px;
+    max-height: 330px;
+  }
+  .concept-portrait {
+    min-height: 235px;
+    max-height: 280px;
+    transform: rotateY(var(--card-turn)) scale(0.92);
+  }
+  .concept-c .factory-station-picker {
+    gap: 3px;
+  }
+  .concept-c .factory-station-picker button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 1px;
+  }
+  .concept-c .factory-station-picker em {
+    display: none;
+  }
+  .concept-c .factory-station-picker b {
+    font-size: 8px;
+  }
+  .concept-cockpit {
+    display: block;
+    height: 170px;
+  }
+  .concept-cockpit > .cockpit-working {
+    height: 100%;
+    padding: 10px;
+  }
+  .cockpit-review {
+    display: none !important;
+  }
+  .cockpit-working > header h2 {
+    max-width: 48vw;
+    font-size: 14px;
+  }
+  .cockpit-working nav {
+    padding-bottom: 3px;
+  }
+  .cockpit-detail > small {
+    display: none;
+  }
+  .concept-learning-loop {
+    font-size: 9px;
+  }
+  .concept-card-caption h3 {
+    font-size: 16px;
+  }
+  .concept-c .factory-station-picker {
+    flex: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .concept-c * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.concept-c {
+  min-height: 0;
+}
+@media (min-width: 1200px) and (min-height: 850px) {
+  .concept-c {
+    min-height: 0;
+  }
+}
+/* Exposed stack edges remain real selection targets, rather than covered buttons. */
+.concept-back-card {
+  inset: 9% auto 18% calc(100% - 8px + 11px * var(--stack));
+  width: 22px;
+  transform: rotateY(-22deg) scale(calc(1 - var(--stack) * 0.025));
+  padding: 5px;
+}
+@media (min-width: 1001px) {
+  .concept-portrait[data-selected="true"] {
+    transform: rotateY(0) translateZ(42px) scale(1.1);
+  }
+}
+@media (max-width: 650px) {
+  .live-main {
+    gap: 6px;
+  }
+  .live-header {
+    gap: 7px;
+  }
+  .live-header h1 {
+    font-size: 20px;
+    margin: 0;
+  }
+  .live-header .live-eyebrow {
+    display: none;
+  }
+  .live-header > div:nth-child(2) {
+    gap: 4px;
+  }
+  .live-header > div:nth-child(2) > button:first-child {
+    display: none;
+  }
+  .live-header > div:nth-child(2) > button {
+    font-size: 10px;
+    padding: 6px;
+  }
+  .live-header > div:nth-child(2) > button[aria-pressed] {
+    font-size: 0;
+    width: 27px;
+    padding: 5px;
+  }
+  .live-header > div:nth-child(2) > button[aria-pressed]:after {
+    content: "Ⅱ";
+    font-size: 14px;
+  }
+  .live-header > div:nth-child(2) > button[aria-pressed="true"]:after {
+    content: "▶";
+  }
+  .live-status {
+    font-size: 9px;
+    min-height: 12px;
+    line-height: 1.2;
+  }
+  .live-toolbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .live-toolbar > div {
+    gap: 3px;
+  }
+  .live-toolbar > div button {
+    font-size: 10px;
+    padding: 5px 6px;
+  }
+  .live-toolbar > label {
+    min-width: 0;
+    flex: 1;
+    font-size: 0;
+    display: block;
+  }
+  .live-toolbar > label select {
+    max-width: 100%;
+    width: 100%;
+    font-size: 10px;
+    padding: 4px;
+  }
+  .factory-dock {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+    min-height: 28px;
+  }
+  .factory-dock button {
+    white-space: nowrap;
+    font-size: 9px;
+    padding: 5px 7px;
+  }
+  .concept-c .factory-station-picker b {
+    font-size: 7px;
+  }
+  .concept-c .stage-number {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  .concept-c .factory-station-picker button {
+    gap: 3px;
+    padding: 2px 0;
+  }
+  .concept-coverflow {
+    grid-template-columns: repeat(7, 113px);
+    gap: 7px;
+    min-height: 175px;
+    max-height: 235px;
+    padding: 8px 4px 3px;
+  }
+  .concept-portrait {
+    min-height: 175px;
+    max-height: 210px;
+  }
+  .concept-card-caption h3 {
+    font-size: 12px;
+  }
+  .concept-card-caption {
+    padding: 20px 8px 9px !important;
+  }
+  .concept-card-caption > span {
+    font-size: 8px;
+    -webkit-line-clamp: 1;
+  }
+  .concept-card-select {
+    padding: 6px !important;
+  }
+  .concept-state {
+    display: none;
+  }
+  .concept-brand {
+    font-size: 8px !important;
+  }
+  .concept-lane-controls {
+    height: 17px;
+    margin-top: 5px;
+  }
+  .concept-learning-loop {
+    font-size: 8px;
+    gap: 6px;
+  }
+  .concept-learning-loop span {
+    font-size: 15px;
+  }
+  .concept-cockpit {
+    height: 142px;
+  }
+  .cockpit-working > header h2 {
+    font-size: 12px;
+  }
+  .cockpit-working > header > button {
+    font-size: 9px;
+  }
+  .cockpit-working nav button {
+    font-size: 9px;
+    padding: 3px 5px;
+  }
+  .concept-cockpit > .cockpit-working {
+    padding: 8px;
+    gap: 5px;
+  }
+  .cockpit-detail > p {
+    font-size: 10px;
+  }
+  .cockpit-working footer {
+    padding-top: 4px;
+  }
+  .cockpit-agent {
+    font-size: 8px;
+  }
+  .cockpit-working footer button {
+    font-size: 8px;
+    padding: 3px 5px;
+  }
+}

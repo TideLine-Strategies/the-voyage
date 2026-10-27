@@ -1,3 +1,4 @@
+import {cadenceState,seedCadence} from './content-cadence.js';
 import {analyticsTargets,platformObservations,ingestPlatformObservations} from './content-platforms.js';
 import {productionAction,productionState} from './content-production.js';
 import {ownAnalytics} from './content-analytics.js';
@@ -31,7 +32,7 @@ export async function opsState(env){
  const baseline=(await readOpsDoc(env,'content_baseline','linkedin'))?.value;
  const own=[...new Map([...(await platformObservations(env)),...(research?.observations||[])].filter(o=>o.kind==='own-post').sort((a,b)=>Date.parse(a.observedAt)-Date.parse(b.observedAt)).map(o=>[o.url,{...o,brand:o.brand||((baseline?.posts||[]).some(p=>p.url===o.url)?'tideline':null)}])).values()];
  const analytics=Object.fromEntries(['all','tideline','wonplace'].map(b=>[b,ownAnalytics(own,b)]));
- return {analyticsStatus:(await readOpsDoc(env,'content_analytics_status','current'))?.value||null,production:await productionState(env),analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch({...research,observations:[...research.observations.filter(o=>o.kind!=='own-post'),...own]}):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
+ return {control:(await readOpsDoc(env,'content_control','current'))?.value||{paused:false},cadence:await cadenceState(env),analyticsStatus:(await readOpsDoc(env,'content_analytics_status','current'))?.value||null,production:await productionState(env),analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch({...research,observations:[...research.observations.filter(o=>o.kind!=='own-post'),...own]}):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
 }
 export async function handleOps(request,env,actor,readJson){
  if(actor.role!=='edit')return json({error:'Not available to guests'},403);const url=new URL(request.url);
@@ -39,6 +40,10 @@ export async function handleOps(request,env,actor,readJson){
  if(request.method==='GET')return json(await opsState(env));
  if(request.method!=='POST'||request.headers.get('origin')!==url.origin)return json({error:'Same-origin editor action required'},403);
  let body;try{body=await readJson(request);}catch{return json({error:'Invalid request'},400);}
+ if(body.action==='set_paused'){
+  if(typeof body.paused!=='boolean')return json({error:'Choose a production state'},400);
+  await put(env,'content_control','current',{paused:body.paused,by:actor.id,name:actor.name,at:Date.now()});return json({accepted:true,paused:body.paused});
+ }
  if(body.action==='cancel_production'){
   const stored=await readOpsDoc(env,'content_production_jobs',text(body.id,200));if(!stored||stored.value.status!=='running')return json({error:'Production job is no longer running'},409);
   const value={...stored.value,status:'cancelled',cancelledBy:actor.id,cancelledAt:Date.now()};delete value.token;delete value.item;
@@ -69,7 +74,9 @@ export async function ingestOps(env,body){
  if(body.action==='analytics_observations'){try{return json(await ingestPlatformObservations(env,body));}catch(e){return json({error:e.message},400);}}
  if(['production_claim','production_complete','production_fail','production_verify'].includes(body.action)){try{return json(await productionAction(env,body));}catch(e){return json({error:e.message},409);}}
  if(body.action==='research'){try{const d=researchSnapshot(body.snapshot),old=await readOpsDoc(env,'content_research','current');if(old&&Date.parse(old.value.checkedAt)>Date.parse(d.checkedAt))return json({accepted:false});await put(env,'content_research','current',d);return json({accepted:true,observations:d.observations.length});}catch(e){return json({error:e.message},400);}}
+ if(['bootstrap','claim'].includes(body.action)&&(await readOpsDoc(env,'content_control','current'))?.value.paused)return json({job:null,accepted:false,reason:'Production paused by an editor'});
  if(body.action==='bootstrap'){
+  await seedCadence(env,(await readOpsDoc(env,'content_research','current'))?.value);
   // Recover the narrow completion-to-editorial handoff after an interrupted request.
   const completed=await env.DB.prepare("SELECT id,data_json FROM documents WHERE collection=? AND json_extract(data_json,'$.status')='complete' AND json_extract(data_json,'$.itemId') IS NOT NULL ORDER BY updated_at DESC LIMIT 30").bind('content_agent_runs').all();
   for(const r of completed.results){const run=JSON.parse(r.data_json);if(run.itemId)await advanceDecision(env,run,run.decision,r.id);}

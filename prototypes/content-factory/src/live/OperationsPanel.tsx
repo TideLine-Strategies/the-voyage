@@ -80,6 +80,14 @@ type Analytics = {
   }[];
 };
 export type State = {
+  control?: { paused: boolean; name?: string };
+  cadence?: {
+    perWeek: number;
+    timeZone: string;
+    started: number;
+    awaitingReview: number;
+    slots: { date: string; stage: string | null }[];
+  };
   analyticsStatus?: { checkedAt: string; observations: number; blockers: string[] } | null;
   production?: {
     id: string;

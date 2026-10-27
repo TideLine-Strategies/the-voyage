@@ -5,3 +5,6 @@ node_modules/
 .company-release.log
 
 public/__build.json
+
+# Local-only recovered visual reference; never ship demo seed content.
+/prototypes/content-factory/concept-review/
