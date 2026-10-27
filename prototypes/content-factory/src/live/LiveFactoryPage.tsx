@@ -56,6 +56,9 @@ export type Item = {
   activity?: { at: number; name: string; action: string }[];
 };
 type Published = {
+  brand?: string;
+  platform?: string;
+  mediaAssetId?: string | undefined;
   id: string;
   title: string;
   text: string;
@@ -94,6 +97,7 @@ export type Data = {
           url: string | null;
           caption: string;
           blockers: string[];
+          assets?: { sha256: string }[];
         }[];
       }[];
     } | null;
@@ -225,7 +229,40 @@ export function LiveFactoryPage() {
       previous?.focus();
     };
   }, [inspectorOpen]);
-  const posts = data?.baseline?.posts || [];
+  const posts: Published[] = [
+    ...(data?.baseline?.posts || []).map((p) => ({
+      ...p,
+      brand: "tideline",
+      platform: "linkedin",
+    })),
+  ];
+  for (const b of data?.brands || [])
+    for (const c of b.snapshot?.campaigns || [])
+      for (const d of c.deliveries) {
+        if (d.state !== "published" || !d.url) continue;
+        const old = posts.find((p) => p.url === d.url);
+        const mediaAssetId = d.assets
+          ?.map((a) => a.sha256)
+          .find((id) => assets.some((a) => a.id === id));
+        if (old) {
+          if (mediaAssetId) old.mediaAssetId = mediaAssetId;
+          continue;
+        }
+        posts.push({
+          id: "posted-" + b.brand + "-" + c.id + "-" + d.platform,
+          title: c.title,
+          text: d.caption,
+          url: d.url,
+          brand: b.brand,
+          platform: d.platform,
+          mediaAssetId,
+          publishedAt: null,
+          observedAt: b.snapshot!.checkedAt,
+          reactions: null,
+          reposts: null,
+          note: "Verified publisher receipt. Unknown metrics remain unavailable.",
+        });
+      }
   const cards = [
     ...(data?.items || [])
       .filter((x) => brand === "all" || x.brand === brand)
@@ -237,16 +274,16 @@ export function LiveFactoryPage() {
         detail: x.value || x.pain,
         kind: "item",
       })),
-    ...(brand === "wonplace"
-      ? []
-      : posts.map((x) => ({
-          id: x.id,
-          title: x.title,
-          stage: "published",
-          brand: "tideline",
-          detail: x.text,
-          kind: "published",
-        }))),
+    ...posts
+      .filter((x) => brand === "all" || x.brand === brand)
+      .map((x) => ({
+        id: x.id,
+        title: x.title,
+        stage: "published",
+        brand: x.brand || "tideline",
+        detail: x.text,
+        kind: "published",
+      })),
   ];
   const published = posts.find((p) => p.id === selected);
   const activeIndex = Math.max(
@@ -257,6 +294,13 @@ export function LiveFactoryPage() {
   function choose(id: string) {
     if (!mayLeave()) return;
     setInspectorOpen(true);
+    setSelected(id);
+    setDraft(data?.items.find((i) => i.id === id) || null);
+    setDirty(false);
+    setNote("");
+  }
+  function pick(id: string) {
+    if (!mayLeave()) return;
     setSelected(id);
     setDraft(data?.items.find((i) => i.id === id) || null);
     setDirty(false);
@@ -359,6 +403,12 @@ export function LiveFactoryPage() {
             <span className="live-eyebrow">TIDELINE / CONTENT OPERATIONS</span>
             <h1>Content factory.</h1>
             <p>Help gym owners solve the work around the class.</p>
+            {ops?.cadence && (
+              <p className="live-muted">
+                3 pieces / week · Mon / Wed / Fri · Central · {ops.cadence.started}/3 started this
+                week · {ops.cadence.awaitingReview} awaiting approval
+              </p>
+            )}
           </div>
           <div>
             <button
@@ -371,6 +421,34 @@ export function LiveFactoryPage() {
               }}
             >
               Refresh sources
+            </button>
+            <button
+              disabled={!ops || busy}
+              aria-pressed={ops?.control?.paused || false}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const paused = !ops?.control?.paused;
+                  const r = await fetch("/api/content-ops", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ action: "set_paused", paused }),
+                  });
+                  if (!r.ok) throw Error("Could not change production state");
+                  setOps((s) => (s ? { ...s, control: { paused } } : s));
+                  setMessage(
+                    paused
+                      ? "Production paused. Running work finishes at its next checkpoint."
+                      : "Production resumed. Human approval remains required.",
+                  );
+                } catch (e) {
+                  setMessage((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {ops?.control?.paused ? "▶ Resume production" : "Ⅱ Pause production"}
             </button>
             <button className="live-primary" disabled={!data} onClick={() => newItem()}>
               New brief
@@ -428,6 +506,7 @@ export function LiveFactoryPage() {
             <nav className="factory-dock" aria-label="Content controls">
               {[
                 ["line", "Assembly line"],
+                ["published", "Published videos"],
                 ["research", "Ideas"],
                 ["operations", "Automation & media"],
                 ["deliveries", "Publishing"],
@@ -445,11 +524,67 @@ export function LiveFactoryPage() {
                 ops={ops}
                 assets={assets.filter((a) => brand === "all" || a.brand === brand)}
                 selected={selected}
-                onSelect={choose}
+                onSelect={pick}
+                onInspect={choose}
                 onNew={() => newItem()}
                 onLibrary={() => setPane("operations")}
               />
             </div>
+            {pane === "published" && (
+              <section className="live-panel factory-published" aria-label="Published videos">
+                <header>
+                  <h2>Published videos</h2>
+                  <p>
+                    Actual posted cuts, linked to their native posts. New drafts remain in the
+                    assembly line.
+                  </p>
+                </header>
+                <div className="factory-published-grid">
+                  {cards
+                    .filter((c) => c.kind === "published")
+                    .map((c) => {
+                      const post = posts.find((p) => p.id === c.id);
+                      const a = assets.find(
+                        (a) =>
+                          (a.id === post?.mediaAssetId || a.postId === c.id) &&
+                          a.mime === "video/mp4",
+                      );
+                      return (
+                        <article key={c.id}>
+                          <h3>{c.title}</h3>
+                          {a ? (
+                            <MediaLoop
+                              controls
+                              src={"/api/content-media/" + a.id}
+                              aria-label={c.title + " published video"}
+                            />
+                          ) : (
+                            <p>Posted video not yet imported.</p>
+                          )}
+                          <p>
+                            {c.brand} · {post?.platform} ·{" "}
+                            {ops?.insights?.own.find((o) => o.url === post?.url)?.metrics[
+                              "reactions"
+                            ] ?? "—"}{" "}
+                            observed reactions
+                          </p>
+                          <p>{a?.provenance}</p>
+                          <a href={post?.url} target="_blank" rel="noreferrer">
+                            View native post ↗
+                          </a>
+                          <button
+                            onClick={() => {
+                              choose(c.id);
+                            }}
+                          >
+                            Details & analytics
+                          </button>
+                        </article>
+                      );
+                    })}
+                </div>
+              </section>
+            )}
             <section
               id="inspector"
               className="live-panel factory-inspector"
@@ -472,17 +607,17 @@ export function LiveFactoryPage() {
               {published ? (
                 <>
                   <span className="live-eyebrow">
-                    PUBLISHED LINKEDIN BASELINE · TIDELINE → WONPLACE
+                    PUBLISHED · {published.platform || "linkedin"} · {published.brand || "tideline"}
                   </span>
                   <h2>{published.title}</h2>
                   <pre>{published.text}</pre>
                   {assets
                     .filter(
                       (a) =>
-                        a.postId === published.id &&
-                        a.kind === "original" &&
+                        (a.id === published.mediaAssetId || a.postId === published.id) &&
                         a.mime === "video/mp4",
                     )
+                    .slice(0, 1)
                     .map((a) => (
                       <div key={a.id}>
                         <MediaLoop
@@ -499,7 +634,7 @@ export function LiveFactoryPage() {
                       </div>
                     ))}
                   <a href={published.url} target="_blank" rel="noreferrer">
-                    Open the actual LinkedIn post ↗
+                    Open the actual published post ↗
                   </a>
                   <p className="live-muted">
                     Observed {published.observedAt}. {published.note} These are source posts, not

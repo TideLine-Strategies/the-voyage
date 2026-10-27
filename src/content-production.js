@@ -9,6 +9,7 @@ export async function productionAction(env,body){
   return {authorized:!!current&&current.stage==='posting'&&!!current.approval&&current.approval.hash===body.approvalHash&&current.approval.hash===await packageFingerprint(current)&&current.mediaAssetId===body.mediaAssetId&&current.copy===body.copy};
  }
  if(body.action==='production_claim'){
+  if((await read(env,'content_control','current'))?.value.paused)return {job:null,reason:'Production paused by an editor'};
   const pending=await env.DB.prepare("SELECT id,data_json,revision FROM documents WHERE collection=? AND json_extract(data_json,'$.status')='running' ORDER BY updated_at LIMIT 30").bind(C).all();
   for(const r of pending.results){const j=JSON.parse(r.data_json),receipt=await read(env,'content_pipeline_receipts',(j.mode==='dispatch'?'dispatch-':'production-')+r.id);if(receipt?.value.status==='advanced'){const done={...j,status:'complete',finishedAt:receipt.value.at,advancement:receipt.value};delete done.token;delete done.item;delete done.leaseUntil;await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(done),Date.now(),C,r.id,r.revision).run();}}
 
