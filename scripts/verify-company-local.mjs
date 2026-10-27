@@ -21,6 +21,21 @@ try{
  const replayBody=JSON.stringify({events:[],measurements:[{metric:'customers.paying',value:4,at:measured.metrics.find(m=>m.id==='customers.paying').points[0].at}]});await mf.dispatchFetch(origin+path,{method:'POST',headers:await signedHeaders(secret,'POST',origin+path,'wonplace',replayBody),body:replayBody});
  const measuredAgain=await(await mf.dispatchFetch(origin+'/api/companies/wonplace/metrics',{headers})).json();assert.equal(measuredAgain.metrics.find(m=>m.id==='customers.paying').points.length,1);assert.equal(measuredAgain.metrics.find(m=>m.id==='customers.paying').current,4);
  const other=await(await mf.dispatchFetch(origin+'/api/companies/tideline',{headers})).json();assert.equal(other.live.activeUsers.length,0);assert.equal(other.live.measurements.length,0);assert.equal((await mf.dispatchFetch(origin+'/api/companies/wonplace/metrics')).status,403);
+ // Exercise real workerd + D1 for the ticket lifecycle, including binary reads.
+ const ticketId='11111111-1111-4111-8111-111111111111',ticketUrl=origin+'/api/company-tickets';
+ const ticket=async(method,suffix='',body,product='wonplace')=>mf.dispatchFetch(ticketUrl+suffix+'?company='+product,{method,headers:{...headers,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+ assert.equal((await mf.dispatchFetch(ticketUrl+'?company=wonplace')).status,403);
+ let t=await ticket('POST','',{id:ticketId,title:'Runtime ticket acceptance'});assert.equal(t.status,201);let issue=(await t.json()).issue;
+ const bytes='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a17sAAAAASUVORK5CYII=';
+ t=await ticket('POST','/'+ticketId+'/attachments',{expectedRevision:issue.revision,name:'runtime.png',data:bytes});assert.equal(t.status,200);issue=(await t.json()).issue;const attachment=issue.attachments[0].id;
+ const binary=await ticket('GET','/'+ticketId+'/attachments/'+attachment);assert.equal(binary.headers.get('content-type'),'image/png');assert((await binary.arrayBuffer()).byteLength>0);
+ assert.equal((await ticket('GET','/'+ticketId+'/attachments/'+attachment,null,'tideline')).status,404);
+ assert.equal((await ticket('PATCH','/'+ticketId,{title:'Stale',expectedRevision:1})).status,409);
+ t=await ticket('PATCH','/'+ticketId,{note:'Verified in real workerd',expectedRevision:issue.revision});issue=(await t.json()).issue;assert.equal(issue.notes.length,1);
+ t=await ticket('DELETE','/'+ticketId,{expectedRevision:issue.revision});issue=(await t.json()).issue;assert.equal(issue.deleted,true);
+ t=await ticket('PATCH','/'+ticketId,{restore:true,expectedRevision:issue.revision});assert.equal((await t.json()).issue.deleted,false);
+ assert.equal((await mf.dispatchFetch(ticketUrl+'/'+ticketId+'?company=wonplace',{method:'PATCH',headers:{...headers,origin:'https://evil.example'},body:'{}'})).status,403);
+ console.log(JSON.stringify({ticketLifecycle:true,screenshotRoundtrip:true,ticketProductIsolation:true,conflictProtection:true,crossOriginWritesDenied:true}));
  await db.prepare('UPDATE members SET active=0 WHERE id=?').bind('QS').run();assert.equal((await mf.dispatchFetch(origin+'/api/companies/wonplace/live',{headers:{...headers,upgrade:'websocket'}})).status,403);
  socket.close();console.log(JSON.stringify({accepted:true,realDurableObject:true,pushedWebSocketUpdate:true,independentProductScopes:true,anonymousDenied:true,revokedMembershipDenied:true}));
 }finally{await mf.dispose();}
