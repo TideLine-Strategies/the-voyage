@@ -54,3 +54,20 @@ save requires rereading the original revision before another attempt.
 
 This source covers premier_staff_issue, not separate parent beta feedback.
 No Instinct account or third-party agent credentials are provisioned here.
+
+## Kanban stages
+
+The default Tickets view is a six-lane board: Backlog → Open → In progress →
+Blocked → In review → Resolved. Each lane displays its actual filtered count.
+Drag a card to a lane or use its Move to selector (keyboard/touch friendly).
+Moves use the existing expected-revision API and only repaint after a confirmed
+save. Failed/conflicting moves keep the previous card placement and offer refresh.
+Open a card for its existing editor, screenshots and notes; Back to board/list
+returns to the full-width workflow. A List toggle preserves the previous view.
+Search, product selection, trash and status filtering still apply.
+
+Untriaged WonPlace original reports appear in their original Open/In progress/
+Resolved lanes with an Original report label. Their moves write through to
+WonPlace with its revision checks. Other stages require explicit Company triage;
+no inferred stage or duplicate triage ticket is created by dragging. Linked
+originals are represented by their Company ticket, so counts do not double.
