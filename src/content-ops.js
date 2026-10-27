@@ -1,7 +1,7 @@
 import {cadenceState,seedCadence} from './content-cadence.js';
 import {analyticsTargets,platformObservations,ingestPlatformObservations} from './content-platforms.js';
 import {productionAction,productionState} from './content-production.js';
-import {ownAnalytics} from './content-analytics.js';
+import {ownAnalytics,latestKnownObservations} from './content-analytics.js';
 import {advanceDecision,pipelineState} from './content-pipeline.js';
 import {AGENT_DOCS} from './content-agent-docs.js';
 import {listMedia} from './content-media.js';
@@ -30,9 +30,10 @@ export async function opsState(env){
  const docs=await Promise.all(AGENT_DOCS.map(async d=>({...d,living:(await readOpsDoc(env,'content_agent_docs',d.step))?.value||{passes:0,lessons:[]}})));
  const operator=(await readOpsDoc(env,'content_operator','current'))?.value||null;
  const baseline=(await readOpsDoc(env,'content_baseline','linkedin'))?.value;
- const own=[...new Map([...(await platformObservations(env)),...(research?.observations||[])].filter(o=>o.kind==='own-post').sort((a,b)=>Date.parse(a.observedAt)-Date.parse(b.observedAt)).map(o=>[o.url,{...o,brand:o.brand||((baseline?.posts||[]).some(p=>p.url===o.url)?'tideline':null)}])).values()];
+ const baselineRows=(baseline?.posts||[]).map(p=>({id:p.id,url:p.url,title:p.title,kind:'own-post',brand:'tideline',creator:'TideLine',observedAt:p.observedAt||baseline.checkedAt,metrics:{reactions:p.reactions,reposts:p.reposts},scope:p.note||'Verified LinkedIn source baseline'}));
+ const own=latestKnownObservations([...baselineRows,...(await platformObservations(env)),...(research?.observations||[])].filter(o=>o.kind==='own-post').map(o=>({...o,brand:o.brand||((baseline?.posts||[]).some(p=>p.url===o.url)?'tideline':null)})));
  const analytics=Object.fromEntries(['all','tideline','wonplace'].map(b=>[b,ownAnalytics(own,b)]));
- return {control:(await readOpsDoc(env,'content_control','current'))?.value||{paused:false},cadence:await cadenceState(env),analyticsStatus:(await readOpsDoc(env,'content_analytics_status','current'))?.value||null,production:await productionState(env),analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch({...research,observations:[...research.observations.filter(o=>o.kind!=='own-post'),...own]}):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
+ return {observations:own,control:(await readOpsDoc(env,'content_control','current'))?.value||{paused:false},cadence:await cadenceState(env),analyticsStatus:(await readOpsDoc(env,'content_analytics_status','current'))?.value||null,production:await productionState(env),analytics,pipeline:await pipelineState(env),research,insights:research?deriveResearch({...research,observations:[...research.observations.filter(o=>o.kind!=='own-post'),...own]}):null,media:await listMedia(env),docs,runs:runs.results.map(r=>({id:r.id,...JSON.parse(r.data_json),claimToken:undefined,input:undefined})),operator:{lastSeenAt:operator?.lastSeenAt||null,available:!!operator&&Date.now()-operator.lastSeenAt<600000}};
 }
 export async function handleOps(request,env,actor,readJson){
  if(actor.role!=='edit')return json({error:'Not available to guests'},403);const url=new URL(request.url);

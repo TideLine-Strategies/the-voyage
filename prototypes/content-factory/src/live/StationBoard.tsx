@@ -18,6 +18,7 @@ type Card = {
   brand: string;
   detail: string;
   kind: string;
+  url?: string | undefined;
 };
 const descriptions = [
   "Find angles & evidence",
@@ -42,6 +43,7 @@ export function StationBoard({
   onPresent,
   onNew,
   onLibrary,
+  onAnalytics,
 }: {
   cards: Card[];
   data: Data;
@@ -53,6 +55,7 @@ export function StationBoard({
   onPresent: (id: string) => void;
   onNew: () => void;
   onLibrary: () => void;
+  onAnalytics: () => void;
 }) {
   const [focus, setFocus] = useState("editing"),
     [local, setLocal] = useState(""),
@@ -94,6 +97,7 @@ export function StationBoard({
       brand: a.brand,
       detail: a.provenance,
       kind: "library",
+      url: undefined as string | undefined,
     }));
   const all = [...cards, ...library],
     active = all.find((c) => c.id === local) || all.find((c) => c.id === selected) || all[0];
@@ -127,8 +131,8 @@ export function StationBoard({
       (r) => r.itemId === active?.id && ["pending", "running"].includes(r.status),
     ),
     activeJob = ops?.production?.find((j) => j.itemId === active?.id && j.status === "running");
-  const observation = ops?.insights?.own.find(
-    (o) => o.url === data.baseline?.posts.find((p) => p.id === active?.id)?.url,
+  const observation = (ops?.observations || ops?.insights?.own || []).find(
+    (o) => o.url === (active?.url || data.baseline?.posts.find((p) => p.id === active?.id)?.url),
   );
   const preview = (c: Card | undefined, stage: string) => {
     const asset = c && getAsset(c),
@@ -471,8 +475,8 @@ export function StationBoard({
               <small>Selected post reactions</small>
             </div>
             <div>
-              <b>{ops?.analytics?.["all"]?.observedPosts ?? "—"}</b>
-              <small>Observed posts</small>
+              <b>{ops?.analytics?.["all"]?.metrics["reactions"]?.sum ?? "—"}</b>
+              <small>Total known reactions</small>
             </div>
           </div>
           <div className="cockpit-platforms">
@@ -485,9 +489,15 @@ export function StationBoard({
             ))}
           </div>
           <small>
-            Unknown metrics stay unavailable. Cross-platform totals are not unique reach.
+            {observation
+              ? "Counters as of " + new Date(observation.observedAt).toLocaleString() + ". "
+              : ""}
+            Unknown metrics stay unavailable.
+            {ops?.analyticsStatus?.blockers.length
+              ? " Some metrics unavailable; known counters retain their observation dates."
+              : ""}
           </small>
-          <button onClick={onLibrary}>Platform breakdown ↗</button>
+          <button onClick={onAnalytics}>Platform breakdown ↗</button>
         </section>
       </div>
     </section>
