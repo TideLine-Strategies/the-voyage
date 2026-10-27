@@ -3167,6 +3167,7 @@ render();renderActs();renderItems();
     acts=snap.docs.map(d=>d.data());renderActs();renderAccount();loaded("activity");
   },failed);
 const requestedView=new URLSearchParams(location.search).get("view");
+  const requestedProduct=new URLSearchParams(location.search).get("product");if(!guest&&["wonplace","tideline","voyage","loki"].includes(requestedProduct)&&["company","tickets"].includes(requestedView)){$("companySelect").value=requestedProduct;$("companySelect").dispatchEvent(new Event("change"));}
   if(["accounts","company","content","tickets"].includes(requestedView)&&(!guest||requestedView==="accounts"))go(requestedView);
   const contentItem=new URLSearchParams(location.search).get("contentItem");
   if(!guest&&requestedView==="content"&&contentItem&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Suggest the next useful step for gym owners and admin staff. Do not invent claims, media or analytics. Do not publish."}));
