@@ -115,3 +115,28 @@ test("unfilmed content presents its actual draft rather than a fabricated video"
   await expect(dialog.getByLabel("TikTok HUD wireframe")).toBeVisible();
   await dialog.getByRole("button", { name: "Close content preview" }).click();
 });
+test("performance displays dated known counters even without a research feed", async ({
+  page,
+}, info) => {
+  await page.goto("/__local-review");
+  const f = page.frameLocator("#contentFactory");
+  await expect(f.locator(".cockpit-counters > div").first().locator("b")).toHaveText("2");
+  await expect(f.locator(".cockpit-counters > div").nth(1).locator("b")).toHaveText("3");
+  if (info.project.name === "desktop-live")
+    await f.getByRole("button", { name: "Platform breakdown" }).click();
+  else {
+    await f.getByRole("button", { name: "Automation & media", exact: true }).click();
+    await f.getByRole("button", { name: "Platform analytics", exact: true }).click();
+  }
+  await expect(
+    f.getByRole("heading", { name: "Platform observations", exact: true }),
+  ).toBeVisible();
+  const linkedin = f
+    .locator(".live-research-card")
+    .filter({ has: f.getByRole("heading", { name: "linkedin", exact: true }) });
+  await expect(linkedin).toContainText("reactions: 3");
+  await expect(linkedin).toContainText("reposts: 1");
+  await expect(linkedin).toContainText("impressions: Unavailable");
+  await expect(linkedin).toContainText("as of");
+  await page.screenshot({ path: info.outputPath("performance-counts.png"), fullPage: true });
+});

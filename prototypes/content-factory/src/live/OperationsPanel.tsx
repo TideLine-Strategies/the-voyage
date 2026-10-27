@@ -65,7 +65,7 @@ type Doc = {
     lessons: { runId: string; text: string; outcome: string }[];
   };
 };
-type Counter = { sum: number | null; reported: number; posts: number };
+type Counter = { sum: number | null; reported: number; posts: number; observedAt?: string | null };
 type Analytics = {
   observedPosts: number;
   observedPlatforms: number;
@@ -80,6 +80,7 @@ type Analytics = {
   }[];
 };
 export type State = {
+  observations?: Evidence[];
   control?: { paused: boolean; name?: string };
   cadence?: {
     perWeek: number;
@@ -88,7 +89,12 @@ export type State = {
     awaitingReview: number;
     slots: { date: string; stage: string | null }[];
   };
-  analyticsStatus?: { checkedAt: string; observations: number; blockers: string[] } | null;
+  analyticsStatus?: {
+    checkedAt: string;
+    observations: number;
+    measuredPosts?: number;
+    blockers: string[];
+  } | null;
   production?: {
     id: string;
     itemId: string;
@@ -128,6 +134,8 @@ export function OperationsPanel({
   onAttach,
   onPresent,
   brand,
+  requestedPanel,
+  onPanelChange,
 }: {
   itemId: string;
   onMedia: (assets: Asset[]) => void;
@@ -135,8 +143,13 @@ export function OperationsPanel({
   onAttach: (assetId: string) => void;
   onPresent: (assetId: string) => void;
   brand: string;
+  requestedPanel?: string;
+  onPanelChange?: (panel: string) => void;
 }) {
   const [panel, setPanel] = useState("runs");
+  useEffect(() => {
+    if (requestedPanel) setPanel(requestedPanel);
+  }, [requestedPanel]);
   const [data, setData] = useState<State | null>(null),
     [status, setStatus] = useState("Reading production evidence…"),
     [step, setStep] = useState("research"),
@@ -216,7 +229,14 @@ export function OperationsPanel({
           ["analytics", "Platform analytics"],
           ["policies", "Agent instructions"],
         ].map(([id, label]) => (
-          <button key={id} aria-pressed={panel === id} onClick={() => setPanel(id!)}>
+          <button
+            key={id}
+            aria-pressed={panel === id}
+            onClick={() => {
+              setPanel(id!);
+              onPanelChange?.(id!);
+            }}
+          >
             {label}
           </button>
         ))}
@@ -480,7 +500,8 @@ export function OperationsPanel({
                   <summary>
                     Last native collection ·{" "}
                     {new Date(data.analyticsStatus.checkedAt).toLocaleString()} ·{" "}
-                    {data.analyticsStatus.observations} observations
+                    {data.analyticsStatus.observations} posts checked ·{" "}
+                    {data.analyticsStatus.measuredPosts ?? "Unknown"} with readable counters
                   </summary>
                   {data.analyticsStatus.blockers.map((b, i) => (
                     <p key={i}>{b}</p>
@@ -498,14 +519,26 @@ export function OperationsPanel({
                       <article className="live-research-card" key={p.platform}>
                         <h3>{p.platform}</h3>
                         <p>{p.posts ? p.posts + " observed posts" : "No platform observations"}</p>
-                        {["views", "impressions", "reactions", "clicks"].map((k) => (
-                          <p key={k}>
-                            {k}: {p.metrics[k]?.sum ?? "Unavailable"}
-                            {p.metrics[k]?.reported
-                              ? " · " + p.metrics[k]!.reported + "/" + p.posts + " posts reporting"
-                              : ""}
-                          </p>
-                        ))}
+                        {["views", "impressions", "reactions", "comments", "reposts", "clicks"].map(
+                          (k) => (
+                            <p key={k}>
+                              {k}: {p.metrics[k]?.sum ?? "Unavailable"}
+                              {p.metrics[k]?.reported
+                                ? " · " +
+                                  p.metrics[k]!.reported +
+                                  "/" +
+                                  p.posts +
+                                  " posts reporting"
+                                : ""}
+                              {p.metrics[k]?.observedAt && (
+                                <small>
+                                  {" "}
+                                  · as of {new Date(p.metrics[k]!.observedAt!).toLocaleString()}
+                                </small>
+                              )}
+                            </p>
+                          ),
+                        )}
                         <small>
                           {p.observedAt
                             ? "Observed " + new Date(p.observedAt).toLocaleString()

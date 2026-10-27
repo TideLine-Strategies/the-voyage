@@ -149,6 +149,7 @@ async function api(body?: unknown) {
 }
 export function LiveFactoryPage() {
   const [presentation, setPresentation] = useState<PresentedContent | null>(null);
+  const [operationsPanel, setOperationsPanel] = useState("runs");
   const [campaignLink, setCampaignLink] = useState("");
   const [pane, setPane] = useState("line");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -284,6 +285,7 @@ export function LiveFactoryPage() {
         stage: "published",
         brand: x.brand || "tideline",
         detail: x.text,
+        url: x.url,
         kind: "published",
       })),
   ];
@@ -584,6 +586,10 @@ export function LiveFactoryPage() {
                   onPresent={present}
                   onNew={() => newItem()}
                   onLibrary={() => setPane("operations")}
+                  onAnalytics={() => {
+                    setOperationsPanel("analytics");
+                    setPane("operations");
+                  }}
                 />
               </div>
               {pane === "published" && (
@@ -633,9 +639,9 @@ export function LiveFactoryPage() {
                             </div>
                             <p>
                               {c.brand} · {post?.platform} ·{" "}
-                              {ops?.insights?.own.find((o) => o.url === post?.url)?.metrics[
-                                "reactions"
-                              ] ?? "—"}{" "}
+                              {(ops?.observations || ops?.insights?.own || []).find(
+                                (o) => o.url === post?.url,
+                              )?.metrics["reactions"] ?? "—"}{" "}
                               observed reactions
                             </p>
                             <p>{a?.provenance}</p>
@@ -949,6 +955,8 @@ export function LiveFactoryPage() {
                   onMedia={setAssets}
                   onPresent={present}
                   onState={setOps}
+                  requestedPanel={operationsPanel}
+                  onPanelChange={setOperationsPanel}
                   brand={brand}
                   onAttach={async (assetId) => {
                     if (!draft?.id || dirty) {
