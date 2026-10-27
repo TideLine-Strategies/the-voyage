@@ -22,7 +22,7 @@ if(verify){
  for(const route of ['/api/company-tickets?company=wonplace','/api/company-tickets?company=tideline'])assert.equal((await fetch(origin+route,{redirect:'manual',signal:AbortSignal.timeout(15000)})).status,403);
  const ui=JSON.parse(await fs.readFile(process.env.COMPANY_TICKETS_UI_RECEIPT,'utf8'));
  assert.equal(ui.commit,commit);
- for(const key of ['accepted','companyTabVerified','createEditVerified','notesVerified','imageViewVerified','imageRemovalVerified','trashRestoreVerified','originalReportsPreserved','productScopeVerified','draftConflictVerified'])assert.equal(ui[key],true,key);
+ for(const key of ['accepted','companyTabVerified','createEditVerified','notesVerified','imageViewVerified','imageRemovalVerified','trashRestoreVerified','originalReportsPreserved','productScopeVerified','draftConflictVerified','kanbanStageCountsVerified','stageMovePersisted','sourceStageCoverageVerified','listToggleVerified'])assert.equal(ui[key],true,key);
  assert(ui.screenshot);
  await fs.writeFile(process.env.AGENT_RELEASE_RECEIPT,JSON.stringify({commit,deploymentId:active.id,accepted:true,evidence:{ui,anonymousTicketsDenied:true}}));
 }
