@@ -8,7 +8,7 @@ with summaries. Company triage is linked to the original record.
 ## Daily review
 
 At 09:00 America/Chicago (catch up after wake), read all four product scopes.
-Keep missing sources explicit. Exclude trash; deduplicate linked Spring reports;
+Keep missing sources explicit. Connected zero-open counts mean no active work, not missing data. Include the 20 most recently resolved tickets as review evidence, without counting them as open. A manual --correction run uses its own deduplicated subject/state; the regular daily send remains once per day. Exclude trash; deduplicate linked Spring reports;
 flag unresolved original reports whose Company triage is marked resolved.
 Use the existing read-only Muninn LLM to assess priority, impact, blockers,
 aging/unassigned work and next actions. Counts and recipient selection are
