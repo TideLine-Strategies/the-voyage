@@ -95,3 +95,11 @@ prevent duplicates; uncertain sends require reconciliation. Native Mail, Muninn,
 the owner Mac and source access must be available. See the living policy in
 `docs/agents/company-ticket-operations.md`. First-party collector configuration
 is reused privately; no new credentials or paid service are introduced.
+
+The coding queue works across browsers and devices: the CRM stores an
+authenticated launch request, and the owner Mac worker claims it with its signed
+source connection. Browser security settings do not need changing. Only Quan
+and Cody can enqueue/cancel coding workers; ordinary editors can copy prompts.
+Each ticket shows recent coding task states. A queued request can be cancelled
+before claim; uncertain launches remain explicit and are never auto-replayed.
+The daily review includes coding-job state alongside ticket evidence.
