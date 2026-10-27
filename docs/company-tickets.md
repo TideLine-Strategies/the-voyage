@@ -71,3 +71,27 @@ Resolved lanes with an Original report label. Their moves write through to
 WonPlace with its revision checks. Other stages require explicit Company triage;
 no inferred stage or duplicate triage ticket is created by dragging. Linked
 originals are represented by their Company ticket, so counts do not double.
+
+## Spring requests, coding actions and daily priorities
+
+Spring bug reports already use the original WonPlace source. Explicit feature
+requests now share that path, retain their images, and carry feature type into
+Company triage. The source remains permission-filtered and tenant-bound.
+
+Saved tickets and original reports offer Fix with Codex, Fix with Claude and
+Copy prompt. A preview opens first. Launch fetches current evidence, verifies a
+short-lived signed package, downloads saved screenshots, and starts the selected
+installed CLI through the managed workspace launcher. The helper shows the
+actual durable task state. Queued/running is not resolved. Copy prompt remains
+available when a computer has no local helper. WonPlace and Voyage repositories
+are configured; other product repositories must be deliberately added before
+local launch is supported.
+
+Muninn's owner-Mac job reviews all product scopes at 09:00 America/Chicago,
+catching up after wake. It uses the existing read-only Muninn connector for
+priority decisions, appends deterministic source counts, then emails Quan and
+Cody from the TideLine Mail account. Send intent and exact Sent confirmation
+prevent duplicates; uncertain sends require reconciliation. Native Mail, Muninn,
+the owner Mac and source access must be available. See the living policy in
+`docs/agents/company-ticket-operations.md`. First-party collector configuration
+is reused privately; no new credentials or paid service are introduced.

@@ -1,0 +1,1 @@
+export function launchArgs(p,repo){const worker=p.agent==='codex'?['codex','exec','--json','--sandbox','workspace-write','-']:['claude','-p','--output-format','json','--permission-mode','acceptEdits'];return ['launch','--agent',p.agent,'--repo',repo,'--task',p.code+' '+p.title.slice(0,120),'--delivery','deploy','--',...worker];}
