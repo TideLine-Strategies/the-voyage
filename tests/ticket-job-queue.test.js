@@ -18,7 +18,7 @@ test('interactive Codex commands are owner-only, idempotent and scoped to the cl
  const command={action:'control',company:'voyage',jobId,commandId:other,command:'message',text:'Check the existing recovery flow.'};
  assert.equal((await ui(env,command,{id:'OTHER',role:'edit'})).status,403);
  for(let i=0;i<2;i++)assert.equal((await ui(env,command)).status,200);
- const poll=await(await source(env,{action:'poll',runtimeId:runtime,agents:['codex']})).json();assert.equal(poll.active[0].commands.length,1);assert.equal(poll.active[0].commands[0].text,command.text);
+ const poll=await(await source(env,{action:'poll',runtimeId:runtime,agents:['codex']})).json();assert.equal(poll.active[0].commands.length,1);assert.equal(poll.active[0].commands[0].text,command.text);assert.equal(poll.active[0].commands[0].sequence,1);
  await source(env,{action:'ack',runtimeId:runtime,jobId,state:'running',transcript:'Verified current fields',threadId:other,sessionStatus:'completed',commandResults:[{id:other,accepted:true}]});
  const job=(await(await ui(env,null,actor,'GET','/'+jobId)).json()).job;assert.equal(job.transcript,'Verified current fields');assert.equal(job.commands[0].state,'accepted');assert(!JSON.stringify(job.commands).includes(command.text));
  assert.equal((await ui(env,{...command,commandId:runtime,command:'shell'})).status,400);

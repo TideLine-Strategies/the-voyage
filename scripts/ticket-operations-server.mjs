@@ -39,7 +39,7 @@ createServer(async(req,res)=>{
    const session=sessionLog(log);
    if(req.method==='POST'&&match[2]){const c=await body(req);if(job.mode!=='interactive'||!session.control||!task||task.state!=='working'||!['message','interrupt'].includes(c.action)||!/^[0-9a-f-]{36}$/i.test(c.id)||c.action==='message'&&(typeof c.text!=='string'||!c.text.trim()||c.text.length>12000))throw Error('Codex session is not ready for this command');
     const expected=path.join(home,'.agent-workspaces/coordinator/worker-data',task.id,'ticket-control');if(path.resolve(session.control)!==expected)throw Error('Unexpected session control path');
-    const file=path.join(expected,c.id+'.json');if(!await get(file+'.accepted')){try{await fs.writeFile(file,JSON.stringify({id:c.id,action:c.action,text:c.text||''}),{flag:'wx',mode:0o600});}catch(e){if(e.code!=='EEXIST')throw e;}}respond(res,202,{accepted:true});return;}
+    const file=path.join(expected,c.id+'.json');if(!await get(file+'.accepted')){try{await fs.writeFile(file,JSON.stringify({id:c.id,sequence:Number.isSafeInteger(c.sequence)?c.sequence:0,action:c.action,text:c.text||''}),{flag:'wx',mode:0o600});}catch(e){if(e.code!=='EEXIST')throw e;}}respond(res,202,{accepted:true});return;}
    if(req.method==='GET'&&!match[2]){const {control,...publicSession}=session;respond(res,200,{jobId:job.id,status:job.status,task,draft:draft&&{pasted:draft.pasted===true,submitted:draft.submitted===true},...publicSession,error:job.signal?'Worker stopped by '+job.signal:job.exitCode?'Worker exited with code '+job.exitCode:job.error||null});return;}
   }
   if(req.method!=='POST'||req.url!=='/handoff'){respond(res,404,{error:'Not found'});return;}
