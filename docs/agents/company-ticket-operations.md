@@ -93,3 +93,21 @@ No Enter is generated. The built-in display is put into the existing Macarchy
 grid layout before launch and rechecked after arrival; layout failures remain in
 the private helper receipt, without a launcher-created error dialog. No OS
 permission or security dialog is bypassed.
+
+## Full-page ticket workspace (2026-10-28)
+
+The approved design combines concept 05's queue/detail/Codex panes with concept
+04's readable ticket detail and concept 03's table. Workspace is the default;
+Urgent, High, Normal and Low groups can be collapsed and retain their state while
+switching views. Table has sortable headings and keeps the selected ticket open.
+The existing Kanban workflow remains available. Codex is an inline pane, with
+explicit Send, Interrupt and an unsubmitted Terminal draft; opening a ticket
+only reads its handoff and reconnects an existing session. It does not queue work.
+Ticket fields remain in Edit ticket details, with revision conflicts, unsaved
+changes, original report boundaries, screenshots, notes and trash preserved.
+
+For synthetic browser regression checks, run `node scripts/preview-ticket-workspace.mjs`
+and `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node scripts/verify-ticket-workspace.mjs`
+under resource-run. This uses a temporary isolated headless Chrome profile and
+local demo records only. Live acceptance must verify the signed-in ticket page
+at the exact managed release commit using `verify-ticket-workspace-live.mjs`.
