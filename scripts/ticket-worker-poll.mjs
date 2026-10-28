@@ -9,8 +9,9 @@ export async function startTicketPolling({root,config,agents,workerToken}){
  let busy=false,lastDigest='';
  const update=async(company,j)=>{
   let localJob;try{localJob=await local('/jobs/'+j.localJobId);}catch{await source(company,{action:'ack',runtimeId,jobId:j.id,state:'delivery_uncertain',error:'Claim exists but local launch status cannot be reconciled. No automatic relaunch.'});return;}
-  const t=localJob.task,failed=['worker_failed','launcher_failed'].includes(localJob.status),state=t?.state==='complete'?'completed':failed?'failed':t?.state==='cancelled'?'blocked':t?.state==='repair_required'||t?.state==='owner_lost'?'blocked':t?'running':'admitted';
-  await source(company,{action:'ack',runtimeId,jobId:j.id,state,task:t||null,error:failed?'Local coding worker failed. Inspect the managed task and private helper logs.':undefined});
+  for(const command of j.commands||[])await local('/jobs/'+j.localJobId+'/control',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(command)});
+  const t=localJob.task,failed=['worker_failed','launcher_failed'].includes(localJob.status),state=localJob.status==='draft_opened'?'draft_opened':t?.state==='complete'?'completed':failed&&!['working','submitted','releasing','awaiting_remote','retry_wait'].includes(t?.state)?'failed':t?.state==='cancelled'?'blocked':t?.state==='repair_required'||t?.state==='owner_lost'?'blocked':t?'running':'admitted';
+  await source(company,{action:'ack',runtimeId,jobId:j.id,state,task:t||null,transcript:localJob.transcript,threadId:localJob.threadId,sessionStatus:localJob.sessionStatus,commandResults:localJob.commandResults,error:failed?(localJob.error||'Local coding worker failed. Inspect the managed task and private helper logs.'):undefined});
  };
  const tick=async()=>{if(busy)return;busy=true;try{
    const capabilities=typeof agents==='function'?agents():agents;

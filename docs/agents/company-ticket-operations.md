@@ -54,3 +54,25 @@ printed, copied into CRM records or stored in LaunchAgent plists.
 ## Personal Claude Code handoff
 
 Fix with Claude opens a personal-computer handoff, never a shared-Mac launch. Cody uses his own Claude subscription and repository access. Download a private ZIP containing TASK.md, README.md and every saved screenshot, including the original Spring report linked to Company triage. It needs no owner-Mac Claude login or source-launch signature. Keep downloads read-only: no coding queue entry, ticket-stage update or launch claim. The user opens their repository with Worktree enabled, supplies TASK.md and screenshots, reviews the PR and records verification on the ticket. Do not claim execution on Cody’s machine without an actual result. Reject incomplete/invalid image bundles; filenames are generated, never attachment-controlled paths. Bound images at 6 MiB each, 13 files and 20 MiB total.
+
+## Ticket Codex interface and Terminal drafts
+
+Fix with Codex opens a conversation panel. Sending the ticket starts a supervised
+Codex app-server in an isolated workspace. Signed queue commands are bound to
+that job, owner checked, idempotent and acknowledged. Follow-ups steer the active
+turn or start another turn. Interrupt targets that session only. Show bounded
+agent text and actual turn/task states; never expose provider logs or credentials.
+Closing the panel preserves the worker; reopening reconnects. Additional permission
+requests are not silently approved by this client.
+
+Open in new Terminal queues a distinct, signed terminal_draft action. The owner
+Mac opens a .command file that uses the coordinator, then runs codex --yolo inside
+the coordinator's external sandbox. A PTY driver waits for bracketed-paste readiness
+and pastes sanitized ticket text without Enter. Do not pass the prompt as a CLI
+argument, which would submit it. Draft opened is not started work or completion.
+No model turn starts until the owner submits the composer.
+
+Workers use detached process groups and private file-backed stdin/stdout. Helper
+reloads preserve these groups. Reconcile the managed task before interpreting a
+launcher exit, retain exit signal/code, and never automatically replay a failed or
+uncertain launch.
