@@ -76,3 +76,20 @@ Workers use detached process groups and private file-backed stdin/stdout. Helper
 reloads preserve these groups. Reconcile the managed task before interpreting a
 launcher exit, retain exit signal/code, and never automatically replay a failed or
 uncertain launch.
+
+## Owner change, October 28: root session capabilities
+
+New Codex sessions start from the owner home directory with full user access and
+normal configured capabilities. They do not run under the coordinator launcher
+sandbox. This is user-account access, not a change to the Unix user or sudo.
+The ticket names the target repository and instructs the agent to obtain a managed
+isolated worktree before repository writes and use the coordinator for release.
+Existing running sessions are preserved; opening a new root session does not
+transfer or kill their work. Claude launch behavior is unchanged.
+
+Terminal drafts use small bracketed-paste chunks and disabled paste-burst detection
+to keep the entire prompt as editable text rather than a collapsed paste item.
+No Enter is generated. The built-in display is put into the existing Macarchy
+grid layout before launch and rechecked after arrival; layout failures remain in
+the private helper receipt, without a launcher-created error dialog. No OS
+permission or security dialog is bypassed.
