@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';import path from 'node:path';import {randomUUID} from 'node:crypto';
+import {drainTicketEvidence} from './ticket-evidence-outbox.mjs';
 import {signedHeaders} from '../src/company-signing.js';
 const origin='https://voyage.tidelinestrats.com';
 export async function startTicketPolling({root,config,agents,workerToken}){
@@ -25,5 +26,6 @@ export async function startTicketPolling({root,config,agents,workerToken}){
    try{const text=await fs.readFile(path.join(root,'last-digest.json'),'utf8');if(text!==lastDigest){const d=JSON.parse(text);await source('tideline',{action:'digest',digest:{day:d.day,status:d.status,messageId:d.messageId||null}});lastDigest=text;}}catch{}
    await fs.writeFile(path.join(root,'worker-status.json'),JSON.stringify({checkedAt:Date.now(),status:'ok',runtimeId})+'\n',{mode:0o600});
   }catch(error){await fs.writeFile(path.join(root,'worker-status.json'),JSON.stringify({checkedAt:Date.now(),status:'source_unavailable',error:error.message})+'\n',{mode:0o600});}finally{busy=false;}};
- const timer=setInterval(()=>{void tick();},15000);void tick();return()=>clearInterval(timer);
+ let evidenceBusy=false;const evidenceTick=async()=>{if(evidenceBusy)return;evidenceBusy=true;try{await drainTicketEvidence({root,config});}catch(error){await fs.writeFile(path.join(root,'evidence-status.json'),JSON.stringify({at:Date.now(),error:String(error.message).slice(0,300)}),{mode:0o600});}finally{evidenceBusy=false;}};const evidenceTimer=setInterval(()=>{void evidenceTick();},5000);void evidenceTick();
+ const timer=setInterval(()=>{void tick();},15000);void tick();return()=>{clearInterval(timer);clearInterval(evidenceTimer);};
 }

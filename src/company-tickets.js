@@ -16,7 +16,7 @@ export function ticketFields(v){
  if(out.links)for(const link of out.links.split('\n').filter(Boolean)){let u;try{u=new URL(link);}catch{fail('Links must be full HTTPS URLs');}if(u.protocol!=='https:'||u.username||u.password)fail('Links must be HTTPS without credentials');}
  return out;
 }
-async function readBody(request,max=40000){const reader=request.body?.getReader();if(!reader)fail('Request body required');const chunks=[];let size=0;while(true){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>max){await reader.cancel();fail('Request too large',413);}chunks.push(value);}const bytes=new Uint8Array(size);let at=0;for(const v of chunks){bytes.set(v,at);at+=v.length;}try{return JSON.parse(new TextDecoder().decode(bytes));}catch{fail('Invalid JSON');}}
+export async function readBody(request,max=40000){const reader=request.body?.getReader();if(!reader)fail('Request body required');const chunks=[];let size=0;while(true){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>max){await reader.cancel();fail('Request too large',413);}chunks.push(value);}const bytes=new Uint8Array(size);let at=0;for(const v of chunks){bytes.set(v,at);at+=v.length;}try{return JSON.parse(new TextDecoder().decode(bytes));}catch{fail('Invalid JSON');}}
 export function decodeScreenshot(value){
  const data=text(value.data,1400000),name=text(value.name,150).replace(/[\\/\x00-\x1f]/g,'_');let bytes;try{bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));}catch{fail('Invalid screenshot');}if(!bytes.length||bytes.length>1048576)fail('Screenshots must be 1 MB or smaller',413);
  const start=[...bytes.slice(0,12)],str=String.fromCharCode(...start);let type;

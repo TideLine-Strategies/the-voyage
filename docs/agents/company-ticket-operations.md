@@ -111,3 +111,30 @@ and `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node scripts/verify-ticket-
 under resource-run. This uses a temporary isolated headless Chrome profile and
 local demo records only. Live acceptance must verify the signed-in ticket page
 at the exact managed release commit using `verify-ticket-workspace-live.mjs`.
+
+## Codex completion screenshots
+
+New Codex handoffs include a job-specific command:
+
+```
+node "/installed/runtime/scripts/ticket-evidence.mjs" --context "/job/evidence-context.json" --file "/path/after.png" --file "/path/another.png" --caption "What these screenshots verify"
+```
+
+The installed private helper also creates contexts for existing local Codex jobs.
+The context contains no source secret. The CLI copies only chosen PNG/JPEG/WebP
+bytes into that job's private outbox; the helper signs the upload. Limits match
+manual ticket uploads: 1 MB per image, 10 total images per ticket. Compress or
+resize before calling the uploader. It waits for accepted receipts, returning
+attachment IDs and the ticket URL. Offline/timeouts stay pending with a receipt
+path; rerun the same command to reconcile. Same-job content retries do not add
+copies, including when the upload succeeded but its response was lost.
+
+The server derives the product, ticket and requesting owner from the claimed job,
+checks current owner access, validates images, and atomically stores the image and
+revisioned ticket metadata. Captions, Codex attribution and job ID appear with
+completion evidence. It does not change status or assert acceptance from an image.
+Original Spring reports receive a stable linked Company ticket; the original is
+never changed by this uploader. View Codex completion screenshots on the original
+opens that linked ticket. Refresh screenshots reloads the latest gallery while
+retaining unsaved-edit guards. Inspect screenshots before uploading; exclude
+secrets and unrelated private records. Missing capture is an explicit limitation.

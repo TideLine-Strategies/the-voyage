@@ -1,3 +1,4 @@
+import {sourceTicketEvidence} from './ticket-evidence.js';
 import {handleTicketQueue,sourceTicketQueue,sourceTicketSweep} from "./ticket-job-queue.js";
 import {signedTicketRead} from "./ticket-handoffs.js";
 import { handleCompanyTickets } from "./company-tickets.js";
@@ -960,6 +961,7 @@ export default {
     }
     if (pathName.startsWith("/api/content-source/")) return ingestContent(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-sweep/"))return sourceTicketSweep(request,env);
+    if(pathName.startsWith("/api/company-ticket-evidence/"))return sourceTicketEvidence(request,env);
     if(pathName.startsWith("/api/company-ticket-jobs/"))return sourceTicketQueue(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-sweep/")||pathName.startsWith("/api/company-ticket-image/"))return signedTicketRead(request,env);
     if (pathName.startsWith("/api/company-events/")) return ingestCompany(request,env,readJson);
