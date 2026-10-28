@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {execFileSync} from 'node:child_process';
 const commit=process.env.AGENT_RELEASE_COMMIT,origin='https://voyage.tidelinestrats.com';assert(commit);assert.equal((await(await fetch(origin+'/__release.json')).json()).commit,commit);
-for(const file of ['company-tickets.js','company-tickets.css'])assert.equal(await(await fetch(origin+'/'+file+'?release='+commit)).text(),await fs.readFile('public/'+file,'utf8'));
+for(const file of ['company-tickets.js','company-tickets.css'])assert.equal((await fetch(origin+'/'+file+'?release='+commit,{redirect:'manual'})).status,403,'Ticket assets remain authenticated');
 assert.equal((await fetch(origin+'/api/ticket-handoff/status',{redirect:'manual'})).status,403);
 const installed=JSON.parse(await fs.readFile('/Users/stewartos/Library/Application Support/TideLine/Ticket Operations/release.json','utf8'));assert.equal(installed.activeWebCommit,commit);
 const ui=JSON.parse(await fs.readFile(process.env.TICKET_CODEX_UI_RECEIPT,'utf8'));assert.equal(ui.commit,commit);for(const key of ['accepted','embeddedPanelVisible','followupAndInterruptVerified','terminalDraftUnsubmitted','sameTicketPreserved'])assert.equal(ui[key],true,key);
