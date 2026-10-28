@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 const root=path.join(os.homedir(),'Library/Application Support/TideLine/Ticket Operations'),config=process.env.COMPANY_OPERATIONS_CONFIG;
 if(!config)throw Error('Existing private Company source configuration required');
 const active=await(await fetch('https://voyage.tidelinestrats.com/__release.json')).json();
-const files=['scripts/ticket-terminal-tiling.mjs','scripts/ticket-codex-session.mjs','scripts/ticket-terminal-draft.py','scripts/ticket-session-log.mjs','scripts/ticket-operations-server.mjs','scripts/ticket-worker-poll.mjs','scripts/ticket-daily-sweep.mjs','scripts/muninn-ticket-review.mjs','scripts/ticket-mail.mjs','scripts/ticket-coding-plan.mjs','src/company-signing.js','src/ticket-digest-policy.js'];
+const files=['scripts/ticket-evidence.mjs','scripts/ticket-evidence-outbox.mjs','scripts/ticket-terminal-tiling.mjs','scripts/ticket-codex-session.mjs','scripts/ticket-terminal-draft.py','scripts/ticket-session-log.mjs','scripts/ticket-operations-server.mjs','scripts/ticket-worker-poll.mjs','scripts/ticket-daily-sweep.mjs','scripts/muninn-ticket-review.mjs','scripts/ticket-mail.mjs','scripts/ticket-coding-plan.mjs','src/company-signing.js','src/ticket-digest-policy.js'];
 if(!/^[0-9a-f]{40}$/.test(active.commit))throw Error('Invalid live revision');
 // Read every runtime file from the exact live, committed revision before replacing anything.
 const blobs=new Map(files.map(file=>[file,execFileSync('git',['show',active.commit+':'+file],{maxBuffer:2000000})]));
