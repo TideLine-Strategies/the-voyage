@@ -10,3 +10,22 @@ test('source authentication and atomic claim prevent duplicate workers; job comp
 test('queued work is cancellable and revoked editors cannot start coding agents',async()=>{const {env,sql}=setup();await ui(env);let r=await ui(env,{action:'cancel',company:'voyage',jobId});assert.equal((await r.json()).job.state,'cancelled');assert.equal((await source(env,{action:'claim',runtimeId:runtime,jobId})).status,409);const next={...body,requestId:other};await ui(env,next);sql.prepare('UPDATE members SET active=0').run();r=await source(env,{action:'claim',runtimeId:runtime,jobId:other});assert.equal(r.status,409);const d=await(await ui(env,null,actor,'GET','/'+other)).json();assert.equal(d.job.state,'blocked');});
 
 test('ordinary CRM editors cannot execute code on the owner Mac',async()=>{const {env,sql}=setup();sql.prepare('INSERT INTO members VALUES(?,?,?,?)').run('OTHER','edit',1,'staff@example.com');assert.equal((await ui(env,body,{id:'OTHER',role:'edit'})).status,403);});
+
+test('interactive Codex commands are owner-only, idempotent and scoped to the claimed session',async()=>{
+ const {env,sql}=setup();await ui(env,{...body,mode:'interactive'});
+ const claim=await(await source(env,{action:'claim',runtimeId:runtime,jobId})).json();assert.equal(claim.envelope.payload.mode,'interactive');
+ await source(env,{action:'ack',runtimeId:runtime,jobId,state:'running'});
+ const command={action:'control',company:'voyage',jobId,commandId:other,command:'message',text:'Check the existing recovery flow.'};
+ assert.equal((await ui(env,command,{id:'OTHER',role:'edit'})).status,403);
+ for(let i=0;i<2;i++)assert.equal((await ui(env,command)).status,200);
+ const poll=await(await source(env,{action:'poll',runtimeId:runtime,agents:['codex']})).json();assert.equal(poll.active[0].commands.length,1);assert.equal(poll.active[0].commands[0].text,command.text);
+ await source(env,{action:'ack',runtimeId:runtime,jobId,state:'running',transcript:'Verified current fields',threadId:other,sessionStatus:'completed',commandResults:[{id:other,accepted:true}]});
+ const job=(await(await ui(env,null,actor,'GET','/'+jobId)).json()).job;assert.equal(job.transcript,'Verified current fields');assert.equal(job.commands[0].state,'accepted');assert(!JSON.stringify(job.commands).includes(command.text));
+ assert.equal((await ui(env,{...command,commandId:runtime,command:'shell'})).status,400);
+ assert.equal(JSON.parse(sql.prepare("SELECT data_json FROM documents WHERE collection='company_tickets'").get().data_json).status,'open');
+});
+test('terminal draft mode is signed and cannot be silently converted to execution by reusing a job ID',async()=>{
+ const {env}=setup();assert.equal((await ui(env,{...body,mode:'terminal_draft'})).status,202);assert.equal((await ui(env,{...body,mode:'interactive'})).status,409);
+ const claim=await(await source(env,{action:'claim',runtimeId:runtime,jobId})).json();assert.equal(claim.envelope.payload.mode,'terminal_draft');
+ assert.equal((await source(env,{action:'ack',runtimeId:runtime,jobId,state:'draft_opened'})).status,200);
+});
