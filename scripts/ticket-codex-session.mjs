@@ -1,5 +1,5 @@
 // Private stdio app-server bridge. The coordinator supplies the isolated cwd.
-import {spawn} from 'node:child_process';
+import {spawn,execFileSync} from 'node:child_process';
 import {createInterface} from 'node:readline';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -17,7 +17,7 @@ lines.on('line',line=>{let m;try{m=JSON.parse(line);}catch{return;}
  if(m.id!==undefined){write({id:m.id,error:{code:-32601,message:'This ticket interface cannot grant additional permissions. Use the terminal for owner interaction.'}});emit('ticket.notice',{text:'Codex needs an owner interaction: '+m.method});return;}
  if(m.method==='item/agentMessage/delta')emit('ticket.delta',{text:String(m.params.delta||'').slice(0,12000)});
  if(m.method==='turn/started'){busy=true;turnId=m.params.turn.id;emit('ticket.status',{status:'working'});}
- if(m.method==='turn/completed'){busy=false;emit('ticket.status',{status:m.params.turn.status,error:m.params.turn.error?.message||null});}
+ if(m.method==='turn/completed'){busy=false;emit('ticket.status',{status:m.params.turn.status,error:m.params.turn.error?.message||null});if(process.env.AGENT_COORDINATOR_TASK)try{const task=JSON.parse(execFileSync('agent-workspace',['queue',process.env.AGENT_COORDINATOR_TASK],{encoding:'utf8',timeout:10000}));if(task.state!=='working'){child.kill('SIGTERM');process.exit(0);}}catch{emit('ticket.notice',{text:'Could not check managed task state; preserve this session for reconciliation.'});}}
 });
 child.on('error',e=>{emit('ticket.error',{text:e.message});process.exitCode=1;});
 child.on('exit',(code,signal)=>{emit('ticket.exit',{code,signal});process.exit(code||1);});
@@ -26,4 +26,4 @@ const start=await rpc('thread/start',{cwd:process.cwd(),sandbox:'workspace-write
 const send=async text=>{if(busy)throw Error('Wait for Codex to finish, or interrupt the active turn first.');busy=true;try{await rpc('turn/start',{threadId,input:[{type:'text',text}]});}catch(e){busy=false;throw e;}};
 if(process.argv.includes('--probe')){console.log(JSON.stringify({type:'ticket.probe',initialized:true,threadId,turnStarted:false}));child.kill('SIGTERM');process.exit(0);}
 await send(input.prompt);
-let checking=false;setInterval(async()=>{if(checking)return;checking=true;try{for(const name of (await fs.readdir(control)).filter(n=>/^[0-9a-f-]{36}\.json$/.test(n)).sort()){const file=path.join(control,name),c=JSON.parse(await fs.readFile(file,'utf8'));await fs.rename(file,file+'.accepted');try{if(c.action==='interrupt'){if(busy&&turnId)await rpc('turn/interrupt',{threadId,turnId});}else if(c.action==='message'){if(busy&&turnId)await rpc('turn/steer',{threadId,expectedTurnId:turnId,input:[{type:'text',text:c.text}]});else await send(c.text);}emit('ticket.command',{id:c.id,accepted:true});}catch(e){emit('ticket.command',{id:c.id,accepted:false,error:e.message});}}}catch(e){emit('ticket.error',{text:e.message});}finally{checking=false;}},500);
+let checking=false;setInterval(async()=>{if(checking)return;checking=true;try{const commands=await Promise.all((await fs.readdir(control)).filter(n=>/^[0-9a-f-]{36}\.json$/.test(n)).map(async name=>({name,c:JSON.parse(await fs.readFile(path.join(control,name),'utf8'))})));commands.sort((a,b)=>(a.c.sequence||0)-(b.c.sequence||0)||a.name.localeCompare(b.name));for(const {name,c} of commands){const file=path.join(control,name);await fs.rename(file,file+'.accepted');try{if(c.action==='interrupt'){if(busy&&turnId)await rpc('turn/interrupt',{threadId,turnId});}else if(c.action==='message'){if(busy&&turnId)await rpc('turn/steer',{threadId,expectedTurnId:turnId,input:[{type:'text',text:c.text}]});else await send(c.text);}emit('ticket.command',{id:c.id,accepted:true});}catch(e){emit('ticket.command',{id:c.id,accepted:false,error:e.message});}}}catch(e){emit('ticket.error',{text:e.message});}finally{checking=false;}},500);
