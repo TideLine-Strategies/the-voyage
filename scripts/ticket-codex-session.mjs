@@ -4,7 +4,7 @@ import {createInterface} from 'node:readline';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 const input=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
-const control=path.join(process.env.TMPDIR,'ticket-control');await fs.mkdir(control,{recursive:true,mode:0o700});
+const control=path.join(path.dirname(process.argv[2]),'ticket-control');await fs.mkdir(control,{recursive:true,mode:0o700});
 console.log(JSON.stringify({type:'ticket.ready',control}));
 const child=spawn('codex',['app-server','--listen','stdio://'],{stdio:['pipe','pipe','inherit']});
 let seq=0,threadId,turnId,busy=false;const pending=new Map();
@@ -22,7 +22,7 @@ lines.on('line',line=>{let m;try{m=JSON.parse(line);}catch{return;}
 child.on('error',e=>{emit('ticket.error',{text:e.message});process.exitCode=1;});
 child.on('exit',(code,signal)=>{emit('ticket.exit',{code,signal});process.exit(code||1);});
 await rpc('initialize',{clientInfo:{name:'voyage_ticket_codex',title:'Voyage ticket Codex',version:'1.0.0'}});write({method:'initialized',params:{}});
-const start=await rpc('thread/start',{cwd:process.cwd(),sandbox:'workspace-write',approvalPolicy:'on-request',developerInstructions:'Work only on the assigned product ticket in this managed isolated worktree. Read AGENTS.md. Use resource-run for heavy checks. Commit scoped work and submit using AGENT_WORKSPACE_SESSION. Do not merge or deploy directly. Report live acceptance honestly.'});threadId=start.thread.id;emit('ticket.thread',{threadId});
+const start=await rpc('thread/start',{cwd:process.env.HOME,sandbox:'danger-full-access',approvalPolicy:'never',developerInstructions:'This root session has full user permissions and normal configured capabilities. Read AGENTS.md. The target repository is supplied in the ticket prompt. Before repository writes, use agent-workspace start to obtain a managed isolated worktree and follow its protocol from this same full-access session. Do not relaunch Codex under the sandboxed launcher. Use resource-run for heavy checks and the coordinator for routine release. Preserve other active sessions. Report verification honestly.'});threadId=start.thread.id;emit('ticket.thread',{threadId});
 const send=async text=>{if(busy)throw Error('Wait for Codex to finish, or interrupt the active turn first.');busy=true;try{await rpc('turn/start',{threadId,input:[{type:'text',text}]});}catch(e){busy=false;throw e;}};
 if(process.argv.includes('--probe')){console.log(JSON.stringify({type:'ticket.probe',initialized:true,threadId,turnStarted:false}));child.kill('SIGTERM');process.exit(0);}
 await send(input.prompt);
