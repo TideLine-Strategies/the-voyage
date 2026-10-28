@@ -34,12 +34,13 @@ createServer(async(req,res)=>{
   const match=req.url.match(/^\/jobs\/([0-9a-f-]{36})(\/control)?$/i);
   if(match){const nonceFile=path.join(stateRoot,match[1]+'.json'),job=await get(nonceFile);if(!job){respond(res,404,{error:'Job not found'});return;}
    let log='';try{const f=await fs.open(path.join(stateRoot,job.id,'agent.log'));try{const stat=await f.stat(),bytes=Buffer.alloc(Math.min(stat.size,2*1024*1024));await f.read(bytes,0,bytes.length,0);log=bytes.toString();}finally{await f.close();}}catch{}
-   const taskId=job.task||log.match(/Queued task ([a-f0-9]{12})/)?.[1];let task=null;if(taskId)try{const q=JSON.parse(execFileSync('agent-workspace',['queue',taskId],{encoding:'utf8',timeout:10000}));task={id:q.id,state:q.state,stage:q.stage};}catch{}
+   const draft=job.mode==='terminal_draft'?await get(path.join(stateRoot,job.id,'draft-status.json')):null;
+   const taskId=draft?.taskId||job.task||log.match(/Queued task ([a-f0-9]{12})/)?.[1];let task=null;if(taskId)try{const q=JSON.parse(execFileSync('agent-workspace',['queue',taskId],{encoding:'utf8',timeout:10000}));task={id:q.id,state:q.state,stage:q.stage};}catch{}
    const session=sessionLog(log);
    if(req.method==='POST'&&match[2]){const c=await body(req);if(job.mode!=='interactive'||!session.control||!task||task.state!=='working'||!['message','interrupt'].includes(c.action)||!/^[0-9a-f-]{36}$/i.test(c.id)||c.action==='message'&&(typeof c.text!=='string'||!c.text.trim()||c.text.length>12000))throw Error('Codex session is not ready for this command');
     const expected=path.join(home,'.agent-workspaces/coordinator/worker-data',task.id,'ticket-control');if(path.resolve(session.control)!==expected)throw Error('Unexpected session control path');
     const file=path.join(expected,c.id+'.json');if(!await get(file+'.accepted')){try{await fs.writeFile(file,JSON.stringify({id:c.id,action:c.action,text:c.text||''}),{flag:'wx',mode:0o600});}catch(e){if(e.code!=='EEXIST')throw e;}}respond(res,202,{accepted:true});return;}
-   if(req.method==='GET'&&!match[2]){const {control,...publicSession}=session;respond(res,200,{jobId:job.id,status:job.status,task,...publicSession,error:job.signal?'Worker stopped by '+job.signal:job.exitCode?'Worker exited with code '+job.exitCode:job.error||null});return;}
+   if(req.method==='GET'&&!match[2]){const {control,...publicSession}=session;respond(res,200,{jobId:job.id,status:job.status,task,draft:draft&&{pasted:draft.pasted===true,submitted:draft.submitted===true},...publicSession,error:job.signal?'Worker stopped by '+job.signal:job.exitCode?'Worker exited with code '+job.exitCode:job.error||null});return;}
   }
   if(req.method!=='POST'||req.url!=='/handoff'){respond(res,404,{error:'Not found'});return;}
   if(launchBusy){respond(res,409,{error:'Another handoff is being admitted. Retry after it finishes.'});return;}launchBusy=true;ownsLaunch=true;
