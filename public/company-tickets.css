@@ -47,3 +47,5 @@
 .ticket-codex-pane [data-attach-ticket]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:7px 9px;margin:4px 0;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;font-size:12px}
 .ticket-codex-pane [data-agent-content]{display:flex;flex-direction:column;height:100%;min-height:0}
 .ticket-codex-pane [data-agent-content]>.ticket-coding-dialog{flex:1;height:auto}
+
+.ticket-task-progress{border:1px solid var(--border,#354054);border-radius:8px;padding:12px;margin:12px 0;min-width:0}.ticket-task-progress article+article{border-top:1px solid var(--border,#354054);padding-top:10px}.ticket-task-progress code,.ticket-task-progress p{overflow-wrap:anywhere}

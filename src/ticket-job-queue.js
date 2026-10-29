@@ -1,3 +1,4 @@
+import {ticketTasks} from './ticket-task-progress.js';
 import {handoffPackage,ticketSweep} from './ticket-handoffs.js';
 import {portableClaudeTask} from './ticket-portable.js';
 import {verifySource} from './company-signing.js';
@@ -13,10 +14,11 @@ const publicJob=j=>({id:j.id,company:j.company,ticket:j.ticket,agent:j.agent,sta
 export async function handleTicketQueue(request,env,actor,path,readJson){
  if(actor.role!=='edit')return reply({error:'Editors only'},403);
  const url=new URL(request.url),company=url.searchParams.get('company');
+ if(path[2]==='tasks'&&request.method==='GET'&&products.includes(company)&&uuid.test(url.searchParams.get('ticket')||''))return reply({tasks:await ticketTasks(env,company,url.searchParams.get('ticket'))});
  if(path[2]==='portable'&&request.method==='GET')return portableClaudeTask(env,actor,{company,id:url.searchParams.get('id'),source:url.searchParams.get('source')});
  if(path.length===2&&request.method==='GET'&&products.includes(company)&&uuid.test(url.searchParams.get('ticket')||''))return reply({jobs:await codingJobs(env,company,url.searchParams.get('ticket'))});
  if(path[2]==='status'&&request.method==='GET'){
-  const workers=await Promise.all(repos.map(c=>stored(env,runtimeCollection,c))),worker=workers.filter(Boolean).sort((a,b)=>b.lastSeen-a.lastSeen)[0],digest=await stored(env,runtimeCollection,'digest');return reply({jobs:products.includes(company)?(await codingJobs(env,company)).map(({id,ticket,agent,state,updatedAt})=>({id,ticket,agent,state,updatedAt})):[],worker:worker&&{lastSeen:worker.lastSeen,available:Date.now()-worker.lastSeen<90000,agents:worker.agents||[],products:repos},dailyReview:{hour:9,timezone:'America/Chicago',last:digest&&{day:digest.day,status:digest.status,messageId:digest.messageId||null}}});
+  const workers=await Promise.all(repos.map(c=>stored(env,runtimeCollection,c))),worker=workers[repos.indexOf(company)]||workers.filter(Boolean).sort((a,b)=>b.lastSeen-a.lastSeen)[0],digest=await stored(env,runtimeCollection,'digest');return reply({jobs:products.includes(company)?(await codingJobs(env,company)).map(({id,ticket,agent,state,updatedAt})=>({id,ticket,agent,state,updatedAt})):[],worker:worker&&{lastSeen:worker.lastSeen,available:Date.now()-worker.lastSeen<90000,agents:worker.agents||[],products:repos,progress:worker.progress||null},dailyReview:{hour:9,timezone:'America/Chicago',last:digest&&{day:digest.day,status:digest.status,messageId:digest.messageId||null}}});
  }
  if(path[2]&&uuid.test(path[2])&&request.method==='GET'&&products.includes(company)){const job=await stored(env,collection,company+':'+path[2]);return job?reply({job:publicJob(job)}):reply({error:'Job not found'},404);}
  if(request.method!=='POST'||path.length!==2)return reply({error:'Not found'},404);
@@ -45,7 +47,8 @@ export async function sourceTicketQueue(request,env,readJson){
  if(value.action==='digest'&&company==='tideline'){const d=value.digest;if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d.day)||!['sent','preview','review_failed','send_intent','delivery_uncertain','review_ready'].includes(d.status))return reply({error:'Invalid digest status'},400);await put(env,runtimeCollection,'digest',{day:d.day,status:d.status,messageId:d.status==='sent'?String(d.messageId||'').slice(0,300):null,reportedAt:Date.now()});return reply({accepted:true});}
  if(!repos.includes(company)||!uuid.test(value.runtimeId||''))return reply({error:'Invalid worker'},400);
  if(value.action==='poll'){
-  await put(env,runtimeCollection,company,{runtimeId:value.runtimeId,lastSeen:Date.now(),agents:['codex','claude'].filter(a=>value.agents?.includes(a))});
+  const p=value.progress,progress=p&&Number.isSafeInteger(p.checkedAt)&&p.checkedAt<=Date.now()+300000&&['ok','reporting_failed'].includes(p.status)?{checkedAt:p.checkedAt,status:p.status,unlinked:Array.isArray(p.unlinked)?p.unlinked.filter(t=>/^[0-9a-f]{12}$/.test(t)).slice(0,200):[],failed:Array.isArray(p.failed)?p.failed.filter(t=>/^[0-9a-f]{12}$/.test(t)).slice(0,200):[]}:null;
+  await put(env,runtimeCollection,company,{runtimeId:value.runtimeId,lastSeen:Date.now(),progress,agents:['codex','claude'].filter(a=>value.agents?.includes(a))});
   const {results}=await env.DB.prepare("SELECT data_json,revision FROM documents WHERE collection=? AND id LIKE ? AND json_extract(data_json,'$.state') IN ('queued','claimed','admitted','running') ORDER BY updated_at ASC LIMIT 100").bind(collection,company+':%').all();const jobs=results.map(r=>({...JSON.parse(r.data_json),revision:r.revision}));
   return reply({queued:jobs.filter(j=>j.state==='queued'&&value.agents?.includes(j.agent)).slice(0,10).map(publicJob),active:jobs.filter(j=>j.runtimeId===value.runtimeId&&['claimed','admitted','running'].includes(j.state)).slice(0,20).map(j=>({...publicJob(j),localJobId:j.localJobId||null,commands:(j.commands||[]).filter(c=>c.state==='queued')}))});
  }

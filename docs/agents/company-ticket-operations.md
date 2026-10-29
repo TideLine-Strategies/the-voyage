@@ -172,3 +172,34 @@ Synthetic local acceptance: `node scripts/preview-ticket-reports.mjs`, then
 `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node scripts/verify-ticket-reports.mjs`
 under resource-run. The fixture uses demo members and an in-memory database;
 only those demo humans are signed by the automated test.
+# Standalone coordinator progress
+
+Start new ticket work with the installed `scripts/ticket-task-progress.mjs start`
+command, supplying `--company wonplace|voyage --ticket FULL_UUID --owner EMAIL
+--title 'Task description'` and `--lead` only for the accountable lead. It invokes
+the managed coordinator and durably queues the exact ticket link. Continue using
+the returned isolated worktree and generation-bound heartbeat. Existing tasks use
+`link --task TASK_ID` with the same explicit company, ticket, owner and lead fields.
+Never infer a ticket from a similar title or invent the requesting owner.
+
+The helper reads a restricted, read-only coordinator projection. It sends state,
+stage, commit, source-timed journal milestones and lease time through a signed,
+ordered, durable outbox; an accepted
+receipt is required before reporting that CRM is updated. A lost receipt retries
+the identical event. Conflicting identity, reassignment, revoked access and sequence
+conflicts remain visible failures. Source code, credentials, environment, logs and
+coordinator capabilities are not uploaded. Existing active work is never restarted.
+
+Use `checkpoint --task TASK_ID --text 'What was verified, current blocker, next step'`
+at meaningful transitions and before yielding. Checkpoints are explicit agent
+statements; a heartbeat never proves a substantive checkpoint or active execution.
+The UI shows checkpoint time, lease time, received time and stale reporting
+separately. Coordinator completion never resolves a ticket, proves deployment,
+signs a human review or substitutes for the final work report and live acceptance.
+
+`status` reports accepted receipts, failures and unlinked coordinator IDs. Raw
+`agent-workspace` starts outside this workflow are detected as unlinked, not
+silently described as covered. Until every such task is reconciled, do not claim
+universal reporting. CRM-launched jobs retain their existing job/evidence tracking.
+This integration does not replace the coordinator binary or intercept arbitrary
+shell launches. One lead per ticket and supporting links do not reserve a repo.
