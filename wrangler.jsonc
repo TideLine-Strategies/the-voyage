@@ -8,9 +8,7 @@
   ],
   "workers_dev": true,
   "vars": {
-    "ACCOUNT_AUTH_URL": "https://xdghdnlwrizvnrzkddgw.supabase.co",
-    "ACCOUNT_AUTH_PUBLIC_KEY": "sb_publishable_3SItPlSfk2-sP7xgGMG6Zw_WneEhxjg",
-    "ACCOUNT_RECOVERY_URL": "https://premieros-preview.signallabs.workers.dev/"
+
   },
   "routes": [
     {
@@ -18,6 +16,8 @@
       "custom_domain": true
     }
   ],
+  "send_email": [{"name":"EMAIL"}],
+  "limits": {"cpu_ms":30000},
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",

@@ -1,6 +1,7 @@
 // Actual workerd Request/fetch validation; mock the network only after runtime construction.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {passwordHash} from '../src/voyage-auth.js';
 import {build} from 'esbuild';
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 const built=await build({entryPoints:['src/entry.js'],bundle:true,write:false,format:'esm',platform:'browser',external:['cloudflare:workers','node:*'],target:'es2022'});
@@ -10,12 +11,13 @@ try{
  const db=await mf.getD1Database('DB');for(const name of fs.readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort()){for(const sql of fs.readFileSync('migrations/'+name,'utf8').replace(/^--.*$/gm,'').split(';').map(s=>s.trim()).filter(Boolean))await db.prepare(sql).run();}
  const origin='https://voyage.example';
  const password=()=>mf.dispatchFetch(origin+'/auth/password',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:'no-account@example.invalid',password:'synthetic-invalid'})});
- let r=await password();assert.equal(r.status,401);assert(calls.includes('password'));assert.match((await r.json()).error,/incorrect/);
+ let r=await password();assert.equal(r.status,401);assert(!calls.includes('password'));assert.match((await r.json()).error,/incorrect/);
+ const salt='a'.repeat(64),validPassword='runtime Voyage password only';await db.prepare('INSERT INTO voyage_credentials(member_id,salt,password_hash,updated_at) VALUES(?,?,?,?)').bind('QS',salt,await passwordHash(validPassword,salt),Date.now()).run();r=await mf.dispatchFetch(origin+'/auth/password',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({email:'q.stewart@tidelinestrats.com',password:validPassword})});assert.equal(r.status,200);assert(r.headers.get('set-cookie'));assert(!calls.includes('password'));
  redirect=true;r=await password();assert.equal(r.status,401);assert.equal(r.headers.get('set-cookie'),null);
  const start=await mf.dispatchFetch(origin+'/auth/google',{redirect:'manual'}),url=new URL(start.headers.get('location')||(()=>{throw Error('OAuth start '+start.status)})()),cookie=start.headers.get('set-cookie').split(';')[0];
  r=await mf.dispatchFetch(origin+'/auth/google/callback?state='+url.searchParams.get('state')+'&code=synthetic-invalid',{headers:{cookie}});assert.equal(r.status,401);assert(calls.includes('google'));
  const token='c'.repeat(64),hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex');await db.prepare('INSERT INTO sessions(token_hash,member_id,expires_at,created_at) VALUES(?,?,?,?)').bind(hash,'QS',Date.now()+60000,Date.now()).run();
  r=await mf.dispatchFetch(origin+'/api/companies/wonplace/source',{headers:{cookie:'voyage_session='+token}});assert.equal(r.status,200);assert.equal((await r.json()).connected,true);
  r=await mf.dispatchFetch(origin+'/api/tickets',{headers:{cookie:'voyage_session='+token}});assert.equal(r.status,200);assert.equal((await r.json()).items[0].code,'ISS-FIXTURE');assert(calls.includes('tickets'));
- console.log(JSON.stringify({ticketsSourceRead:true,accepted:true,actualWorkerdFetch:true,passwordProviderReached:true,googleTokenProviderReached:true,redirectNotFollowed:true,companySourceRead:true}));
+ console.log(JSON.stringify({ticketsSourceRead:true,accepted:true,actualWorkerdFetch:true,independentPasswordVerified:true,googleTokenProviderReached:true,redirectNotFollowed:true,companySourceRead:true}));
 }finally{await mf.dispose();}

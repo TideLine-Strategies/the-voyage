@@ -1,3 +1,4 @@
+import {sendPasswordLink} from './voyage-auth.js';
 import {sourceTicketEvidence} from './ticket-evidence.js';
 import {handleTicketQueue,sourceTicketQueue,sourceTicketSweep} from "./ticket-job-queue.js";
 import {signedTicketRead} from "./ticket-handoffs.js";
@@ -776,6 +777,17 @@ async function handleProfile(request, env, actor, path) {
 async function handleAdmin(request, env, actor, path) {
   if (actor.role !== "edit") return error("Not available to guests", 403);
   const now = Date.now();
+  if (path.length === 3 && path[2] === 'invite' && request.method === 'POST') {
+    if (!['QS','CK'].includes(actor.id)) return error('Owner access required',403);
+    const {email}=await readJson(request);
+    if(typeof email!=='string'||email.length>254)return error('Expected email',400);
+    const member=await env.DB.prepare('SELECT id FROM members WHERE lower(email)=? AND active=1').bind(email.trim().toLowerCase()).first();
+    if(!member)return error('Add the member to the roster first',404);
+    const recent=await env.DB.prepare('SELECT created_at FROM voyage_password_links WHERE member_id=? ORDER BY created_at DESC LIMIT 1').bind(member.id).first();
+    if(recent && now-recent.created_at<60000)return error('A link was already requested. Check the inbox before retrying.',429);
+    const accepted=await sendPasswordLink(env,email.trim().toLowerCase(),audit);
+    return accepted?reply({accepted:true}):error('Email delivery could not be confirmed. Reconcile before retrying.',503);
+  }
   if (path.length === 3 && path[2] === "signout" && request.method === "POST") {
     const { member } = await readJson(request);
     if (typeof member !== "string" || !ID_PATTERN.test(member)) return error("Expected a member", 400);
