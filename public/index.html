@@ -1102,6 +1102,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
 
 <script src="/voyage-db.js"></script>
 <link rel="stylesheet" href="/company-tickets.css">
+<script src="/ticket-splitters.js"></script>
 <script src="/company-tickets.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
@@ -1977,7 +1978,7 @@ function renderSecurity(){
   const sl=el("div","tbl");[
     ["Sign-in method","Google or independent Voyage password"],
 
-    ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
+    ["Staying signed in","Remembered devices: up to "+admin.settings.sessionDays+" days. Other sign-ins: browser session, up to 12 hours."],
     ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: company account sign-in protects the app"],
     ["Guests","Can edit existing CRM records. Cannot create, delete, see vendors, or open Admin"],
   ].forEach(([k,v])=>{const r=el("div","ubar");r.style.gridTemplateColumns="minmax(0,10rem) minmax(0,1fr)";r.append(el("span","nm",k),cell(v));sl.append(r)});

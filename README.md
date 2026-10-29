@@ -19,7 +19,7 @@ Apply `migrations/0007_account_signin.sql` through the reviewed release before d
 - `https://voyage.tidelinestrats.com/auth/google/callback`
 - `https://the-voyage.q-stewart.workers.dev/auth/google/callback`
 
-The public `ACCOUNT_AUTH_URL`, `ACCOUNT_AUTH_PUBLIC_KEY` and `ACCOUNT_RECOVERY_URL` settings select the existing company account service and recovery destination. The publishable key grants no administrative access. Google credentials and any user passwords must never be committed. Login attempts are bounded by durable fixed-window limits. Completed/expired OAuth requests are removed; rate-limit keys are hashed and old buckets are purged during login.
+Voyage uses its own credential store and transactional email. Legacy WonPlace account-service settings are unused. The “Remember this device” option creates a persistent cookie for up to 180 days; unchecked sign-ins have a browser-session cookie and a 12-hour server expiry. The choice applies to both password and Google sign-in and is bound to the OAuth request. Sign-out and password reset still revoke Voyage sessions.
 
 Invitation-link login is retired; old `/invite/...` URLs redirect to `/login` and cannot issue a session. Roster membership still controls private company access; public visitors cannot claim an existing account by typing its email. `scripts/make-invites.mjs` is retired. Provision membership separately from identity verification, preserving current IDs and roles.
 
@@ -81,3 +81,5 @@ Files are stored in D1 in 512 KB chunks (`migrations/0006_deal_files.sql`), so n
 ## Contacts
 
 Each account has **Contacts** (name, title, role, email, phone, main contact, notes). Every task and meeting must name the contact it was with: the task form has a contact picker with **+ Add a new contact**, and saving or marking a task or meeting done is refused without one, in the app and by the Worker (`contactId` must exist and belong to the same account). Older tasks without a contact can still be edited, but need a contact before they can be completed. Sequence steps use the account's main contact automatically. Editors can add and delete contacts; guests can update existing ones. Contacts are searchable and included in Muninn's context.
+
+Ticket workspace columns can be resized by dragging their dividers on desktop. Widths are saved per signed-in member, view and panel visibility in this browser. Arrow keys adjust a focused divider; Home or double-click resets widths. Narrow layouts retain their responsive stacking.
