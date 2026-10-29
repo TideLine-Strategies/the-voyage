@@ -504,6 +504,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
 </style>
 <link rel="stylesheet" href="/company-cockpit.css">
 <link rel="stylesheet" href="/content.css">
+<link rel="stylesheet" href="/living-crm.css">
 </head>
 <body>
 <div id="boot" role="status">Loading The Voyage…</div>
@@ -3174,5 +3175,6 @@ const requestedView=new URLSearchParams(location.search).get("view");
 })();
 setInterval(()=>{render();renderItems()},60000);
 </script>
+<script src="/living-crm.js" defer></script>
 </body>
 </html>
