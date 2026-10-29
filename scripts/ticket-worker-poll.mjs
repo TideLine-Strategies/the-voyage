@@ -1,3 +1,4 @@
+import {syncTaskProgress} from './ticket-task-progress.mjs';
 import fs from 'node:fs/promises';import path from 'node:path';import {randomUUID} from 'node:crypto';
 import {drainTicketEvidence} from './ticket-evidence-outbox.mjs';
 import {signedHeaders} from '../src/company-signing.js';
@@ -17,7 +18,8 @@ export async function startTicketPolling({root,config,agents,workerToken}){
  const tick=async()=>{if(busy)return;busy=true;try{
    const capabilities=typeof agents==='function'?agents():agents;
    for(const company of ['wonplace','voyage']){
-    const jobs=await source(company,{action:'poll',runtimeId,agents:capabilities});for(const j of jobs.active)await update(company,j);
+    let progress=null;try{const p=JSON.parse(await fs.readFile(path.join(root,'task-progress-status.json'),'utf8'));progress={checkedAt:p.checkedAt,status:p.status,unlinked:(p.unlinked||[]).filter(t=>t.identity===({wonplace:'github.com/quanbuilds/premieros',voyage:'github.com/quanbuilds/the-voyage'})[company]).map(t=>t.id),failed:(p.errors||[]).map(t=>t.taskId)};}catch{}
+    const jobs=await source(company,{action:'poll',runtimeId,agents:capabilities,progress});for(const j of jobs.active)await update(company,j);
     for(const j of jobs.queued.slice(0,2)){
      let claimed;try{claimed=await source(company,{action:'claim',runtimeId,jobId:j.id});}catch{continue;}
      try{await local('/handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(claimed.envelope)});await source(company,{action:'ack',runtimeId,jobId:j.id,state:'admitted'});}catch(e){await source(company,{action:'ack',runtimeId,jobId:j.id,state:'delivery_uncertain',error:e.message+' Check local job '+claimed.envelope.payload.nonce+' before another launch.'});}
@@ -27,5 +29,6 @@ export async function startTicketPolling({root,config,agents,workerToken}){
    await fs.writeFile(path.join(root,'worker-status.json'),JSON.stringify({checkedAt:Date.now(),status:'ok',runtimeId})+'\n',{mode:0o600});
   }catch(error){await fs.writeFile(path.join(root,'worker-status.json'),JSON.stringify({checkedAt:Date.now(),status:'source_unavailable',error:error.message})+'\n',{mode:0o600});}finally{busy=false;}};
  let evidenceBusy=false;const evidenceTick=async()=>{if(evidenceBusy)return;evidenceBusy=true;try{await drainTicketEvidence({root,config});}catch(error){await fs.writeFile(path.join(root,'evidence-status.json'),JSON.stringify({at:Date.now(),error:String(error.message).slice(0,300)}),{mode:0o600});}finally{evidenceBusy=false;}};const evidenceTimer=setInterval(()=>{void evidenceTick();},5000);void evidenceTick();
- const timer=setInterval(()=>{void tick();},15000);void tick();return()=>{clearInterval(timer);clearInterval(evidenceTimer);};
+ let progressBusy=false;const progressTick=async()=>{if(progressBusy)return;progressBusy=true;try{await syncTaskProgress({root,config});}catch(error){await fs.writeFile(path.join(root,'task-progress-status.json'),JSON.stringify({checkedAt:Date.now(),status:'reporting_failed',error:String(error.message).slice(0,300)})+'\n',{mode:0o600});}finally{progressBusy=false;}};const progressTimer=setInterval(()=>{void progressTick();},15000);void progressTick();
+ const timer=setInterval(()=>{void tick();},15000);void tick();return()=>{clearInterval(timer);clearInterval(evidenceTimer);clearInterval(progressTimer);};
 }
