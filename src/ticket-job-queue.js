@@ -36,8 +36,8 @@ export async function handleTicketQueue(request,env,actor,path,readJson){
  if(body.action!=='queue')return handoffPackage(env,actor,body);
  if(!repos.includes(body.company)||!uuid.test(body.requestId||'')||!['codex','claude'].includes(body.agent))return reply({error:'Repository not configured; use Copy prompt'},400);
  const prepared=await handoffPackage(env,actor,body);if(!prepared.ok)return prepared;const {payload}=await prepared.json();
- const job={id:body.requestId,company:body.company,ticket:body.id,source:body.source,agent:body.agent,mode:body.mode||'worker',actor:actor.id,title:payload.title,code:payload.code,state:'queued',createdAt:Date.now(),updatedAt:Date.now()};
- await env.DB.prepare('INSERT OR IGNORE INTO documents(collection,id,data_json,updated_at) VALUES(?,?,?,?)').bind(collection,body.company+':'+job.id,JSON.stringify(job),job.updatedAt).run();const actual=await stored(env,collection,body.company+':'+job.id);if(actual.actor!==actor.id||actual.ticket!==body.id||actual.agent!==body.agent||actual.source!==body.source||(actual.mode||'worker')!==(body.mode||'worker'))return reply({error:'Request ID already belongs to another handoff'},409);return reply({job:publicJob(actual)},202);
+ const job={id:body.requestId,company:body.company,ticket:body.id,source:body.source,agent:body.agent,mode:body.mode||'worker',initialMessage:body.initialMessage||null,includeTicketEvidence:body.includeTicketEvidence===true,actor:actor.id,title:payload.title,code:payload.code,state:'queued',createdAt:Date.now(),updatedAt:Date.now()};
+ await env.DB.prepare('INSERT OR IGNORE INTO documents(collection,id,data_json,updated_at) VALUES(?,?,?,?)').bind(collection,body.company+':'+job.id,JSON.stringify(job),job.updatedAt).run();const actual=await stored(env,collection,body.company+':'+job.id);if(actual.actor!==actor.id||actual.ticket!==body.id||actual.agent!==body.agent||actual.source!==body.source||(actual.mode||'worker')!==(body.mode||'worker')||(actual.initialMessage||null)!==(body.initialMessage||null)||(actual.includeTicketEvidence===true)!==(body.includeTicketEvidence===true))return reply({error:'Request ID already belongs to another handoff'},409);return reply({job:publicJob(actual)},202);
 }
 export async function sourceTicketQueue(request,env,readJson){
  const company=new URL(request.url).pathname.split('/')[3];if(request.method!=='POST'||!products.includes(company))return reply({error:'Not found'},404);
@@ -53,7 +53,7 @@ export async function sourceTicketQueue(request,env,readJson){
  if(value.action==='claim'){
   if(job.state!=='queued')return reply({error:'Job is no longer queued'},409);
   const member=await owner(env,job.actor);if(!member||member.role!=='edit'||Date.now()-job.createdAt>86400000){await put(env,collection,key,{...job,state:'blocked',error:'Request expired or editor access changed',updatedAt:Date.now()});return reply({error:'Request expired or editor access changed'},409);}
-  const prepared=await handoffPackage(env,member,{company,id:job.ticket,source:job.source,agent:job.agent,mode:job.mode||'worker'});if(!prepared.ok)return prepared;
+  const prepared=await handoffPackage(env,member,{company,id:job.ticket,source:job.source,agent:job.agent,mode:job.mode||'worker',...(job.initialMessage?{initialMessage:job.initialMessage,includeTicketEvidence:job.includeTicketEvidence===true}:{})});if(!prepared.ok)return prepared;
   const envelope=await prepared.json(),next={...job,state:'claimed',runtimeId:value.runtimeId,localJobId:envelope.payload.nonce,updatedAt:Date.now()};
   const r=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),Date.now(),collection,key,job.revision).run();if(!r.meta.changes)return reply({error:'Another worker claimed this job'},409);return reply({job:publicJob(next),envelope});
  }
