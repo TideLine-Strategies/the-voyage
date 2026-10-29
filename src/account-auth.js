@@ -53,21 +53,21 @@ async function handleGoogleLogin(request,env,{audit,verifyGoogle,exchange}){
    const state=randomBytes(32).toString('hex'),nonce=randomBytes(32).toString('hex'),verifier=randomBytes(32).toString('base64url');
    await env.DB.prepare('DELETE FROM login_limits WHERE window_start < ?').bind(Date.now()-86400000).run();
    await env.DB.prepare('DELETE FROM oauth_logins WHERE expires_at < ?').bind(Date.now()).run();
-   await env.DB.prepare('INSERT INTO oauth_logins(state_hash,nonce,verifier,expires_at) VALUES(?,?,?,?)').bind(hash(state),nonce,verifier,Date.now()+600000).run();
+   await env.DB.prepare('INSERT INTO oauth_logins(state_hash,nonce,verifier,expires_at,remember_device) VALUES(?,?,?,?,?)').bind(hash(state),nonce,verifier,Date.now()+600000,url.searchParams.get('remember')==='1'?1:0).run();
    const destination=new URL('https://accounts.google.com/o/oauth2/v2/auth');
    destination.search=new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,redirect_uri:callback,response_type:'code',scope:'openid email profile',state,nonce,code_challenge:randomChallenge(verifier),code_challenge_method:'S256',prompt:'select_account'}).toString();
    return new Response(null,{status:303,headers:{location:destination.toString(),'cache-control':'no-store','referrer-policy':'no-referrer','set-cookie':`voyage_oauth=${state}; Max-Age=600; Path=/auth/google; Secure; HttpOnly; SameSite=Lax`}});
   }
   const state=url.searchParams.get('state')||'',cookie=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('voyage_oauth='))?.slice(13)||'';
   if(!/^[a-f0-9]{64}$/.test(state)||cookie.length!==64||!timingSafeEqual(Buffer.from(state),Buffer.from(cookie)))throw Error('Sign-in expired');
-  const login=await env.DB.prepare('DELETE FROM oauth_logins WHERE state_hash=? AND expires_at>? RETURNING nonce,verifier').bind(hash(state),Date.now()).first();
+  const login=await env.DB.prepare('DELETE FROM oauth_logins WHERE state_hash=? AND expires_at>? RETURNING nonce,verifier,remember_device').bind(hash(state),Date.now()).first();
   const code=url.searchParams.get('code');if(!login||!code||code.length>4096)throw Error('Sign-in expired');
    const token=await oauthResponse(await exchange('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,client_secret:env.GOOGLE_CLIENT_SECRET,redirect_uri:callback,grant_type:'authorization_code',code,code_verifier:login.verifier}),redirect:'manual',...timeoutOption()}));
   const member=await verifyGoogle(token.id_token,env,login.nonce);if(!member)return json({error:'This Google account does not have company access.'},403,{'set-cookie':expire});
-  const session=randomBytes(32).toString('hex'),now=Date.now();
-  await env.DB.prepare('INSERT INTO sessions(token_hash,member_id,expires_at,created_at) VALUES(?,?,?,?)').bind(hash(session),member.id,now+180*86400000,now).run();
+  const session=randomBytes(32).toString('hex'),now=Date.now(),remember=login.remember_device===1,maxAge=remember?15552000:43200;
+  await env.DB.prepare('INSERT INTO sessions(token_hash,member_id,expires_at,created_at) VALUES(?,?,?,?)').bind(hash(session),member.id,now+maxAge*1000,now).run();
   await audit(env,member.id,'Signed in',null,null,'Google account');
-  return new Response(null,{status:303,headers:{location:'/', 'cache-control':'private, no-store','referrer-policy':'no-referrer','set-cookie':`voyage_session=${session}; Max-Age=15552000; Path=/; Secure; HttpOnly; SameSite=Lax`}});
+  return new Response(null,{status:303,headers:{location:'/', 'cache-control':'private, no-store','referrer-policy':'no-referrer','set-cookie':`voyage_session=${session}; ${remember?'Max-Age='+maxAge+'; ':''}Path=/; Secure; HttpOnly; SameSite=Lax`}});
  }catch{return json({error:'Google sign-in could not finish. Return to the sign-in page and try again.'},401,{'set-cookie':expire});}
 }
 const randomChallenge=verifier=>createHash('sha256').update(verifier).digest('base64url');
