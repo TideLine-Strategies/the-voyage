@@ -3173,6 +3173,8 @@ const requestedView=new URLSearchParams(location.search).get("view");
   const contentItem=new URLSearchParams(location.search).get("contentItem");
   if(!guest&&requestedView==="content"&&contentItem&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Suggest the next useful step for gym owners and admin staff. Do not invent claims, media or analytics. Do not publish."}));
 })();
+window.VoyagePulseSnapshot=()=>({view,guest,items:items.map(x=>({id:x.id,title:x.title||x.oppName||x.type||x.kind,kind:x.kind,date:x.date,done:x.done})),accounts:opps.map(x=>({id:x.id,name:x.name,owner:x.owner,next:x.next,closed:x.closed})),deals:deals.map(x=>({id:x.id,name:x.name,status:x.status})),vendors:vendors.length});
+window.addEventListener('voyage-pulse-open',e=>{const {type,id}=e.detail||{};if(type==='item'){const i=items.find(x=>x.id===id);if(i)openT(i.kind,i);}if(type==='account'&&opps.some(x=>x.id===id))openAccount(id,'accounts');if(type==='deal'&&deals.some(x=>x.id===id))openDeal(id);});
 setInterval(()=>{render();renderItems()},60000);
 </script>
 <script src="/living-crm.js" defer></script>
