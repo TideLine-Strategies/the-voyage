@@ -1,3 +1,4 @@
+import {installTicketContract} from './install-ticket-contract.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -5,13 +6,14 @@ import {execFileSync} from 'node:child_process';
 const root=path.join(os.homedir(),'Library/Application Support/TideLine/Ticket Operations'),config=process.env.COMPANY_OPERATIONS_CONFIG;
 if(!config)throw Error('Existing private Company source configuration required');
 const active=await(await fetch('https://voyage.tidelinestrats.com/__release.json')).json();
-const files=['scripts/ticket-task-progress.mjs','src/ticket-work-report.js','scripts/ticket-evidence.mjs','scripts/ticket-evidence-outbox.mjs','scripts/ticket-terminal-tiling.mjs','scripts/ticket-codex-session.mjs','scripts/ticket-terminal-draft.py','scripts/ticket-session-log.mjs','scripts/ticket-operations-server.mjs','scripts/ticket-worker-poll.mjs','scripts/ticket-daily-sweep.mjs','scripts/muninn-ticket-review.mjs','scripts/ticket-mail.mjs','scripts/ticket-coding-plan.mjs','src/company-signing.js','src/ticket-digest-policy.js'];
+const files=['scripts/agent-workspace-ticket-gate.mjs','scripts/install-ticket-contract.mjs','scripts/ticket-task-progress.mjs','src/ticket-work-report.js','scripts/ticket-evidence.mjs','scripts/ticket-evidence-outbox.mjs','scripts/ticket-terminal-tiling.mjs','scripts/ticket-codex-session.mjs','scripts/ticket-terminal-draft.py','scripts/ticket-session-log.mjs','scripts/ticket-operations-server.mjs','scripts/ticket-worker-poll.mjs','scripts/ticket-daily-sweep.mjs','scripts/muninn-ticket-review.mjs','scripts/ticket-mail.mjs','scripts/ticket-coding-plan.mjs','src/company-signing.js','src/ticket-digest-policy.js'];
 if(!/^[0-9a-f]{40}$/.test(active.commit))throw Error('Invalid live revision');
 // Read every runtime file from the exact live, committed revision before replacing anything.
 const blobs=new Map(files.map(file=>[file,execFileSync('git',['show',active.commit+':'+file],{maxBuffer:2000000})]));
 let preserveWorkers=false;if(process.argv.includes('--helper-only'))try{preserveWorkers=execFileSync('/usr/bin/python3',['-c','import plistlib,sys; print(plistlib.load(open(sys.argv[1],"rb")).get("AbandonProcessGroup") is True)',path.join(os.homedir(),'Library/LaunchAgents/com.tideline.ticket-operations.plist')],{encoding:'utf8'}).trim()==='True';}catch{}
 try{for(const f of await fs.readdir(path.join(root,'state'))){if(!f.endsWith('.json'))continue;let j;try{j=JSON.parse(await fs.readFile(path.join(root,'state',f),'utf8'));}catch{continue;}if(j.pid&&!preserveWorkers)try{process.kill(j.pid,0);throw Object.assign(Error('A coding launcher is still active; preserve it before updating the helper'),{busy:true});}catch(e){if(e.busy)throw e;}}}catch(e){if(e.code!=='ENOENT')throw e;}
 await fs.mkdir(root,{recursive:true,mode:0o700});for(const file of files){await fs.mkdir(path.dirname(path.join(root,file)),{recursive:true,mode:0o700});await fs.writeFile(path.join(root,file),blobs.get(file));await fs.chmod(path.join(root,file),0o600);}
+if(process.argv.includes('--enforce-progress'))console.log(JSON.stringify(await installTicketContract({root,configPath:config})));
 const uid=process.getuid(),launchDir=path.join(os.homedir(),'Library/LaunchAgents');await fs.mkdir(launchDir,{recursive:true});
 const base={RunAtLoad:true,WorkingDirectory:root,EnvironmentVariables:{PATH:path.join(os.homedir(),'.local/bin')+':/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',COMPANY_OPERATIONS_CONFIG:config,TICKET_OPERATIONS_HOME:root},StandardOutPath:path.join(root,'operations.log'),StandardErrorPath:path.join(root,'operations-error.log')};
 for(const [label,script,extra]of [['com.tideline.ticket-operations','ticket-operations-server.mjs',{KeepAlive:true,AbandonProcessGroup:true}],['com.tideline.muninn-ticket-sweep','ticket-daily-sweep.mjs',{StartInterval:900,StartCalendarInterval:{Hour:9,Minute:0}}]].filter(([label])=>!process.argv.includes('--helper-only')||label==='com.tideline.ticket-operations')){

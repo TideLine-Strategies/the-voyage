@@ -1,4 +1,4 @@
-import {syncTaskProgress} from './ticket-task-progress.mjs';
+import {syncTaskProgress,coverageGroup} from './ticket-task-progress.mjs';
 import fs from 'node:fs/promises';import path from 'node:path';import {randomUUID} from 'node:crypto';
 import {drainTicketEvidence} from './ticket-evidence-outbox.mjs';
 import {signedHeaders} from '../src/company-signing.js';
@@ -18,7 +18,7 @@ export async function startTicketPolling({root,config,agents,workerToken}){
  const tick=async()=>{if(busy)return;busy=true;try{
    const capabilities=typeof agents==='function'?agents():agents;
    for(const company of ['wonplace','voyage']){
-    let progress=null;try{const p=JSON.parse(await fs.readFile(path.join(root,'task-progress-status.json'),'utf8'));progress={checkedAt:p.checkedAt,status:p.status,unlinked:(p.unlinked||[]).filter(t=>t.identity===({wonplace:'github.com/quanbuilds/premieros',voyage:'github.com/quanbuilds/the-voyage'})[company]).map(t=>t.id),failed:(p.errors||[]).map(t=>t.taskId)};}catch{}
+    let progress=null;try{const p=JSON.parse(await fs.readFile(path.join(root,'task-progress-status.json'),'utf8'));const gaps=(p.unlinked||[]).filter(t=>t.identity===({wonplace:'github.com/quanbuilds/premieros',voyage:'github.com/quanbuilds/the-voyage'})[company]);progress={currentUnlinked:gaps.filter(t=>coverageGroup(t.state)==='current').length,recoveryUnlinked:gaps.filter(t=>coverageGroup(t.state)==='recovery').length,checkedAt:p.checkedAt,status:p.status,unlinked:(p.unlinked||[]).filter(t=>t.identity===({wonplace:'github.com/quanbuilds/premieros',voyage:'github.com/quanbuilds/the-voyage'})[company]).map(t=>t.id),failed:(p.errors||[]).filter(t=>!t.company||t.company===company).map(t=>t.taskId)};}catch{}
     const jobs=await source(company,{action:'poll',runtimeId,agents:capabilities,progress});for(const j of jobs.active)await update(company,j);
     for(const j of jobs.queued.slice(0,2)){
      let claimed;try{claimed=await source(company,{action:'claim',runtimeId,jobId:j.id});}catch{continue;}
