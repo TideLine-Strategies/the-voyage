@@ -8,6 +8,7 @@
     "migrate:remote": "wrangler d1 migrations apply the-voyage --remote --profile tideline"
   },
   "dependencies": {
+    "@noble/hashes": "^2.0.1",
     "fflate": "^0.8.3",
     "jose": "^6.1.0"
   },

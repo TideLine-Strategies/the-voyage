@@ -1975,7 +1975,7 @@ function renderSecurity(){
   w.append(adTiles([[active.filter(m=>m.role==="edit").length,"editors"],[active.filter(m=>m.role==="guest").length,"guests"],[admin.sessions.length,"signed-in devices"]]));
   const st=usageSection("How sign-in works","Current access settings.");
   const sl=el("div","tbl");[
-    ["Sign-in method","Company Google account"],
+    ["Sign-in method","Google or independent Voyage password"],
 
     ["Staying signed in","Up to "+admin.settings.sessionDays+" days per device, unless signed out here"],
     ["Cloudflare Access",admin.settings.cloudflareAccess?"On: Cloudflare checks identity before the app":"Off: company account sign-in protects the app"],
@@ -1987,6 +1987,7 @@ function renderSecurity(){
     const ss=admin.sessions.filter(s=>s.member_id===m.id),last=ss[0]?.created_at;
     const r=el("div","row");const n=el("div");n.append(el("div","nm",m.name),el("div","co",m.email));
     const b=el("span");
+    if(m.active&&["QS","CK"].includes(me)){const invite=el("button","btn","Email password setup");invite.onclick=async()=>{invite.disabled=true;try{const r=await fetch("/api/admin/invite",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:m.email})});const data=await r.json();if(!r.ok)throw Error(data.error||"Email could not be confirmed");toast("Password setup email accepted for "+m.name);}catch(e){toast(e.message);}finally{invite.disabled=false;}};b.append(invite);}
     if(ss.length){const btn=el("button","btn danger",m.id===me?"Sign out my devices":"Sign out everywhere");btn.onclick=()=>adminSignOut(m,ss.length);b.append(btn)}
     r.append(n,cell(m.active?(m.role==="guest"?"Guest":"Editor"):"Removed"),cell(ss.length?`${ss.length} device${ss.length===1?"":"s"}${ss.some(s=>s.current)&&m.id===me?" (incl. this one)":""}`:"Not signed in"),cell(last?"Signed in "+fmtDay(last):"–"),b);
     return r;
@@ -2994,7 +2995,7 @@ $("pTheme").onchange=()=>{const v=$("pTheme").value;try{v?localStorage.setItem("
 $("pAdmin").onclick=()=>go("admin");
 $("adBack").onclick=()=>go("profile");
 async function profileSignOut(others){
-  if(!confirm(others?"Sign out every other device? This one stays signed in.":"Sign out of this device? You will need a new invitation link to get back in on it."))return;
+  if(!confirm(others?"Sign out every other device? This one stays signed in.":"Sign out of this device? You can sign in again with Google or your Voyage password."))return;
   try{const r=await fetch("/api/me/signout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({scope:others?"others":"this"})});if(!r.ok)throw Error();
     if(others){toast("Signed out other devices");track("action","Signed out other devices");loadProfile()}else location.replace("/")}
   catch(_){toast("That didn't work. Try again.")}
