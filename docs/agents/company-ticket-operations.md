@@ -138,3 +138,37 @@ never changed by this uploader. View Codex completion screenshots on the origina
 opens that linked ticket. Refresh screenshots reloads the latest gallery while
 retaining unsaved-edit guards. Inspect screenshots before uploading; exclude
 secrets and unrelated private records. Missing capture is an explicit limitation.
+
+## Completion reports and signed human review (2026-10-29)
+
+Every Company ticket has a Completion report with append-only work entries,
+contributor filters, changes, checks/limitations and validated HTTPS verification
+links. A human records their own work as Me, or reports Codex/Claude work with
+their logged-in account retained as recorder. Job-posted reports derive the agent
+and requesting human from the signed claimed job. Earlier notes retain their
+recorded author text; they are not invented verified attributions.
+
+The Human reviewed checkbox signs only the current authenticated active member,
+using the server's account name, ID and time. It never accepts a supplied reviewer
+identity. Each person has a separate checkbox state; unchecking removes only
+their current stamp. New reports, screenshots, material completion-detail edits
+or reopening invalidate current stamps and preserve prior review history.
+Agents cannot sign human review through the signed job endpoint. Production
+acceptance must not mark a real human reviewed on the human's behalf.
+
+Codex/Claude job helpers support text reports alongside screenshots:
+`ticket-evidence.mjs --context PATH --summary TEXT --changes TEXT --checks TEXT --link https://example.com/fix`.
+Repeat --link; screenshots can be included with --file. Accepted receipts contain
+a report ID or attachment ID. Report retries are idempotent. Claude portable
+bundles explain manual reporting through Cody's own account and subscription.
+
+Resolved original staff reports keep their source intact. Their completion
+reports and reviews are stored on the stable linked Company ticket; a clear
+Create linked completion report & human review action is available if needed.
+Resolution never implies human review. Existing resolution dates/statuses do
+not fabricate historical signatures.
+
+Synthetic local acceptance: `node scripts/preview-ticket-reports.mjs`, then
+`PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node scripts/verify-ticket-reports.mjs`
+under resource-run. The fixture uses demo members and an in-memory database;
+only those demo humans are signed by the automated test.
