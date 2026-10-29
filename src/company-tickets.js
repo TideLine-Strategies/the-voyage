@@ -1,3 +1,4 @@
+import {ticketResolutionBlocker} from './ticket-resolution-gate.js';
 import {appendWorkReport,contributor,invalidateHumanReviews} from './ticket-work-report.js';
 // Product engineering workspace. Original staff reports remain in WonPlace.
 const collection='company_tickets', images='company_ticket_images';
@@ -74,7 +75,7 @@ export async function handleCompanyTickets(request,env,actor,path){
   else if(request.method==='PATCH'){
    if(issue.deleted&&v.restore!==true)fail('Restore the ticket first',409);
    if(['humanReviews','reviewLog','reviewVersion','workReports','reviewer','author'].some(k=>k in v))fail('Use the report or human-review operation');
-   const fields=ticketFields(v);Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';if(changed.some(k=>['title','description','steps','expected','actual','links','status'].includes(k)))invalidateHumanReviews(next,who,now,'Ticket completion details changed');
+   const fields=ticketFields(v);if(fields.status==='resolved'&&issue.status!=='resolved'){const blocker=await ticketResolutionBlocker(env,company,issue);if(blocker)return reply({error:blocker},409);}Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';if(changed.some(k=>['title','description','steps','expected','actual','links','status'].includes(k)))invalidateHumanReviews(next,who,now,'Ticket completion details changed');
    if(v.restore===true){next.deleted=false;action='Restored ticket';}
    if(v.note!==undefined){const body=text(v.note,6000);if(!body)fail('Note is empty');if(issue.notes.length>=200)fail('Maximum 200 notes; use a linked document for more');next.notes=[...issue.notes,{id:crypto.randomUUID(),at:now,by:who,body,author:contributor(actor)}];action='Added note';}
   }else return reply({error:'Method not allowed'},405);

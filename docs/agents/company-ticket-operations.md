@@ -197,9 +197,39 @@ The UI shows checkpoint time, lease time, received time and stale reporting
 separately. Coordinator completion never resolves a ticket, proves deployment,
 signs a human review or substitutes for the final work report and live acceptance.
 
-`status` reports accepted receipts, failures and unlinked coordinator IDs. Raw
-`agent-workspace` starts outside this workflow are detected as unlinked, not
-silently described as covered. Until every such task is reconciled, do not claim
-universal reporting. CRM-launched jobs retain their existing job/evidence tracking.
-This integration does not replace the coordinator binary or intercept arbitrary
-shell launches. One lead per ticket and supporting links do not reserve a repo.
+Use `report --task TASK_ID --file /absolute/path/report.json` after committing.
+The JSON accepts `summary`, `changes`, `checks`, optional HTTPS `links` and an
+optional UUID `requestId`. Checks must explain what passed and what remains.
+The helper pins the report to the current clean committed HEAD. It derives agent
+and requesting-human attribution from the server-validated task link; it cannot
+sign human review or resolve the ticket. Repeating the same report is idempotent.
+`status --task TASK_ID` must show an accepted `reportReceipt` for the current HEAD
+before submission. Managed workers stage reports in their own permitted scratch
+area; the existing owner helper delivers them without exposing signing secrets.
+
+The installed coordinator entry point enforces this contract for new PremierOS
+and Voyage CLI tasks after its recorded cutoff. Raw `start` and supervised `launch`
+need `--crm-ticket FULL_UUID --crm-owner OWNER_EMAIL_OR_MEMBER_ID` (and optionally
+`--crm-lead`). Preflight verifies the exact ticket and active approved owner before
+creating a task. `submit` requires accepted link and report receipts for that
+committed HEAD. Rejected starts do not create a task; unavailable source validation
+waits for recovery. Other products and all pre-existing tasks retain their control
+and release paths. The coordinator daemon, database, capabilities, sandbox and
+publication policy are unchanged. Direct Python calls to internal coordinator
+implementation are outside this CLI contract and remain visible as unlinked.
+
+`status` reports accepted receipts, failures and unlinked coordinator IDs. Coverage
+separates current work from recovery records; old repair/owner-lost/legacy records
+are not described as running agents. Existing ambiguous work stays unlinked until
+its exact ticket is known. Do not claim universal reporting while those gaps
+remain. One lead per ticket and supporting links do not reserve a repository.
+
+New links use report contract version 2. Resolving their ticket requires every
+non-cancelled linked task to have completed, its source-timed completion milestone
+to have arrived, and a structured task report for that committed HEAD written after
+delivery. Deploy-level work additionally needs the coordinator's exact live
+acceptance receipt, and its final report must follow that acceptance. The bridge
+uploads only receipt commit, deployment identifier and time, not private evidence
+payloads. Human review remains a separate authenticated action. Existing version 1
+links retain their earlier rules; neither historical records nor current workers
+are silently reclassified or relaunched.

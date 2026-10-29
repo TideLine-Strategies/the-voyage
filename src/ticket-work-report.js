@@ -16,7 +16,7 @@ export function appendWorkReport(ticket,value,actor,at){
  const fields=workReportFields(value),reports=ticket.workReports||[],existing=reports.find(r=>r.id===fields.requestId);
  const author=actor.agent?contributor(actor):fields.performer==='me'?contributor(actor):{kind:'agent',id:fields.performer,name:fields.performer==='claude'?'Claude':'Codex'};
  if(actor.agent&&fields.performer!==actor.agent)fail('Agent identity comes from the coding job');
- const content={via:actor.agent?'coding-job':'member-report',summary:fields.summary,changes:fields.changes,checks:fields.checks,links:fields.links,author,recordedBy:{id:actor.id,name:actor.humanName||actor.name||actor.id},jobId:actor.jobId||null};
+ const content={via:actor.taskId?'coordinator-task':actor.agent?'coding-job':'member-report',...(actor.taskId?{taskId:actor.taskId,commit:actor.commit||null}:{} ),summary:fields.summary,changes:fields.changes,checks:fields.checks,links:fields.links,author,recordedBy:{id:actor.id,name:actor.humanName||actor.name||actor.id},jobId:actor.jobId||null};
  if(existing){if(JSON.stringify(content)!==JSON.stringify(existing.content))throw Object.assign(Error('Report request ID already has different content'),{status:409});return {entry:existing,duplicate:true};}
  if(reports.length>=200)fail('Maximum 200 work reports per ticket');
  const entry={id:fields.requestId,at,content};ticket.workReports=[...reports,entry];invalidateHumanReviews(ticket,actor.name||actor.id,at,'Completion report changed');return {entry,duplicate:false};
