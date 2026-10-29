@@ -39,3 +39,12 @@
 .ticket-agent-context strong{font-size:13px;line-height:1.4}
 .ticket-agent-context p{margin:0;font-size:12px}
 .ticket-agent-context .btn{justify-self:start}
+.company-tickets .ticket-grid{position:relative}
+.ticket-splitter{position:absolute;width:12px;margin-left:-6px;z-index:5;cursor:col-resize;touch-action:none;outline:none}
+.ticket-splitter[hidden]{display:none}
+.ticket-splitter::after{content:'';position:absolute;left:5px;top:0;bottom:0;width:2px;background:var(--blue,#3979ff);opacity:0;transition:opacity .16s ease}
+.ticket-splitter:hover::after,.ticket-splitter:focus-visible::after,.ticket-resizing .ticket-splitter::after{opacity:.65}
+.ticket-splitter:focus-visible{outline:2px solid var(--blue,#3979ff);outline-offset:-3px}
+.ticket-resizing,.ticket-resizing *{cursor:col-resize!important;user-select:none!important}
+@media(prefers-reduced-motion:reduce){.ticket-splitter::after{transition:none}}
+@media(max-width:760px){.ticket-splitter{display:none!important}}
