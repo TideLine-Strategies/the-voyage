@@ -1,3 +1,4 @@
+import {appendWorkReport,contributor,invalidateHumanReviews} from './ticket-work-report.js';
 // Product engineering workspace. Original staff reports remain in WonPlace.
 const collection='company_tickets', images='company_ticket_images';
 const companies=new Set(['tideline','wonplace','loki','voyage']);
@@ -29,7 +30,7 @@ export function decodeScreenshot(value){
 export async function handleCompanyTickets(request,env,actor,path){
  if(actor.role!=='edit')return reply({error:'Company tickets are available to editors only.'},403);
  const company=new URL(request.url).searchParams.get('company');if(!companies.has(company))return reply({error:'Choose a valid product'},400);
- const id=path[2],operation=path[3],file=path[4];if((id&&!uuid.test(id))||path.length>5||(operation&&operation!=='attachments')||(file&&!uuid.test(file)))return reply({error:'Not found'},404);
+ const id=path[2],operation=path[3],file=path[4];if((id&&!uuid.test(id))||path.length>5||(operation&&!['attachments','work','human-review'].includes(operation))||(file&&(operation!=='attachments'||!uuid.test(file))))return reply({error:'Not found'},404);
  const stored=company+':',db=env.DB,now=Date.now(),who=String(actor.name||actor.id).slice(0,120);
  const get=async()=>{const row=await db.prepare('SELECT data_json, revision FROM documents WHERE collection=? AND id=?').bind(collection,stored+id).first();return row?{...JSON.parse(row.data_json),revision:row.revision}:null;};
  try{
@@ -45,32 +46,46 @@ export async function handleCompanyTickets(request,env,actor,path){
   }
   const issue=await get();if(!issue)return reply({error:'Ticket not found'},404);
   if(request.method==='GET'){
-   if(!operation)return reply({issue});
+   if(!operation)return reply({issue,reviewer:{id:actor.id,name:who}});
    if(!file||issue.deleted||!issue.attachments.some(a=>a.id===file))return reply({error:'Screenshot not found'},404);
    const row=await db.prepare('SELECT data_json FROM documents WHERE collection=? AND id=?').bind(images,stored+id+':'+file).first();if(!row)return reply({error:'Screenshot not found'},404);const image=JSON.parse(row.data_json),bytes=Uint8Array.from(atob(image.data),c=>c.charCodeAt(0));return new Response(bytes,{headers:{'content-type':image.type,'cache-control':'private, no-store','content-disposition':'inline; filename="screenshot"','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; sandbox"}});
   }
   if(!['PATCH','DELETE','POST'].includes(request.method))return reply({error:'Method not allowed'},405);
-  const v=await readBody(request,operation?1450000:40000);if(v.expectedRevision!==issue.revision)return reply({error:'This ticket changed. Reload it before saving; your draft has been kept.'},409);
+  const v=await readBody(request,operation==='attachments'?1450000:40000);if(operation==='work'&&(issue.workReports||[]).some(r=>r.id===v.requestId)){const {expectedRevision,...report}=v;appendWorkReport({...issue},report,actor,now);return reply({issue,reviewer:{id:actor.id,name:who}});}
+  if(v.expectedRevision!==issue.revision)return reply({error:'This ticket changed. Reload it before saving; your draft has been kept.'},409);
   const next={...issue};delete next.revision;let action,attachment=null;
-  if(operation){
+  if(operation==='human-review'){
+   if(request.method!=='PATCH'||file)return reply({error:'Method not allowed'},405);
+   if(issue.deleted||issue.status!=='resolved')fail('Resolve the ticket before recording human review',409);
+   if(Object.keys(v).some(k=>!['reviewed','expectedRevision'].includes(k))||typeof v.reviewed!=='boolean')fail('Review accepts only the checkbox state and ticket revision');
+   if(actor.agent)fail('Only the logged-in human can sign a review',403);
+   const member=await db.prepare('SELECT id,name,role FROM members WHERE id=? AND active=1').bind(actor.id).first();if(!member||member.role!=='edit')fail('An active logged-in editor is required',403);
+   const reviewer={id:member.id,name:member.name},others=(issue.humanReviews||[]).filter(r=>r.reviewer.id!==member.id);
+   if((issue.reviewLog||[]).length>=500)fail('Review history limit reached');
+   next.humanReviews=v.reviewed?[...others,{reviewer,at:now,reviewVersion:issue.reviewVersion||0}]:others;next.reviewLog=[...(issue.reviewLog||[]),{id:crypto.randomUUID(),at:now,action:v.reviewed?'reviewed':'unchecked',by:reviewer,reviewVersion:issue.reviewVersion||0}];action=(v.reviewed?'Human reviewed by ':'Human review unchecked by ')+member.name;
+  }else if(operation==='work'){
+   if(request.method!=='POST'||file)return reply({error:'Method not allowed'},405);if(issue.deleted)fail('Restore the ticket first',409);const {expectedRevision,...report}=v;const result=appendWorkReport(next,report,actor,now);if(result.duplicate)return reply({issue,reviewer:{id:actor.id,name:who}});action='Added work report by '+result.entry.content.author.name;
+  }else if(operation==='attachments'){
    if(issue.deleted)fail('Restore the ticket first',409);
-   if(request.method==='POST'&&!file){if(issue.attachments.length>=10)fail('Maximum 10 screenshots per ticket');attachment=decodeScreenshot(v);attachment.id=crypto.randomUUID();next.attachments=[...issue.attachments,{id:attachment.id,name:attachment.name,type:attachment.type,size:attachment.size,at:now,by:who}];action='Attached '+attachment.name;}
+   if(request.method==='POST'&&!file){if(issue.attachments.length>=10)fail('Maximum 10 screenshots per ticket');attachment=decodeScreenshot(v);attachment.id=crypto.randomUUID();next.attachments=[...issue.attachments,{id:attachment.id,name:attachment.name,type:attachment.type,size:attachment.size,at:now,by:who,author:contributor(actor)}];action='Attached '+attachment.name;}
    else if(request.method==='DELETE'&&file){if(!issue.attachments.some(a=>a.id===file))fail('Screenshot not found',404);next.attachments=issue.attachments.filter(a=>a.id!==file);action='Removed screenshot';}
    else return reply({error:'Method not allowed'},405);
-  }else if(request.method==='DELETE'){next.deleted=true;action='Moved to trash';}
+  }else if(request.method==='DELETE'){invalidateHumanReviews(next,who,now,'Ticket moved to trash');next.deleted=true;action='Moved to trash';}
   else if(request.method==='PATCH'){
    if(issue.deleted&&v.restore!==true)fail('Restore the ticket first',409);
-   const fields=ticketFields(v);Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';
+   if(['humanReviews','reviewLog','reviewVersion','workReports','reviewer','author'].some(k=>k in v))fail('Use the report or human-review operation');
+   const fields=ticketFields(v);Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';if(changed.some(k=>['title','description','steps','expected','actual','links','status'].includes(k)))invalidateHumanReviews(next,who,now,'Ticket completion details changed');
    if(v.restore===true){next.deleted=false;action='Restored ticket';}
-   if(v.note!==undefined){const body=text(v.note,6000);if(!body)fail('Note is empty');if(issue.notes.length>=200)fail('Maximum 200 notes; use a linked document for more');next.notes=[...issue.notes,{id:crypto.randomUUID(),at:now,by:who,body}];action='Added note';}
+   if(v.note!==undefined){const body=text(v.note,6000);if(!body)fail('Note is empty');if(issue.notes.length>=200)fail('Maximum 200 notes; use a linked document for more');next.notes=[...issue.notes,{id:crypto.randomUUID(),at:now,by:who,body,author:contributor(actor)}];action='Added note';}
   }else return reply({error:'Method not allowed'},405);
-  next.updatedAt=now;next.history=[...issue.history,{at:now,by:who,action}].slice(-300);
+  if(operation==='attachments')invalidateHumanReviews(next,who,now,'Screenshot evidence changed');
+  next.updatedAt=now;next.history=[...issue.history,{at:now,by:who,action,author:contributor(actor)}].slice(-300);
   const statements=[];
   // Conditional child writes and parent revision update share one atomic D1 batch.
   if(attachment)statements.push(db.prepare('INSERT INTO documents (collection,id,data_json,updated_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)').bind(images,stored+id+':'+attachment.id,JSON.stringify(attachment),now,collection,stored+id,issue.revision));
   if(operation&&request.method==='DELETE')statements.push(db.prepare('DELETE FROM documents WHERE collection=? AND id=? AND EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)').bind(images,stored+id+':'+file,collection,stored+id,issue.revision));
   statements.push(db.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,stored+id,issue.revision));
   const results=await db.batch(statements);if(results.at(-1).meta.changes!==1)return reply({error:'This ticket changed. Reload before saving; your draft has been kept.'},409);
-  return reply({issue:{...next,revision:issue.revision+1}});
+  return reply({issue:{...next,revision:issue.revision+1},reviewer:{id:actor.id,name:who}});
  }catch(error){if(error.status)return reply({error:error.message},error.status);throw error;}
 }
