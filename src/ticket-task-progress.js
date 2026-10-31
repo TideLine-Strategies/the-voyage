@@ -1,3 +1,4 @@
+import {taskPresence,taskColor} from './ticket-collaboration.js';
 import {readTicket} from './ticket-handoffs.js';
 import {handleCompanyTickets} from './company-tickets.js';
 import {appendWorkReport,contributor} from './ticket-work-report.js';
@@ -75,5 +76,6 @@ export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  if(snapshot.milestones.length&&snapshot.milestones[0].id<=(existing.eventCursor||0))return reply({error:'Milestone cursor already accepted'},409);
  const next={...existing,eventCursor:snapshot.milestones.at(-1)?.id||existing.eventCursor||0,milestones:[...(existing.milestones||[]),...snapshot.milestones].slice(-200),sequence:value.sequence,snapshot,receivedAt:now,history:substantive?[...(existing.history||[]),{sequence:value.sequence,at:now,state:snapshot.state,stage:snapshot.stage,checkpoint:snapshot.checkpoint,checkpointAt:snapshot.checkpointAt,commit:snapshot.commit}].slice(-100):(existing.history||[])};delete next.revision;
  const saved=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,key,existing.revision).run();
- return saved.meta.changes?reply({accepted:true,sequence:value.sequence}):reply({error:'Progress changed; retry the same event'},409);
+ if(saved.meta.changes)try{await taskPresence(env,next,ticket,snapshot);}catch{console.warn(JSON.stringify({event:'ticket_presence_failed',taskId:next.taskId}));}
+ return saved.meta.changes?reply({accepted:true,sequence:value.sequence,label:ticket.title,color:taskColor(value.taskId)}):reply({error:'Progress changed; retry the same event'},409);
 }

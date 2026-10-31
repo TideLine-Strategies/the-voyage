@@ -4,6 +4,7 @@ import { companyEvent, snapshotFrom } from './company-events.js';
 export class CompanyHub extends DurableObject {
   constructor(ctx,env) {
     super(ctx,env);
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS task_presence (id TEXT PRIMARY KEY, data TEXT NOT NULL, sequence INTEGER NOT NULL, expires_at INTEGER NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, at INTEGER NOT NULL, data TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS measurements (metric TEXT NOT NULL, at INTEGER NOT NULL, currency TEXT NOT NULL DEFAULT \'\', value REAL NOT NULL, PRIMARY KEY(metric,at,currency))');
   }
@@ -25,21 +26,45 @@ export class CompanyHub extends DurableObject {
       this.ctx.storage.sql.exec('DELETE FROM events WHERE at<? OR seq NOT IN (SELECT seq FROM events ORDER BY seq DESC LIMIT 2000)',Date.now()-7*86400000);
     });
     const snapshot=JSON.stringify({type:'snapshot',...this.snapshot(),measurements});
-    for(const socket of this.ctx.getWebSockets()) {
+    for(const socket of this.ctx.getWebSockets('company')) {
       try { if(socket.deserializeAttachment()?.expiresAt<=Date.now())socket.close(1008,'Reconnect to verify access');else socket.send(snapshot); } catch { socket.close(1011,'Reconnect'); }
     }
     return {accepted:events.length};
   }
+  taskSnapshot() {
+    this.ctx.storage.sql.exec('DELETE FROM task_presence WHERE expires_at<=?',Date.now());
+    return {type:'task-presence',asOf:Date.now(),tasks:this.ctx.storage.sql.exec('SELECT data,sequence,expires_at FROM task_presence ORDER BY id LIMIT 64').toArray().map(r=>({...JSON.parse(r.data),sequence:r.sequence,expiresAt:r.expires_at}))};
+  }
+  broadcastTasks() {
+    const data=JSON.stringify(this.taskSnapshot());
+    for(const socket of this.ctx.getWebSockets('tickets'))try{if(socket.deserializeAttachment()?.expiresAt<=Date.now())socket.close(1008,'Reconnect to verify access');else socket.send(data);}catch{socket.close(1011,'Reconnect');}
+  }
+  publishTask(value,expectedSequence) {
+    this.taskSnapshot();
+    const prior=this.ctx.storage.sql.exec('SELECT data,sequence FROM task_presence WHERE id=?',value.taskId).toArray()[0];
+    if(expectedSequence!==undefined&&expectedSequence!==(prior?.sequence||0))return {accepted:false,error:'Task draft changed; read before retrying',sequence:prior?.sequence||0};
+    if(value.origin==='coordinator'&&prior){const old=JSON.parse(prior.data);if(old.origin==='tools'&&Date.now()-old.updatedAt<60000)return {accepted:true,sequence:prior.sequence};}
+    if(!prior&&this.taskSnapshot().tasks.length>=64)return {accepted:false,error:'Collaboration room is full'};
+    const sequence=(prior?.sequence||0)+1,expires=Date.now()+(value.origin==='coordinator'?90000:60000);
+    this.ctx.storage.sql.exec('INSERT OR REPLACE INTO task_presence(id,data,sequence,expires_at) VALUES(?,?,?,?)',value.taskId,JSON.stringify(value),sequence,expires);
+    this.broadcastTasks();return {accepted:true,sequence,expiresAt:expires};
+  }
+  markTaskConflict(id) {
+    const row=this.ctx.storage.sql.exec('SELECT data,sequence,expires_at FROM task_presence WHERE id=?',id).toArray()[0];
+    if(row){const data={...JSON.parse(row.data),status:'conflict',detail:'Ticket changed; draft kept. Read the latest revision.'};this.ctx.storage.sql.exec('UPDATE task_presence SET data=?,sequence=sequence+1 WHERE id=?',JSON.stringify(data),id);this.broadcastTasks();}
+  }
+  removeTask(id) {this.ctx.storage.sql.exec('DELETE FROM task_presence WHERE id=?',id);this.broadcastTasks();return {accepted:true};}
   async fetch(request) {
     if(request.headers.get('upgrade')?.toLowerCase()!=='websocket')return new Response('WebSocket required',{status:426});
     const [client,server]=Object.values(new WebSocketPair());
-    this.ctx.acceptWebSocket(server);server.serializeAttachment({expiresAt:Date.now()+60000});
-    server.send(JSON.stringify({type:'snapshot',...this.snapshot()}));
+    const tickets=new URL(request.url).pathname==='/tickets';
+    this.ctx.acceptWebSocket(server,tickets?['tickets']:['company']);server.serializeAttachment({expiresAt:Date.now()+60000,tickets});
+    server.send(JSON.stringify(tickets?this.taskSnapshot():{type:'snapshot',...this.snapshot()}));
     return new Response(null,{status:101,webSocket:client});
   }
   webSocketMessage(socket,message) {
     if(socket.deserializeAttachment()?.expiresAt<=Date.now())return socket.close(1008,'Reconnect to verify access');
-    if(message==='snapshot')socket.send(JSON.stringify({type:'snapshot',...this.snapshot()}));
+    if(message==='snapshot')socket.send(JSON.stringify(socket.deserializeAttachment()?.tickets?this.taskSnapshot():{type:'snapshot',...this.snapshot()}));
   }
   webSocketClose(socket,code,reason) { socket.close(code,reason); }
   webSocketError(socket) { socket.close(1011,'Reconnect'); }

@@ -12,7 +12,7 @@ const read=async file=>{try{return JSON.parse(await fs.readFile(file,'utf8'));}c
 const write=async(file,value)=>{const tmp=file+'.'+randomUUID()+'.tmp';await fs.writeFile(tmp,JSON.stringify(value)+'\n',{mode:0o600});await fs.rename(tmp,file);};
 export function coordinatorTasks(){
  // Explicit projection: never select capabilities, environment, command text or private logs.
- const script="import sqlite3,json,sys; d=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True); d.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in d.execute('SELECT t.id,t.identity,t.agent,t.state,t.stage,t.heartbeat,t.head,t.created,t.delivery,CAST(r.at*1000 AS INTEGER) acceptanceAt,json_extract(r.detail,\"$.commit\") liveCommit,json_extract(r.detail,\"$.deploymentId\") deploymentId,json_extract(r.detail,\"$.accepted\") liveAccepted FROM tasks t LEFT JOIN receipts r ON r.task_id=t.id AND r.stage=\"live-acceptance\"')]))";
+ const script="import sqlite3,json,sys; d=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True); d.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in d.execute('SELECT t.id,t.task,t.identity,t.agent,t.state,t.stage,t.heartbeat,t.head,t.created,t.delivery,CAST(r.at*1000 AS INTEGER) acceptanceAt,json_extract(r.detail,\"$.commit\") liveCommit,json_extract(r.detail,\"$.deploymentId\") deploymentId,json_extract(r.detail,\"$.accepted\") liveAccepted FROM tasks t LEFT JOIN receipts r ON r.task_id=t.id AND r.stage=\"live-acceptance\"')]))";
  return JSON.parse(execFileSync('/usr/bin/python3',['-c',script,path.join(os.homedir(),'.agent-workspaces/coordinator/tasks.sqlite3')],{encoding:'utf8',timeout:10000,maxBuffer:4000000}));
 }
 export function coverageGroup(state){return ['queued','admitting','working','submitted','releasing','awaiting_remote','retry_wait'].includes(state)?'current':'recovery';}
@@ -27,8 +27,8 @@ export async function syncTaskProgress({root,config,tasks=coordinatorTasks(),eve
  try{
   const runtimeId=(await fs.readFile(path.join(root,'worker-id'),'utf8')).trim();
   const send=async(company,value)=>{const url=origin+'/api/company-ticket-task-progress/'+company,body=JSON.stringify(value),r=await transport(url,{method:'POST',headers:await signedHeaders(config.secrets[company],'POST',url,'Owner Mac task progress',body),body,redirect:'manual',signal:AbortSignal.timeout(45000)});const data=await r.json();if(!r.ok||data.accepted!==true)throw Error(data.error||'Progress receipt not accepted');return data;};
-  const files=(await fs.readdir(dir)).filter(f=>/^[0-9a-f]{12}\.json$/.test(f)),linked=new Set(),errors=[];
-  for(const file of files){const full=path.join(dir,file),record=await read(full),task=tasks.find(t=>t.id===record.link.taskId);linked.add(record.link.taskId);
+  const files=(await fs.readdir(dir)).filter(f=>/^[0-9a-f]{12}\.json$/.test(f)),linked=new Set(),errors=[],roomLabels=new Map();
+  for(const file of files){const full=path.join(dir,file),record=await read(full),task=tasks.find(t=>t.id===record.link.taskId);linked.add(record.link.taskId);roomLabels.set(record.link.taskId,record.receipt?.label);
    try{
     if(!task||task.identity!==identities[record.company]||task.agent!==record.link.agent)throw Error('Coordinator identity does not match explicit ticket link');
     if(!record.linkReceipt){const receipt=await send(record.company,{...record.link,runtimeId,action:'link'});record.linkReceipt={at:now,accepted:receipt.accepted};await write(full,record);}
@@ -43,10 +43,13 @@ export async function syncTaskProgress({root,config,tasks=coordinatorTasks(),eve
      record.pending={action:'progress',taskId:task.id,runtimeId,sequence:(record.sequence||0)+1,snapshot};await write(full,record);
     }
     const receipt=await send(record.company,record.pending);if(receipt.sequence!==record.pending.sequence)throw Error('Progress receipt sequence mismatch');
-    record.eventCursor=record.pending.snapshot.milestones?.at(-1)?.id||record.eventCursor||0;record.sequence=receipt.sequence;record.lastSnapshot=record.pending.snapshot;record.receipt={at:now,accepted:true,sequence:receipt.sequence};delete record.pending;delete record.error;await write(full,record);
+    record.eventCursor=record.pending.snapshot.milestones?.at(-1)?.id||record.eventCursor||0;record.sequence=receipt.sequence;record.lastSnapshot=record.pending.snapshot;record.receipt={at:now,accepted:true,sequence:receipt.sequence,label:receipt.label||record.receipt?.label};roomLabels.set(task.id,record.receipt.label);delete record.pending;delete record.error;await write(full,record);
    }catch(error){record.error={at:now,message:String(error.message).slice(0,300)};await write(full,record);errors.push({taskId:record.link.taskId,company:record.company,...record.error});}
   }
   const unlinked=tasks.filter(t=>Object.values(identities).includes(t.identity)&&!['complete','cancelled'].includes(t.state)&&!linked.has(t.id)).map(({id,identity,state})=>({id,identity,state,group:coverageGroup(state)}));
+  const palette=['#83bcb0','#8faed5','#baa1d3','#c4b385','#87b9ca','#c599aa','#a2bb87','#aeabe0'];
+  const roomTasks=tasks.filter(t=>linked.has(t.id)&&coverageGroup(t.state)==='current'&&t.heartbeat&&now-t.heartbeat*1000<90000).slice(0,64).map(t=>{let h=0;for(const c of t.id)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;return {taskId:t.id,label:roomLabels.get(t.id)||t.task||t.id,color:palette[h%palette.length],state:t.state,expiresAt:Math.floor(t.heartbeat*1000)+90000};});
+  await write(path.join(root,'task-room.json'),{checkedAt:now,tasks:roomTasks});
   const status={checkedAt:now,status:errors.length?'reporting_failed':'ok',linked:linked.size,unlinked,errors};await write(path.join(root,'task-progress-status.json'),status);return status;
  }finally{await handle.close();await fs.unlink(lock);}
 }
