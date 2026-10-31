@@ -13,3 +13,5 @@ Installed command:
 - `leave`: remove your cursor.
 
 Task identity, product, owner and label are derived from the authenticated managed task link. Drafts and cursor locations are ephemeral; saved changes keep the ticket's attributed history. Only the human can sign human acceptance. Coordinator progress alone is shown as progress, not keystrokes. Existing source reports stay intact.
+
+Recent blocked tasks remain visible for up to 24 hours after the reported blocker, even after their worker heartbeat stops. Clicking a blocked task sends a status message and recovery steps to the existing right-hand agent panel. Treat these as reported coordinator facts, not a model conversation or permission to bypass a release gate. Plain task titles omit ticket codes; technical task references remain in expanded details. Active animation requires recent task-tool activity; a heartbeat alone is idle. Respect reduced-motion preferences.
