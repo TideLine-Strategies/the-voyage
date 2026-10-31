@@ -43,7 +43,11 @@ export async function sourceCollaboration(request,env){
  if(!task||task.runtimeId!==value.runtimeId)return reply({error:'Linked task required'},403);
  const member=await env.DB.prepare('SELECT id,name,role,email FROM members WHERE id=? AND active=1').bind(task.requestedBy).first();
  if(member?.role!=='edit'||!['q.stewart@tidelinestrats.com','c.knudsen@tidelinestrats.com'].includes(member.email?.toLowerCase()))return reply({error:'Owner access revoked'},403);
- if(['complete','cancelled','owner_lost'].includes(task.snapshot?.state))return reply({error:'Task is no longer active'},409);
+ const completed=task.snapshot?.state==='complete';
+ if(['cancelled','owner_lost'].includes(task.snapshot?.state))return reply({error:'Task is no longer active'},409);
+ // Completed tasks retain a bounded final-status handoff, not an editing session.
+ // The ticket endpoint still enforces revision, delivery and final-report gates.
+ if(completed&&!['read','list','leave'].includes(value.action)&&!(value.action==='save'&&value.patch&&Object.keys(value.patch).length===1&&['in_review','resolved'].includes(value.patch.status)))return reply({error:'Completed tasks may only read or set a final ticket status'},409);
  const issue=await read(env,'company_tickets',company+':'+task.ticket);
  if(!issue||issue.deleted)return reply({error:'Ticket unavailable'},409);
  const hub=collaborationHub(env,company);if(!hub)return reply({error:'Collaboration unavailable'},503);
@@ -51,9 +55,9 @@ export async function sourceCollaboration(request,env){
  const identity={taskId:task.taskId,ticket:issue.id,label:taskLabel(task.snapshot?.taskTitle||issue.title),color:taskColor(task.taskId),agent:task.agent,owner:member.name||member.id,origin:'tools',blocker:task.snapshot?.blocker&&Date.now()-task.snapshot.blocker.at<86400000?task.snapshot.blocker:null,lastTool:value.action,lastToolAt:Date.now(),updatedAt:Date.now()};
  if(value.action==='list'){
   if(value.offset!==undefined&&(!Number.isInteger(value.offset)||value.offset<0||value.offset>100000))return reply({error:'Invalid offset'},400);
-  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets?company='+company+'&offset='+(value.offset||0)),env,member,['api','company-tickets']);if(response.ok)await hub.touchTask(identity,'list');return response;
+  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets?company='+company+'&offset='+(value.offset||0)),env,member,['api','company-tickets']);if(response.ok&&!completed)await hub.touchTask(identity,'list');return response;
  }
- if(value.action==='read'){await hub.touchTask(identity,'read');return reply({accepted:true,issue,workspace:await hub.taskSnapshot()});}
+ if(value.action==='read'){if(!completed)await hub.touchTask(identity,'read');return reply({accepted:true,issue,workspace:await hub.taskSnapshot()});}
  if(value.action==='presence'){
   let presence;try{presence=presenceInput(value.presence);}catch(error){return reply({error:error.message},400);}
   if(!Number.isInteger(value.expectedSequence)||value.expectedSequence<0)return reply({error:'Read the workspace sequence first'},400);
@@ -64,7 +68,7 @@ export async function sourceCollaboration(request,env){
  if(!Object.keys(patch).length||!Number.isInteger(value.expectedRevision))return reply({error:'Changes and expectedRevision required'},400);
  const actor={...member,agent:task.agent,taskId:task.taskId,humanName:member.name,name:(task.agent==='claude'?'Claude':'Codex')+' for '+member.name};
  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets/'+issue.id+'?company='+company,{method:'PATCH',body:JSON.stringify({...patch,expectedRevision:value.expectedRevision})}),env,actor,['api','company-tickets',issue.id]);
- if(response.ok){const saved=await response.clone().json();await hub.publishTask({...identity,status:'saved',field:null,draft:'',caret:0,detail:'Saved revision '+saved.issue.revision});}
- else if(response.status===409)await hub.markTaskConflict(task.taskId);
+ if(response.ok){const saved=await response.clone().json();if(!completed)await hub.publishTask({...identity,status:'saved',field:null,draft:'',caret:0,detail:'Saved revision '+saved.issue.revision});}
+ else if(response.status===409&&!completed)await hub.markTaskConflict(task.taskId);
  return response;
 }
