@@ -17,7 +17,7 @@ export async function taskPresence(env,task,ticket,snapshot){
  if(['complete','cancelled','owner_lost'].includes(snapshot.state))return hub.removeTask(task.taskId);
  const fresh=snapshot.heartbeatAt&&Date.now()-snapshot.heartbeatAt<90000;
  if(!fresh)return hub.removeTask(task.taskId);
- return hub.publishTask({taskId:task.taskId,ticket:ticket.id,label:ticket.title,color:taskColor(task.taskId),agent:task.agent,owner:task.requestedBy,status:['repair_required','awaiting_remote','retry_wait'].includes(snapshot.state)?'waiting':snapshot.stage==='test'?'testing':'working',field:null,draft:'',caret:0,origin:'coordinator',detail:snapshot.stage||snapshot.state,updatedAt:Date.now()});
+ return hub.publishTask({taskId:task.taskId,ticket:ticket.id,label:snapshot.taskTitle||ticket.title,color:taskColor(task.taskId),agent:task.agent,owner:task.requestedBy,status:['repair_required','awaiting_remote','retry_wait'].includes(snapshot.state)?'waiting':snapshot.stage==='test'?'testing':'working',field:null,draft:'',caret:0,origin:'coordinator',detail:snapshot.stage||snapshot.state,updatedAt:Date.now()});
 }
 export async function handleCollaboration(request,env,actor,path){
  if(actor.role!=='edit')return reply({error:'Editor access required'},403);
@@ -46,7 +46,7 @@ export async function sourceCollaboration(request,env){
  if(!issue||issue.deleted)return reply({error:'Ticket unavailable'},409);
  const hub=collaborationHub(env,company);if(!hub)return reply({error:'Collaboration unavailable'},503);
  if(value.action==='leave'){await hub.removeTask(task.taskId);return reply({accepted:true});}
- const identity={taskId:task.taskId,ticket:issue.id,label:issue.title,color:taskColor(task.taskId),agent:task.agent,owner:member.name||member.id,origin:'tools',updatedAt:Date.now()};
+ const identity={taskId:task.taskId,ticket:issue.id,label:task.snapshot?.taskTitle||issue.title,color:taskColor(task.taskId),agent:task.agent,owner:member.name||member.id,origin:'tools',updatedAt:Date.now()};
  if(value.action==='list'){
   if(value.offset!==undefined&&(!Number.isInteger(value.offset)||value.offset<0||value.offset>100000))return reply({error:'Invalid offset'},400);
   const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets?company='+company+'&offset='+(value.offset||0)),env,member,['api','company-tickets']);return response;
