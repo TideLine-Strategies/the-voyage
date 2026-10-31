@@ -1,3 +1,4 @@
+import {taskLabel} from './task-blockers.js';
 import {verifySource} from './company-signing.js';
 import {handleCompanyTickets,readBody,ticketFields} from './company-tickets.js';
 export const roomColors=['#83bcb0','#8faed5','#baa1d3','#c4b385','#87b9ca','#c599aa','#a2bb87','#aeabe0'];
@@ -14,10 +15,11 @@ const reply=(value,status=200)=>Response.json(value,{status,headers:{'cache-cont
 const read=async(env,collection,id)=>{const row=await env.DB.prepare('SELECT data_json,revision FROM documents WHERE collection=? AND id=?').bind(collection,id).first();return row?{...JSON.parse(row.data_json),revision:row.revision}:null;};
 export async function taskPresence(env,task,ticket,snapshot){
  const hub=collaborationHub(env,task.company);if(!hub)return;
- if(['complete','cancelled','owner_lost'].includes(snapshot.state))return hub.removeTask(task.taskId);
+ if(['complete','cancelled'].includes(snapshot.state))return hub.removeTask(task.taskId);
+ const blocked=snapshot.blocker&&Date.now()-snapshot.blocker.at<86400000;
  const fresh=snapshot.heartbeatAt&&Date.now()-snapshot.heartbeatAt<90000;
- if(!fresh)return hub.removeTask(task.taskId);
- return hub.publishTask({taskId:task.taskId,ticket:ticket.id,label:snapshot.taskTitle||ticket.title,color:taskColor(task.taskId),agent:task.agent,owner:task.requestedBy,status:['repair_required','awaiting_remote','retry_wait'].includes(snapshot.state)?'waiting':snapshot.stage==='test'?'testing':'working',field:null,draft:'',caret:0,origin:'coordinator',detail:snapshot.stage||snapshot.state,updatedAt:Date.now()});
+ if(!fresh&&!blocked)return hub.removeTask(task.taskId);
+ return hub.publishTask({taskId:task.taskId,ticket:ticket.id,label:taskLabel(snapshot.taskTitle||ticket.title),color:taskColor(task.taskId),agent:task.agent,owner:task.requestedBy,blocker:blocked?snapshot.blocker:null,status:blocked?'blocked':['repair_required','awaiting_remote','retry_wait'].includes(snapshot.state)?'waiting':snapshot.stage==='test'?'testing':'working',field:null,draft:'',caret:0,origin:'coordinator',detail:snapshot.stage||snapshot.state,updatedAt:Date.now()});
 }
 export async function handleCollaboration(request,env,actor,path){
  if(actor.role!=='edit')return reply({error:'Editor access required'},403);
@@ -46,12 +48,12 @@ export async function sourceCollaboration(request,env){
  if(!issue||issue.deleted)return reply({error:'Ticket unavailable'},409);
  const hub=collaborationHub(env,company);if(!hub)return reply({error:'Collaboration unavailable'},503);
  if(value.action==='leave'){await hub.removeTask(task.taskId);return reply({accepted:true});}
- const identity={taskId:task.taskId,ticket:issue.id,label:task.snapshot?.taskTitle||issue.title,color:taskColor(task.taskId),agent:task.agent,owner:member.name||member.id,origin:'tools',updatedAt:Date.now()};
+ const identity={taskId:task.taskId,ticket:issue.id,label:taskLabel(task.snapshot?.taskTitle||issue.title),color:taskColor(task.taskId),agent:task.agent,owner:member.name||member.id,origin:'tools',blocker:task.snapshot?.blocker&&Date.now()-task.snapshot.blocker.at<86400000?task.snapshot.blocker:null,lastTool:value.action,lastToolAt:Date.now(),updatedAt:Date.now()};
  if(value.action==='list'){
   if(value.offset!==undefined&&(!Number.isInteger(value.offset)||value.offset<0||value.offset>100000))return reply({error:'Invalid offset'},400);
-  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets?company='+company+'&offset='+(value.offset||0)),env,member,['api','company-tickets']);return response;
+  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets?company='+company+'&offset='+(value.offset||0)),env,member,['api','company-tickets']);if(response.ok)await hub.touchTask(identity,'list');return response;
  }
- if(value.action==='read')return reply({accepted:true,issue,workspace:await hub.taskSnapshot()});
+ if(value.action==='read'){await hub.touchTask(identity,'read');return reply({accepted:true,issue,workspace:await hub.taskSnapshot()});}
  if(value.action==='presence'){
   let presence;try{presence=presenceInput(value.presence);}catch(error){return reply({error:error.message},400);}
   if(!Number.isInteger(value.expectedSequence)||value.expectedSequence<0)return reply({error:'Read the workspace sequence first'},400);

@@ -23,6 +23,20 @@ try{
  // Pointer overlays must not intercept the human's mouse or keyboard.
  assert.equal(await page.locator('.collab-cursors').evaluate(n=>getComputedStyle(n).pointerEvents),'none');
  await page.screenshot({path:'/tmp/voyage-collaboration.png',fullPage:true});
+ const composer=page.getByLabel('Message Codex',{exact:true});await composer.fill('Keep my conversation draft');
+ const blocker={kind:'integration',title:'Integration needs repair',summary:'Changes conflict with the current release.',nextSteps:['Inspect the current main revision.','Resolve the conflicting files.','Run checks and retry the managed release.'],at:Date.now()};
+ const states=[{...base,taskId:'123456abcdef',label:'ENG-130ED366 Repair enrollment',draft:'Actual tool draft',caret:6,lastTool:'presence',lastToolAt:Date.now()},{...base,taskId:'abcdef123456',label:'Waiting for the next tool',origin:'coordinator',status:'working',field:null,draft:'',caret:0},{...base,taskId:'cccccccccccc',label:'ENG-C93A5CFB Restore staff sign-in',origin:'coordinator',status:'blocked',field:null,draft:'',caret:0,blocker}];
+ stream.send(JSON.stringify({type:'task-presence',tasks:states}));await page.locator('.collab-task[data-phase=blocked]').waitFor();
+ assert.equal(await page.locator('.collab-task summary strong').first().innerText(),'Repair enrollment');
+ assert.equal(await page.locator('.collab-task[data-phase=active] .collab-dot').evaluate(n=>getComputedStyle(n).animationDuration),'0.9s');
+ assert.equal(await page.locator('.collab-task[data-phase=idle] .collab-dot').evaluate(n=>getComputedStyle(n).animationDuration),'4.8s');
+ assert.equal(await page.locator('.collab-task[data-phase=blocked]').evaluate(n=>getComputedStyle(n).animationDuration),'1.7s');
+ const summary=page.locator('.collab-task').first().locator('summary');await summary.focus();await page.evaluate(()=>window.__focusedTask=document.activeElement);
+ stream.send(JSON.stringify({type:'task-presence',tasks:states.map(t=>t.taskId==='123456abcdef'?{...t,draft:'Updated tool draft',caret:8}:t)}));await page.waitForTimeout(60);assert(await page.evaluate(()=>document.activeElement===window.__focusedTask));
+ await page.locator('.collab-task[data-phase=blocked] summary').click();const message=page.locator('[data-agent-task-messages]');await message.waitFor();assert((await message.innerText()).includes('Codex · Restore staff sign-in'));assert((await message.innerText()).includes('Resolve the conflicting files.'));assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await composer.inputValue(),'Keep my conversation draft');assert.equal(await input.inputValue(),'Human draft must stay');
+ await page.locator('.collab-cursor[data-phase=blocked]').click();assert.equal(await page.locator('[data-agent-task-messages] article').count(),1);assert.equal(await composer.inputValue(),'Keep my conversation draft');
+ await page.screenshot({path:'/tmp/voyage-task-states.png',fullPage:true});
+ await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.collab-task[data-phase=blocked]').evaluate(n=>getComputedStyle(n).animationName),'none');
  stream.send(JSON.stringify({type:'task-presence',tasks:[{...base,taskId:'123456abcdef',draft:'Expired',caret:0,expiresAt:Date.now()-1}]}));await page.waitForTimeout(50);assert.equal(await page.locator('.collab-task').count(),0);assert.equal(await input.inputValue(),'Human draft must stay');assert.deepEqual(errors,[]);
- console.log(JSON.stringify({accepted:true,twoTaskCursors:true,independentDrafts:true,humanFocusPreserved:true,humanDraftPreserved:true,navigationPreserved:true,overlaysNonInteractive:true,expiredPresenceRemoved:true,screenshot:'/tmp/voyage-collaboration.png'}));
+ console.log(JSON.stringify({accepted:true,twoTaskCursors:true,independentDrafts:true,humanFocusPreserved:true,humanDraftPreserved:true,navigationPreserved:true,overlaysNonInteractive:true,expiredPresenceRemoved:true,plainTitles:true,distinctActivityAnimations:true,stableTaskFocus:true,blockedMessageInAgentPanel:true,conversationPreserved:true,reducedMotion:true,screenshot:'/tmp/voyage-collaboration.png'}));
 }finally{await browser.close();}
