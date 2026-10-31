@@ -1,3 +1,4 @@
+import {handleCollaboration,sourceCollaboration} from './ticket-collaboration.js';
 import {sourceTaskProgress} from './ticket-task-progress.js';
 import {sendPasswordLink} from './voyage-auth.js';
 import {sourceTicketEvidence} from './ticket-evidence.js';
@@ -854,6 +855,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "muninn") return handleMuninn(request, env, actor);
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
   if(path[1]==="ticket-handoff")return handleTicketQueue(request,env,actor,path,readJson);
+  if (path[1] === "ticket-collaboration") return handleCollaboration(request,env,actor,path);
   if (path[1] === "company-tickets") return handleCompanyTickets(request, env, actor, path);
   if (path[1] === "tickets") return handleWonPlaceTickets(request, env, actor, path);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
@@ -975,6 +977,7 @@ export default {
     if (pathName.startsWith("/api/content-source/")) return ingestContent(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-sweep/"))return sourceTicketSweep(request,env);
     if(pathName.startsWith("/api/company-ticket-evidence/"))return sourceTicketEvidence(request,env);
+    if(pathName.startsWith("/api/company-ticket-collaboration/"))return sourceCollaboration(request,env);
     if(pathName.startsWith("/api/company-ticket-task-progress/"))return sourceTaskProgress(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-jobs/"))return sourceTicketQueue(request,env,readJson);
     if(pathName.startsWith("/api/company-ticket-sweep/")||pathName.startsWith("/api/company-ticket-image/"))return signedTicketRead(request,env);
