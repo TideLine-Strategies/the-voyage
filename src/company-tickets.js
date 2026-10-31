@@ -80,7 +80,7 @@ export async function handleCompanyTickets(request,env,actor,path){
    if(v.note!==undefined){const body=text(v.note,6000);if(!body)fail('Note is empty');if(issue.notes.length>=200)fail('Maximum 200 notes; use a linked document for more');next.notes=[...issue.notes,{id:crypto.randomUUID(),at:now,by:who,body,author:contributor(actor)}];action='Added note';}
   }else return reply({error:'Method not allowed'},405);
   if(operation==='attachments')invalidateHumanReviews(next,who,now,'Screenshot evidence changed');
-  next.updatedAt=now;next.history=[...issue.history,{at:now,by:who,action,author:contributor(actor)}].slice(-300);
+  next.updatedAt=now;next.history=[...issue.history,{at:now,by:who,action,author:contributor(actor),...(actor.taskId?{taskId:actor.taskId}:{})}].slice(-300);
   const statements=[];
   // Conditional child writes and parent revision update share one atomic D1 batch.
   if(attachment)statements.push(db.prepare('INSERT INTO documents (collection,id,data_json,updated_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)').bind(images,stored+id+':'+attachment.id,JSON.stringify(attachment),now,collection,stored+id,issue.revision));
