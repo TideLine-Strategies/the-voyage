@@ -43,11 +43,15 @@ export class CompanyHub extends DurableObject {
     this.taskSnapshot();
     const prior=this.ctx.storage.sql.exec('SELECT data,sequence FROM task_presence WHERE id=?',value.taskId).toArray()[0];
     if(expectedSequence!==undefined&&expectedSequence!==(prior?.sequence||0))return {accepted:false,error:'Task draft changed; read before retrying',sequence:prior?.sequence||0};
-    if(value.origin==='coordinator'&&prior){const old=JSON.parse(prior.data);if(old.origin==='tools'&&Date.now()-old.updatedAt<60000)return {accepted:true,sequence:prior.sequence};}
+    if(value.origin==='coordinator'&&prior&&value.status!=='blocked'){const old=JSON.parse(prior.data);if(old.origin==='tools'&&Date.now()-old.updatedAt<60000)return {accepted:true,sequence:prior.sequence};}
+    if(value.status==='blocked'&&prior){const old=JSON.parse(prior.data);if(old.field)value={...value,field:old.field,draft:old.draft,caret:old.caret};}
     if(!prior&&this.taskSnapshot().tasks.length>=64)return {accepted:false,error:'Collaboration room is full'};
-    const sequence=(prior?.sequence||0)+1,expires=Date.now()+(value.origin==='coordinator'?90000:60000);
+    const sequence=(prior?.sequence||0)+1,expires=value.blocker?value.blocker.at+86400000:Date.now()+(value.origin==='coordinator'?90000:60000);
     this.ctx.storage.sql.exec('INSERT OR REPLACE INTO task_presence(id,data,sequence,expires_at) VALUES(?,?,?,?)',value.taskId,JSON.stringify(value),sequence,expires);
     this.broadcastTasks();return {accepted:true,sequence,expiresAt:expires};
+  }
+  touchTask(identity,tool) {
+    const old=this.taskSnapshot().tasks.find(t=>t.taskId===identity.taskId)||{};return this.publishTask({...old,...identity,status:old.field?old.status:'reading',field:old.field||null,draft:old.draft||'',caret:old.caret||0,lastTool:tool,lastToolAt:Date.now(),blocker:identity.blocker||null});
   }
   markTaskConflict(id) {
     const row=this.ctx.storage.sql.exec('SELECT data,sequence,expires_at FROM task_presence WHERE id=?',id).toArray()[0];

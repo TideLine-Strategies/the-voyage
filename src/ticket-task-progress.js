@@ -1,3 +1,4 @@
+import {taskLabel,validateBlocker} from './task-blockers.js';
 import {taskPresence,taskColor} from './ticket-collaboration.js';
 import {readTicket} from './ticket-handoffs.js';
 import {handleCompanyTickets} from './company-tickets.js';
@@ -15,14 +16,15 @@ export async function ticketTasks(env,company,ticket){
 }
 export function progressSnapshot(value){
  const states=['queued','admitting','working','submitted','releasing','awaiting_remote','retry_wait','repair_required','owner_lost','complete','cancelled'];
- if(!value||Object.keys(value).some(k=>!['state','stage','heartbeatAt','checkpoint','checkpointAt','commit','milestones','delivery','liveAcceptance','taskTitle'].includes(k))||!states.includes(value.state)||typeof value.stage!=='string'||value.stage.length>80)throw Error('Invalid task snapshot');
+ if(!value||Object.keys(value).some(k=>!['state','stage','heartbeatAt','checkpoint','checkpointAt','commit','milestones','delivery','liveAcceptance','taskTitle','blocker'].includes(k))||!states.includes(value.state)||typeof value.stage!=='string'||value.stage.length>80)throw Error('Invalid task snapshot');
  for(const k of ['heartbeatAt','checkpointAt'])if(value[k]!=null&&(!Number.isSafeInteger(value[k])||value[k]<0||value[k]>Date.now()+300000))throw Error('Invalid progress time');
  if(value.checkpoint!=null&&(typeof value.checkpoint!=='string'||value.checkpoint.length>4000))throw Error('Invalid checkpoint');
  if(value.commit!=null&&!/^[0-9a-f]{40}$/.test(value.commit))throw Error('Invalid commit');
  if(value.taskTitle!==undefined&&(typeof value.taskTitle!=='string'||!value.taskTitle.trim()||value.taskTitle.length>200))throw Error('Invalid task title');
- const delivery=value.delivery||'merge',liveAcceptance=value.liveAcceptance||null;if(!['merge','deploy'].includes(delivery))throw Error('Invalid delivery level');if(liveAcceptance&&(Object.keys(liveAcceptance).some(k=>!['commit','deploymentId','at'].includes(k))||!/^[0-9a-f]{40}$/.test(liveAcceptance.commit||'')||typeof liveAcceptance.deploymentId!=='string'||!liveAcceptance.deploymentId.trim()||liveAcceptance.deploymentId.length>200||!Number.isSafeInteger(liveAcceptance.at)||liveAcceptance.at<0||liveAcceptance.at>Date.now()+300000))throw Error('Invalid live acceptance receipt');
+ if(value.blocker!==undefined)validateBlocker(value.blocker);
+ const delivery=value.delivery||'merge',liveAcceptance=value.liveAcceptance||null;if(!['commit','merge','deploy'].includes(delivery))throw Error('Invalid delivery level');if(liveAcceptance&&(Object.keys(liveAcceptance).some(k=>!['commit','deploymentId','at'].includes(k))||!/^[0-9a-f]{40}$/.test(liveAcceptance.commit||'')||typeof liveAcceptance.deploymentId!=='string'||!liveAcceptance.deploymentId.trim()||liveAcceptance.deploymentId.length>200||!Number.isSafeInteger(liveAcceptance.at)||liveAcceptance.at<0||liveAcceptance.at>Date.now()+300000))throw Error('Invalid live acceptance receipt');
  const milestones=value.milestones||[];if(!Array.isArray(milestones)||milestones.length>50||milestones.some((m,i)=>!m||Object.keys(m).some(k=>!['id','at','kind'].includes(k))||!Number.isSafeInteger(m.id)||m.id<1||i>0&&m.id<=milestones[i-1].id||!Number.isSafeInteger(m.at)||m.at<0||m.at>Date.now()+300000||typeof m.kind!=='string'||!/^[a-z_:-]{1,80}$/.test(m.kind)))throw Error('Invalid coordinator milestones');
- return {...(value.taskTitle?{taskTitle:value.taskTitle}:{}),delivery,liveAcceptance,milestones,state:value.state,stage:value.stage,heartbeatAt:value.heartbeatAt||null,checkpoint:value.checkpoint||'',checkpointAt:value.checkpointAt||null,commit:value.commit||null,activity:'unverified',ticketAcceptance:'pending'};
+ return {...(value.blocker?{blocker:value.blocker}:{}),...(value.taskTitle?{taskTitle:value.taskTitle}:{}),delivery,liveAcceptance,milestones,state:value.state,stage:value.stage,heartbeatAt:value.heartbeatAt||null,checkpoint:value.checkpoint||'',checkpointAt:value.checkpointAt||null,commit:value.commit||null,activity:'unverified',ticketAcceptance:'pending'};
 }
 export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  const company=new URL(request.url).pathname.split('/')[3];
@@ -78,5 +80,5 @@ export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  const next={...existing,eventCursor:snapshot.milestones.at(-1)?.id||existing.eventCursor||0,milestones:[...(existing.milestones||[]),...snapshot.milestones].slice(-200),sequence:value.sequence,snapshot,receivedAt:now,history:substantive?[...(existing.history||[]),{sequence:value.sequence,at:now,state:snapshot.state,stage:snapshot.stage,checkpoint:snapshot.checkpoint,checkpointAt:snapshot.checkpointAt,commit:snapshot.commit}].slice(-100):(existing.history||[])};delete next.revision;
  const saved=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,key,existing.revision).run();
  if(saved.meta.changes)try{await taskPresence(env,next,ticket,snapshot);}catch{console.warn(JSON.stringify({event:'ticket_presence_failed',taskId:next.taskId}));}
- return saved.meta.changes?reply({accepted:true,sequence:value.sequence,label:snapshot.taskTitle||ticket.title,color:taskColor(value.taskId)}):reply({error:'Progress changed; retry the same event'},409);
+ return saved.meta.changes?reply({accepted:true,sequence:value.sequence,label:taskLabel(snapshot.taskTitle||ticket.title),color:taskColor(value.taskId)}):reply({error:'Progress changed; retry the same event'},409);
 }
