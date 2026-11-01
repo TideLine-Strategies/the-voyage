@@ -18,7 +18,7 @@ try{
  await page.getByRole('button',{name:'+ Custom line',exact:true}).click();
  for(const size of [{width:1440,height:1000},{width:390,height:844}]){
   await page.setViewportSize(size);for(const label of ['Line name','Quantity','Unit price','Discount percent','Billing frequency'])assert(await page.getByLabel(label,{exact:true}).isVisible(),label+' should be editable at '+size.width);
-  if(size.width===390)await page.locator('#dlLines').screenshot({path:'docs/audits/2026-11-01-astra/screenshots/mobile-line-editor.png'});
+  if(size.width===390){await page.getByLabel('Line name',{exact:true}).fill('Synthetic service');await page.getByLabel('Quantity',{exact:true}).fill('3');await page.getByLabel('Unit price',{exact:true}).fill('125');await page.getByLabel('Discount percent',{exact:true}).fill('10');await page.getByLabel('Billing frequency',{exact:true}).selectOption('annual');assert.equal(await page.getByLabel('Quantity',{exact:true}).inputValue(),'3');assert.equal(await page.getByLabel('Unit price',{exact:true}).inputValue(),'125');await page.waitForFunction(()=>!document.querySelector('#toast').classList.contains('show'));await page.getByLabel('Line name',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:'docs/audits/2026-11-01-astra/screenshots/mobile-line-editor.png'});}
  }
  await page.setViewportSize({width:1440,height:1000});
  const columns=await page.evaluate(()=>{const t=adTable('dtbl',['a','b','c','d','e','f'],[]);document.querySelector('#dlMain').append(t);return getComputedStyle(t.querySelector('.row')).gridTemplateColumns.split(' ').length;});assert.equal(columns,6,'Device table styles must not override six-column deal tables');
