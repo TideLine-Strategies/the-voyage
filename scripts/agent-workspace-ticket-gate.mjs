@@ -19,7 +19,9 @@ export function gateArguments(args){
  return {args:result,ticket};
 }
 export function repositoryProduct(repo){
- const remote=execFileSync('git',['-C',repo,'remote','get-url','origin'],{encoding:'utf8',timeout:10000}).trim().replace(/^git@/,'').replace('github.com:','github.com/').replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'');return products[remote]||null;
+ // Read logical identity, not Git's transport-expanded URL. CI may rewrite GitHub URLs
+ // with a credential helper/proxy; those transport details must not bypass the gate.
+ const remote=execFileSync('git',['-C',repo,'config','--get','remote.origin.url'],{encoding:'utf8',timeout:10000}).trim().replace(/^git@/,'').replace('github.com:','github.com/').replace(/^https?:\/\//,'').replace(/\.git$/,'').replace(/\/$/,'');return products[remote]||null;
 }
 export function validateStart(ticket){
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticket.ticket||'')||typeof ticket.owner!=='string'||ticket.owner.length>150)throw Error('Ticket reporting required: add --crm-ticket FULL_UUID --crm-owner REQUESTING_OWNER. No task was started. Existing task control commands remain available.');
