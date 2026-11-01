@@ -1,3 +1,5 @@
+> Historical baseline report. See ASTRA-NEXT.md and repair-status.json for current repair status; do not execute this original queue unchanged.
+
 # Voyage CRM audit — Astra execution handoff
 
 Audit date: 2026-11-01. Task: `466de0cefb56`. CRM tracking ticket: `a746a53a-7f1e-47eb-a979-461a74194b90`.

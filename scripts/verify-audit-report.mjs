@@ -23,3 +23,13 @@ for(const [key,value] of Object.entries(worker))if(key!=='baseline')assert.equal
 for(const line of fs.readFileSync(root+'client-results.jsonl','utf8').trim().split('\n'))JSON.parse(line);
 assert(fs.readFileSync(root+'VALIDATION.md','utf8').includes('230'));
 console.log(JSON.stringify({accepted:true,baseline:inventory.baseline,hashedFiles:343,findings:20,artifactIntegrity:true}));
+
+const statusFile=root+'repair-status.json';
+if(fs.existsSync(statusFile)){
+ const statuses=JSON.parse(fs.readFileSync(statusFile,'utf8'));assert.equal(statuses.findings.length,20);assert.equal(new Set(statuses.findings.map(f=>f.id)).size,20);
+ for(const f of statuses.findings)assert(findings.findings.some(old=>old.id===f.id));
+ for(const name of ['ASTRA-NEXT.md','COVERAGE.md','REPAIR-VALIDATION.md','coverage-ledger.json'])assert(fs.existsSync(root+name));
+ const coverage=JSON.parse(fs.readFileSync(root+'coverage-ledger.json','utf8'));assert.equal(coverage.manualEveryLineCertified,false);assert.equal(coverage.files.length,343);
+ for(const f of inventory.files)assert(coverage.files.some(c=>c.path===f.path&&c.baselineSha256===f.sha256));
+ console.log(JSON.stringify({repairHandoffAccepted:true,baselineFilesAccountedFor:coverage.files.length,manualEveryLineCertified:false}));
+}

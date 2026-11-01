@@ -1,0 +1,3006 @@
+{
+  "baseline": "eda8dfb094dddba0664de4ad6d376f5b27664edb",
+  "sourceHead": "24d4ca7d4f3164dca20692933a32840e789b71e7",
+  "workingTree": true,
+  "scope": "Syntax/structure is automated coverage, not a substitute for semantic manual review or live acceptance.",
+  "files": [
+    {
+      "path": ".github/workflows/check.yml",
+      "sha256": "ab43f1f081dcaf54a89d0cef532a75022a7bf5a589fd9cae6f66f758e099e733",
+      "lineCount": 27,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "sha256": "6e3a52863acda9e583c2556528648cd262d912942dfcef0f7d8e1252195bc303",
+      "lineCount": 32,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "da0e9c9c5d2d71a14d07ac97c268533e3803461ea3b60ce90e4884d847a71eea",
+      "lineCount": 10,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "cb5fe8dbfe823f59b6ac7376f6d7470d0a0c89c064016f6303c40ea2191e99ac",
+      "lineCount": 17,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "5bc4b4c35d8362a8cab4644301013a058edcb6a90bc068a5bb3c174c9013656d",
+      "lineCount": 7,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "cb28c498a54fe9377e502ce06a7d4b328f7e807af3e961a15d40a2bc60242613",
+      "lineCount": 38,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "README.md",
+      "sha256": "5ef49d3755d5ef9615fc34d09f1b563f3083a986e0ab67cbcc01a409403c64c2",
+      "lineCount": 85,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "bridge/install-macos.sh",
+      "sha256": "ca6c3ed7c9c3075fb0e4fac4ae817130a41e793a6b353a71979632b809a099fc",
+      "lineCount": 42,
+      "check": "full-file shell syntax (not executed)",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "bridge/muninn-bridge.mjs",
+      "sha256": "437435a3b8baba1071d12f739bc21002ba57b6ed1e0e1afce0cafd33f19c04f5",
+      "lineCount": 116,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/agents/company-social.md",
+      "sha256": "4fe6da1e8eb20a4884d3dc1c812e0cf06144d1ef234841f9ec4c3fc5c8702229",
+      "lineCount": 60,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/agents/company-ticket-operations.md",
+      "sha256": "bab632433b3feda3167cdd5f64f9f17a5779ee957b3daa8279e420e39000d14a",
+      "lineCount": 235,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/company-ga4.md",
+      "sha256": "26cac0c52805a34d3124b325beea3703148d4045546784af53570b9b4991ee59",
+      "lineCount": 11,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/company-operations.md",
+      "sha256": "c7d7b9113dba38a2ee55d821e3398d613a1b3eadb2c584bfc790be5ed1ac7f52",
+      "lineCount": 178,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/company-tickets.md",
+      "sha256": "f048545b5b09df6c7b2e4a5393e24f9bc19e60ee5f0fb8a773ef90fcd75f2f77",
+      "lineCount": 107,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/OPERATIONS.md",
+      "sha256": "ada7d7254c91783a61b3f2cfcf886193ef7907264d2211aaf36965a61e491313",
+      "lineCount": 51,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/analytics.md",
+      "sha256": "4db6f88d5c04d569f04255698dcf27f15c85b7eb59f24b920d82207d33eaf198",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/approval.md",
+      "sha256": "0ee5d8d3f9d7482eeb310e1a5c4cb977cee1c929ac74ef0dd94c81d88975bc28",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/capture.md",
+      "sha256": "0e3272d02ff901f51ed172db0e7e182e6216968309b26f64c607c731c928d888",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/editing.md",
+      "sha256": "e4d0bcbcc26a1815a27794751fe61680df7e73af49f92e4a95b5c7d608fa7d37",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/posting.md",
+      "sha256": "181df4db925be7a6128b565fe120a2d6822c420f830a84c3f59b5c49bdd3a1ee",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/research.md",
+      "sha256": "5126b2482b01805bad8d9dcb0ca5cbad46b560bbc189ff6ec093ea45c3195335",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-agents/scripting.md",
+      "sha256": "512dada49f9215c3193b35b6400b88a86be26dc4a35a687a3b0d7b9d8bf405d5",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content-factory-live.md",
+      "sha256": "9a7845f4d9e0f2ee7311a30db6882ddc49b77efcb59dd24c66f00d2197340e59",
+      "lineCount": 72,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/content.md",
+      "sha256": "0cc31298e5fa7cf057197e8a7f395e7b779d78714dd1c167b0b0acb835b005ee",
+      "lineCount": 20,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/performance-canvas.md",
+      "sha256": "0a8312332fe2d57fb84353c483915e8b51fba9bd52322465206c34babde0b072",
+      "lineCount": 13,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/releases/2026-10-29-ticket-contract-deployment-reconciliation.md",
+      "sha256": "3d66e37b11331c25813e8cbc0f32d9626aa833dbffa682e004c6ebcae8adc0f2",
+      "lineCount": 23,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "index.html",
+      "sha256": "c0b1e0cdfbbb0a324431bb95fc4b81eef8d3af2ba9a2bb67a4f696067a86ccc7",
+      "lineCount": 8,
+      "check": "all inline script syntax; markup inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0001_initial.sql",
+      "sha256": "4a77bcba7b48297f63770d790f9111ef0a6a9e28fe34f28b5db0d7b418bd192c",
+      "lineCount": 21,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0002_invite_sessions.sql",
+      "sha256": "96449ffed909abf7b967e7d2505a61aaec4b1820479246cb280f12f948bb1c9a",
+      "lineCount": 16,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0003_open_member_ids.sql",
+      "sha256": "86f110d7378f5af5ab2040ae08f64a8d4feb041c00e264e52a7ec471fd9a71ca",
+      "lineCount": 39,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0004_usage_events.sql",
+      "sha256": "81053f17c52a38f5ee487deb4d7606ce3257e37ab04ebe7474889c47c0a7e331",
+      "lineCount": 20,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0005_audit_calendar.sql",
+      "sha256": "81c37f22cebb120a799a5b952d65e173dd8a2c29894b0964806fef97e18720bd",
+      "lineCount": 29,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0006_deal_files.sql",
+      "sha256": "da8008e6f41ec576b8ee32975639ff57ca667c29dc13fd9a9233edbc998755db",
+      "lineCount": 23,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0007_account_signin.sql",
+      "sha256": "a587bee3030570b5f3588c63e5354bf705f11e5fc9ef048269646995098616f3",
+      "lineCount": 5,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0008_voyage_credentials.sql",
+      "sha256": "57fba4ab4621c5a81ff602c467bf2c6ae2065197b4cb1a971c4f129a08ba5aea",
+      "lineCount": 4,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "migrations/0009_remember_device.sql",
+      "sha256": "b56c7f4ec25837eda4969245c0276cb86327a84ddf3e3b3ff1030e8175335b54",
+      "lineCount": 2,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "e6287c82a50114f96fded69db71a05990cbf48a427ae7f8bde4dad9b447c6a41",
+      "lineCount": 1574,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "package.json",
+      "sha256": "5cb8ea6f88d9203c403dbe364e1b27027b33987a330f4e4a5d4e8df105ee93fd",
+      "lineCount": 18,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "pages/index.html",
+      "sha256": "c0b1e0cdfbbb0a324431bb95fc4b81eef8d3af2ba9a2bb67a4f696067a86ccc7",
+      "lineCount": 8,
+      "check": "all inline script syntax; markup inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/.gitignore",
+      "sha256": "b7264ff89dc813eade454cc8feea679b00d8b3d9cfbf52e4e11bd25d9c2f122d",
+      "lineCount": 36,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/.lovable/project.json",
+      "sha256": "bd1338b45e8ec628b669a08db3b6149f06d9862e9c6349cd6b0189be506900e4",
+      "lineCount": 5,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/.prettierignore",
+      "sha256": "52c7c767ff0615eec4eb64cc71265877f7f423eb597d665b5e439f337c661a5a",
+      "lineCount": 8,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/.prettierrc",
+      "sha256": "1ed88d3b99eced8dc3b6f58f26645466dd1ceaca6c5a9b818531c941ac28e55b",
+      "lineCount": 6,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/AGENTS.md",
+      "sha256": "4e96b38f10a0bbf0f105f51e6d2c39a889baec12b3386ae3facec4f076714d60",
+      "lineCount": 10,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/README.md",
+      "sha256": "0146378c6969879f820ca241cdc903759b576ad605179e0f35511a2d2c412506",
+      "lineCount": 18,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/bunfig.toml",
+      "sha256": "1ed9b1fc5131fd50c2e0975635c3e98a8362362103f4061910b56eac510b748e",
+      "lineCount": 7,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/components.json",
+      "sha256": "37c484818824d2521eee3367e7aa2c2abbd19635d8103d19734b6e24603d0292",
+      "lineCount": 22,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/HANDOFF.md",
+      "sha256": "f729f222f610aba6a82bb9f455d8f43145179a359311053265e0dd418dc5657c",
+      "lineCount": 7,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/approved-concept-c.png",
+      "sha256": "e46f357cb76d7eed5ae98e2f86578a07c6323370fbe9865363ea552422541578",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/lovable-handoff-before-local-completion.txt",
+      "sha256": "8a83546388a3298aa83a1c3890fa4763eea42faaa49d5b0f52dd07ea1e3b0f7b",
+      "lineCount": 29,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/lovable-original-brief.txt",
+      "sha256": "58b370cd9d7092c86be782d65fa5f0c6d457e3db942ce713c38847047a9fc062",
+      "lineCount": 40,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/lovable-original.bun.lock",
+      "sha256": "4a2f15b39287f71cb09885e15ca6ebb42c540b4451c29082ef91eecf0439c262",
+      "lineCount": 1290,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/docs/lovable-source-export.jsonl",
+      "sha256": "400c8fdc34f67bdf1fc7146a15c6a1daa3fc3267272ae81ff29ec712fa6ba315",
+      "lineCount": 97,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/eslint.config.js",
+      "sha256": "3266245a1ff610a0b37dbb8b8c77b93a125e0d8758b9838cfd04b2e0a1397d56",
+      "lineCount": 40,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/live.html",
+      "sha256": "e3ca65b0d92bbc7561852285ad3f7e5c163d8d61c29cc92cfe97d1db3888461f",
+      "lineCount": 15,
+      "check": "all inline script syntax; markup inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/package-lock.json",
+      "sha256": "9254bd87f6c18d0c72179e779315db9c33fb940837c5decbfa08413619ffb5e7",
+      "lineCount": 10638,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/package.json",
+      "sha256": "e9c664562909b6be95f73cd6010b17129f695e31e00d51dbe8f746d4c5c07601",
+      "lineCount": 103,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/playwright.config.ts",
+      "sha256": "5047c1b7dc1038644e8578ae57d9cfc94283bd3db2db6d43a963fef69c19f10e",
+      "lineCount": 1,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/playwright.live.config.ts",
+      "sha256": "bac50a7e54b09a2d840d46ece125ce22f28826e78415e709ba6208766c05c464",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/public/favicon.ico",
+      "sha256": "dd821076a9b03adc2173c93956226aea3d92482d7578fc4339c5d3a2e9c24586",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/public/robots.txt",
+      "sha256": "a3d27b3ca5ce32341fa9f96f01169b521b1657c05d1860c45d1e53a6258e9e8b",
+      "lineCount": 14,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/public/voyage-mark.png",
+      "sha256": "4de95ccc28aeb765e0f2e856fb5e374f6d96f669701e11587d0b06873fa4a717",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/scripts/verify-build.mjs",
+      "sha256": "75b5909f55b49f03ccd0d40428f983d933af9328c293aebd33e82b3805805803",
+      "lineCount": 42,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/scripts/verify-live-build.mjs",
+      "sha256": "3e09203e92269a85008af84f09b07a362e5587c66de6a83e5591f8a691df95c7",
+      "lineCount": 24,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/accordion.tsx",
+      "sha256": "0903efcd7b746eef0a10c954a541b0dfa7aa1172f3c380a1a88f4e19a317fda3",
+      "lineCount": 51,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/alert-dialog.tsx",
+      "sha256": "ee4d7f3341a1e5592787b7dac8e924bd226189492819f6704d8a7faf8fe64d20",
+      "lineCount": 115,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/alert.tsx",
+      "sha256": "e7f4c2e6f78c59270905b4152b7d3ef4d5c6b9e3b2d370daa7b301aa7cbd27b3",
+      "lineCount": 49,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/aspect-ratio.tsx",
+      "sha256": "d72c73d629e37995a0a71647d851d68d6fdcd7ec120797f36ab83a8ee89f2cab",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/avatar.tsx",
+      "sha256": "0326c9041c5a0b1ba31ff29822c51950b6aeac485cd0985e7df714741a54e7f4",
+      "lineCount": 47,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/badge.tsx",
+      "sha256": "6519775252fe729f21c60b92c7c9feefd1fe7d0a8c2cf16d6f1c2fa7e153fe75",
+      "lineCount": 32,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/breadcrumb.tsx",
+      "sha256": "d5224e87344b3ac0f8b002e5dda6a71ff8fee296db8a5fbe6b034d06bd5c2ae1",
+      "lineCount": 101,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/button.tsx",
+      "sha256": "e39813b666ba434660ec088356a0349246b6803a4e99961295d0c82bab1ab862",
+      "lineCount": 49,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/calendar.tsx",
+      "sha256": "e883f2245873fdf360764f77fc8f391426bef5776c6397537012c46970ebd6ee",
+      "lineCount": 177,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/card.tsx",
+      "sha256": "f13878a0078a5ef9f3e92af29259fc1e93ea56ea80cb992e0c4dea4e35396459",
+      "lineCount": 55,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/carousel.tsx",
+      "sha256": "568e00e8edbfab8af67ee902ca9ef5ceb6d5ed6f3045e7f9b3c15b4f7ef9e974",
+      "lineCount": 240,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/chart.tsx",
+      "sha256": "81b1f692f9334ba3030213ff37eeaf2dd762b644e5d96e51ada7072109f07430",
+      "lineCount": 331,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/checkbox.tsx",
+      "sha256": "c44d02535d5c9c92807576804407dd63d01e7189dbde526e925b53885e645fd4",
+      "lineCount": 26,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/collapsible.tsx",
+      "sha256": "5f0a45d8f6ca72d37ed10bf0a85306158b67d7cbc386319186ce013ead9bc0a6",
+      "lineCount": 11,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/command.tsx",
+      "sha256": "ba8c0f8b23044ce9a5066e66d7ab7be3a3c79bfc4a0ab7dfae6ffafe439145a3",
+      "lineCount": 143,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/context-menu.tsx",
+      "sha256": "b299f50a0a7840b136db5670f2b2e7eec6fc62b3c06bc2ad0015800959cc381b",
+      "lineCount": 186,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/dialog.tsx",
+      "sha256": "e3a6de153fb15597ea95be9c4549211a297c060267787915599e3d680d476bd9",
+      "lineCount": 104,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/drawer.tsx",
+      "sha256": "478c487f66245641d5fa0f0d1c53a07d68bd60c4b3c497ec4c41ce08b482e14b",
+      "lineCount": 98,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/dropdown-menu.tsx",
+      "sha256": "a6b87c89f5a806225b7f3a81f13a6577289c67e5787c2a56b5a22bd1edea02ce",
+      "lineCount": 187,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/form.tsx",
+      "sha256": "1ed53d4ab564a64708938643de590f2bef3718b0b2a309c1019c57e9c1fde23f",
+      "lineCount": 171,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/hover-card.tsx",
+      "sha256": "69dc172ece56ac77bf3a044a1cd60ed601b0041945d16b5da4c6cc4f42116988",
+      "lineCount": 27,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/input-otp.tsx",
+      "sha256": "45b7c4fd518616f76dd611b9da13bc60bece1352e050878bf943e1cc6a4ed678",
+      "lineCount": 73,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/input.tsx",
+      "sha256": "92debb7d6d2d96d9e607a42d5ce8f37b2d63384ae5dd9ffbbf5f047b680ffb85",
+      "lineCount": 22,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/label.tsx",
+      "sha256": "9f72e2ecf16206593aa9e3c4fbc14cd8e81aa8488d57d92d4a950b30935a9fa9",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/menubar.tsx",
+      "sha256": "5bd157c3a446ea1e451867e63724b2e87ad6bba6251c8b5f1b267d1df7bd4e0e",
+      "lineCount": 228,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/navigation-menu.tsx",
+      "sha256": "755aecc77b7911ab61159c9fbb9b25254009eb4c32c95b1430b6b5b7d37ed8f0",
+      "lineCount": 120,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/pagination.tsx",
+      "sha256": "cbe8559c578ee2d34c7daef5ee75dc3afeb795851e294b111dec375ba44a9a2d",
+      "lineCount": 98,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/popover.tsx",
+      "sha256": "861c18577ea5988c6f5ca00d1c677200319fd427cf8b424e59a5cca6ff24f830",
+      "lineCount": 31,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/progress.tsx",
+      "sha256": "418f612946a520d1380b7a0d058185bb6a6d09846846dd6d6904a0016152dd4a",
+      "lineCount": 25,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/radio-group.tsx",
+      "sha256": "8c55aa0496b00a27fc4f609ca8b43a7e82c6802f6bf613998438b7632899fa96",
+      "lineCount": 36,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/resizable.tsx",
+      "sha256": "f0399fec7bc334f06433b41b6ebf34255942ce4916b99173898893fa7fcc8281",
+      "lineCount": 37,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/scroll-area.tsx",
+      "sha256": "b607f562455152a079d70a22538c95072b0267e0d59a1a1cf16a905a2e373a6f",
+      "lineCount": 44,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/select.tsx",
+      "sha256": "6d4deee18cf7ced0354eb719300833a83caf46400de6ee9c3d1942fa4c579ad4",
+      "lineCount": 152,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/separator.tsx",
+      "sha256": "bf5838b692e5f74fde7083280b99492dd402bce6966e912e79f5e23f14bc98eb",
+      "lineCount": 24,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/sheet.tsx",
+      "sha256": "a82f9341962e766ee925a2fe883b0a9ab5d5dd8475c402ac8e491ee37dc95fde",
+      "lineCount": 122,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/sidebar.tsx",
+      "sha256": "9f44f4523271f965adec608ae1c3b8a2f350f2f45ba1401a2c7ee33bc5eda238",
+      "lineCount": 744,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/skeleton.tsx",
+      "sha256": "f4c42257d73925b0b856a3500e2cbdd918fe6744fcd6be87ef28bb88e7eb7366",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/slider.tsx",
+      "sha256": "d307cf3ff05b54be4a04389ef4379f9e8b4dc49720197937991ce843a8d4b5ec",
+      "lineCount": 23,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/sonner.tsx",
+      "sha256": "3ad40f66c339e799b1a57c00e10b4627294c7d580d99d8a48ae0d8d4c13cf931",
+      "lineCount": 23,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/switch.tsx",
+      "sha256": "c3c298df4ffb56695e4a8f0ff3e37eee08437dec542a677153ec16bed0820107",
+      "lineCount": 27,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/table.tsx",
+      "sha256": "1e945e564c2cc5ca3ef33019ba7da7a8b94cbc73feb3cbc2b7b33c36ea648d92",
+      "lineCount": 94,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/tabs.tsx",
+      "sha256": "e9b454d2f987c83b36cc8870bba47d9355db4e8f5c733b310dbc1119a7d27654",
+      "lineCount": 53,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/textarea.tsx",
+      "sha256": "35617a2cf053e52c9e56983bde82d556861d38e462f9e578876c8e99a0432687",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/toggle-group.tsx",
+      "sha256": "d59cd3937c967a3e221fdfcfe4ea5cd57eb97cbe37e1ac98126664c9c7db49c1",
+      "lineCount": 57,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/toggle.tsx",
+      "sha256": "62e6e21993f1ab633b9f830cbbf0c181f3d161bae3a7792dbf2d842d42a2f09c",
+      "lineCount": 42,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/components/ui/tooltip.tsx",
+      "sha256": "9682690fc3755d0f4b8684f2d7b1f77945876d41a45b723d0761b26804ad5010",
+      "lineCount": 32,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/hooks/use-mobile.tsx",
+      "sha256": "21eff740f9e5c965c7f0782925a7e8f67ddfcdf0f58b6613550f99c3e1c454e9",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/lib/error-capture.ts",
+      "sha256": "d6fa7756cbc4c399f4e891b174c2dce8160e2354972c2ae68413dfd1db843088",
+      "lineCount": 81,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/lib/error-page.ts",
+      "sha256": "635915886f5d44a18b6add2a53959dbe2e8ba1bb3f7e597fc714650e74157bb6",
+      "lineCount": 30,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/lib/lovable-error-reporting.ts",
+      "sha256": "0a2e8b5f3ffd2dd682ab78be1a9b0998b73284a6525080e4960f85827cd608d3",
+      "lineCount": 70,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/lib/utils.ts",
+      "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live.css",
+      "sha256": "736411314cbc1b5c9f1ba330aac33f869c55b8944df441a834f7fc91883d518f",
+      "lineCount": 2265,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live.tsx",
+      "sha256": "941a18b3c69f103d6f0e34bfc93be3893063b09e0101e12a02aa3413570a197e",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/ContentPresentation.tsx",
+      "sha256": "f0fe2c3b2deb2860e57148daa5be366b258f4c34d4a6561d96c22b1cde64605b",
+      "lineCount": 328,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/LiveFactoryPage.tsx",
+      "sha256": "8160da4372c924073f76a132e9ed28cc3f9057b7a040dbb7975b0e32a73012a4",
+      "lineCount": 1144,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/MediaLoop.tsx",
+      "sha256": "8a084c7ec736ffee086e0f41813ab520ff48c77a9be25d9d7eef90e765ef20ce",
+      "lineCount": 37,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/OperationsPanel.tsx",
+      "sha256": "1eff49b33c0ffc1abcb84b50103fd8f2f3fc9240d45a452d696dfd2b05794787",
+      "lineCount": 622,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/StationBoard.tsx",
+      "sha256": "58dd6a35395421faac9a4a501b08e50d1a56ed3708db5b9f3a202676ba92cf0f",
+      "lineCount": 507,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/routeTree.gen.ts",
+      "sha256": "fe513400857214ac5d86672722817dc91b9e425e373c65219feae049a882bf0b",
+      "lineCount": 69,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/router.tsx",
+      "sha256": "72b68964d3f55ba4f7dcf2a04aad9d97d7c61fabad13aec1d298f1e39ee59fcc",
+      "lineCount": 16,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/routes/README.md",
+      "sha256": "edbd5d3cd5a427882c60b7b7dcdd12c7031f2f8ac0c085d20d2f6abec719e95d",
+      "lineCount": 21,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/routes/__root.tsx",
+      "sha256": "51e9b7a3a2da1d02a121357776736085099fb5b2c9c84ced8254c7469c36300f",
+      "lineCount": 132,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/routes/index.tsx",
+      "sha256": "9cee8d97cb4b01fa958476d15ef9b28fc240bf06eba1c2422c08f907d0f37909",
+      "lineCount": 3,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/server.ts",
+      "sha256": "f0ee683067afee145f81a63a3af76b3d3767e2a1f61f0e82582f8da184ad3ef6",
+      "lineCount": 61,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/start.ts",
+      "sha256": "d79d142c6c5d057acc7a140197f464ef29a2c55bb422aafe700f82b418894e74",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/styles.css",
+      "sha256": "6121b1d345a06138baac787f07eca9f14b3512d7cf058cfd351f0a2872853670",
+      "lineCount": 399,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/test/app-routing.test.tsx",
+      "sha256": "c817058668430273e00a43620a835f562b8cfe1234ee361c057958c06470cee3",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/test/setup.ts",
+      "sha256": "049fd55d8c3bf8742482f5684ecf15407eadd752bad5e86907032112dc05a558",
+      "lineCount": 20,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/tests/browser/live.spec.ts",
+      "sha256": "d2d3329e177cc1560e6ebbfaa80f38d7585fb66225c3d1f0479aed4350073fa2",
+      "lineCount": 198,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/tests/browser/published.spec.ts",
+      "sha256": "3597041346d0f1c7b6723538b9b0710f47fe1898dcbcff7e11ebc744835c72e8",
+      "lineCount": 142,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/tsconfig.json",
+      "sha256": "890ca342ba4dcc665ae9a2e0f0ea6b82c976d0113e358fec7e939209c13cbd60",
+      "lineCount": 37,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/vite.config.ts",
+      "sha256": "694f17daf64d3bf3481ee838ce69c26c593c60c0ed45a19209754fe5a742bcf0",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/vite.live.config.ts",
+      "sha256": "326a2e67c605d1c60cf877bb95d0e972e2a0a0802ca447b02b3a9574750f9cdb",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/vitest.config.ts",
+      "sha256": "0158325852b8c6c2c4c9e2ae02196430b432a7f40772eb546e227ce16b9da97b",
+      "lineCount": 16,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/vitest.factory.config.ts",
+      "sha256": "fbff13b6e1c80e7b40600ea9137c8a9fc20fc72208416333311e33da363aa138",
+      "lineCount": 9,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/wrangler.jsonc",
+      "sha256": "55495848080707103fdf7923e460898f41fcc6809bcc4d0796312777a1934a82",
+      "lineCount": 14,
+      "check": "JSONC structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/company-cockpit.css",
+      "sha256": "d8d72a733b5ff9b827424c99aec7547e5e6d34b670cd6830bd695b60904cfef9",
+      "lineCount": 23,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/company-cockpit.js",
+      "sha256": "3511b6bebd7e75f1ec8431a5196628f2c71826d0bbc5cf6f829e5fa736ba4ed3",
+      "lineCount": 109,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/company-ops.js",
+      "sha256": "bf43431b59df523a79e90032c3b7a2f7acb370aa01bfabee916ed07016ba14fc",
+      "lineCount": 36,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/company-tickets.css",
+      "sha256": "a5bb83ccf8bbff0e6164f938df67ea15f9d3944d70bdb6c02273d793f36fc0ee",
+      "lineCount": 56,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/company-tickets.js",
+      "sha256": "040655fc88d29cc8cd054ef67eaeacfd6055c92e8aca938a1252e62c42f5beb8",
+      "lineCount": 131,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/content.css",
+      "sha256": "6fd98741d9509c68b016ae57e4c198ae04358389a8975c91c85017b85f7fe14b",
+      "lineCount": 3,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/content.js",
+      "sha256": "535f2d280e90c917a8c1e4ac383b71729725fa534896a9fea6fa7012a61786bc",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory-host.css",
+      "sha256": "14ffb5870322e4158b8f5b06776bc216775c4b2e8b645d78da49a3e718d0ead1",
+      "lineCount": 3,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory-host.js",
+      "sha256": "a55b4c41a97d6b216c7e87cfb62e9fb1fbcc7cb689ff26d3722d704ac44c5f20",
+      "lineCount": 16,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory-tools/front-desk-handoff.csv",
+      "sha256": "61daf261eb97307f489359fde5f4c1aa533689b6ace986523699f9ee839391d1",
+      "lineCount": 1,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory-tools/parent-update.txt",
+      "sha256": "1650a96dab129d5a4ef4c551ecafee751a1d1ee5d6d789304cf2c0fa669886bd",
+      "lineCount": 12,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory-tools/trial-follow-up.csv",
+      "sha256": "7f22032d0bfd7f38d320fc41076b0eac4e93ec43c2b79b45e85e6c23f583fcd2",
+      "lineCount": 1,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/figtree-latin-ext-wght-normal-DCwSJGxG.woff2",
+      "sha256": "bf7828e2c258cffcfa50a048ee388a36b95bc16b452e8d36fa797635dbe15965",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/figtree-latin-wght-normal-D_ZTVpCC.woff2",
+      "sha256": "4ba7d3d096695818fe0686be4f1e82c6b05134e18a22260336130335027462dd",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/live-Bukv6HF2.js",
+      "check": "removed from current source; baseline retained in inventory.json",
+      "accepted": true,
+      "lineCount": 0,
+      "warnings": []
+    },
+    {
+      "path": "public/factory/assets/live-DdR7EtmF.css",
+      "check": "removed from current source; baseline retained in inventory.json",
+      "accepted": true,
+      "lineCount": 0,
+      "warnings": []
+    },
+    {
+      "path": "public/factory/assets/newsreader-latin-ext-wght-normal-C-3rgBeH.woff2",
+      "sha256": "ac6fa9ed533278f4c8fd3ae44a1fc78c7df736040237ab86fc1160d020af0af2",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/newsreader-latin-wght-normal-CCVVNp6i.woff2",
+      "sha256": "62981321d9a3cc7a61a73792729043703fd6112da86e8ec848bb57f088578757",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/newsreader-vietnamese-wght-normal-Czsa-EzN.woff2",
+      "sha256": "f0dcc9795666850cc4cd8d50d55c44d48d9103cc86f552b4a12f0793eb915840",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/favicon.ico",
+      "sha256": "dd821076a9b03adc2173c93956226aea3d92482d7578fc4339c5d3a2e9c24586",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/index.html",
+      "sha256": "b25f6200e8f17942eb9457f3efab60013c81629cca0ca2834ede40449c270307",
+      "lineCount": 16,
+      "check": "all inline script syntax; markup inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/robots.txt",
+      "sha256": "a3d27b3ca5ce32341fa9f96f01169b521b1657c05d1860c45d1e53a6258e9e8b",
+      "lineCount": 14,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/voyage-mark.png",
+      "sha256": "4de95ccc28aeb765e0f2e856fb5e374f6d96f669701e11587d0b06873fa4a717",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "bad77d0002ee5473ed5833708af119907156db276d819012211d7fbe9fa7e9dd",
+      "lineCount": 3206,
+      "check": "all inline script syntax; markup inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/living-crm.css",
+      "sha256": "bc754fb213dd1d054669dc6b2f923e51f6869634e569d1f3300e9381a06296dc",
+      "lineCount": 2,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/living-crm.js",
+      "sha256": "27d3df9096cbb78a6591265108237fc35a35ae4b133bbabd2a91079a9bee564e",
+      "lineCount": 39,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/ticket-collaboration.js",
+      "sha256": "1bfdee5f4bb016339f34481be97985545f2ed490ec9a9664063ff94cf2183daa",
+      "lineCount": 47,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/ticket-splitters.js",
+      "sha256": "fba42f13d87f54ddf6600e85379087fba8d9c345daca7d9ab3a3af3c6d5330aa",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/voyage-db.js",
+      "sha256": "bed52437df9f213356d3fb7e8512b0984b6a3c494134ad11bcbf389ca649612e",
+      "lineCount": 190,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/agent-workspace-ticket-gate.mjs",
+      "sha256": "6ef00010414bbe675cf11d4c6763c8ef28792f8792ff76f971dfb475426dea09",
+      "lineCount": 67,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/company-runtime.mjs",
+      "sha256": "e143532194da7483a57827977b5da7c222c6df1dbd17965ba7f43b5953190243",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/company-social-sync.mjs",
+      "sha256": "01029ed4fe5916ceef176b0d6b6040ce9567d2807f9f98e71e7b0541dc1dcb70",
+      "lineCount": 34,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/company-sync-all.mjs",
+      "sha256": "f8d598119e9f562325d1a880c965f6bbeab1dd7a2ab2180474824994ee2a1fba",
+      "lineCount": 11,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/company-sync.mjs",
+      "sha256": "8a4c1f9991860009f778a975af205d01f009c8211fa24928ee874bd8bd3d54a9",
+      "lineCount": 34,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-agent-docs-build.mjs",
+      "sha256": "211fe818214cdbedc5d0cd841c5f538b53d58fa1bf5ac53be9176b306ed6280a",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-agent-pass.mjs",
+      "sha256": "9441be5e31189f8d0f1737d7cb1302a905c0fde025b82239191d1283d7862497",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-analytics-pass.mjs",
+      "sha256": "950cd7a6199b4eebe00478903fe9eea6cfc2185891a1b3901c6af766a0ece770",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-baseline-sync.mjs",
+      "sha256": "d6bc3bc042bfe33a2628daeb3f0cfe19bde9116be6462f2276bad6f9fc62aaac",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-brand-video.mjs",
+      "sha256": "cbdb8b972fc13d6e8ff22eea0ec661dab2f3a5f0064df75bba1e81d9a4f4602c",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-import-assets.mjs",
+      "sha256": "88aaaa5a22cfc0f772e38b6c943ef0c6372248cf8ed38cac5c614b7d7abc8dea",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-native-browser.py",
+      "sha256": "a48eea6a7e8972eb0e9be4f0a520b19efeab2bdbded33246f3595388fab6c9b4",
+      "lineCount": 72,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-native-intake.py",
+      "sha256": "229b5b795d6194997c094b5a64a767cd2b41419dbe92e59b270eb671f10e866d",
+      "lineCount": 15,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-native-snapshots.mjs",
+      "sha256": "4c831359166b9a18a75af99f71b58854443cd732d5310db3f67ef4323ab30c63",
+      "lineCount": 165,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-operator-tick.mjs",
+      "sha256": "fa7d3066d9674b536421f3bd636b3ba99d863bed6def76c1f3f58a5e63cfcbd1",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-production-pass.mjs",
+      "sha256": "20efeb1ef928db058d44998364f24593b4ba72affb22f4a6ecd73a52698e533d",
+      "lineCount": 43,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-research-refresh.mjs",
+      "sha256": "97b8db949e10810df2732d2010e72c55c7e209276b88467add1b73b90bf4b2c4",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/content-sync.mjs",
+      "sha256": "e6ddd56bf39aff881e8e9661286c58803a0a728571c43e66552c00703485aaa0",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/deploy-account-signin.mjs",
+      "sha256": "25b94d9b60fee2819570657e639e2fcf1ed555f80743f465cee1abc16c734e56",
+      "lineCount": 9,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/deploy-company-analytics.sh",
+      "sha256": "96eb6e618961222951a21f00f9a61feb87b40ebb76d0c6e263638544f22c8845",
+      "lineCount": 4,
+      "check": "full-file shell syntax (not executed)",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/import-artifact.mjs",
+      "sha256": "81a2897c2ff76c70d49cd5593122a3c296bf3513c2c7f83be5c21c2f259aa7cd",
+      "lineCount": 51,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-company-social-sync.mjs",
+      "sha256": "1a79dff36e46008c40c6a061ab21d68c5dff0afd1c9c8396858f2882347dc6cc",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-company-sync.mjs",
+      "sha256": "2b91dca6338b14821958db560854bd85ec982e6106a9cc4ea40edbab7169e419",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-content-operator.mjs",
+      "sha256": "17e56207cf9639c8dc0330716af2bd1b843c93e21bd6aa9420a146292285dd76",
+      "lineCount": 127,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-content-sync.mjs",
+      "sha256": "8f4eb205ff8ff88d99c303b8ee35532fdbfb2f94c77d0a4cbb00f2b5fdccc30c",
+      "lineCount": 13,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-factory-native.mjs",
+      "sha256": "9028fb58b79372116902375f6f85912e068fd274cce3a10bf22c6763fb72f8e4",
+      "lineCount": 33,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-room-task-colors.mjs",
+      "sha256": "5c16aa47581f741147b7a5860b10b2e7606383b9c5d5b369cc9021204cc2aef6",
+      "lineCount": 26,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-ticket-contract.mjs",
+      "sha256": "c178208ee32d9eff5eb41cf3f8724d5456663a59d14d167c0e9acc5f66eebdea",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/install-ticket-operations.mjs",
+      "sha256": "9c20a7389176a3a4858c5dae0c0f5e0b8a13bc348eecf52553059cf2eb9bf154",
+      "lineCount": 24,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/make-invites.mjs",
+      "sha256": "53c595162cf1ba4b84e6a4596f67fe298ebdd492c4803f773da039310b58573d",
+      "lineCount": 1,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/muninn-ticket-review.mjs",
+      "sha256": "b6e5fb65eaeab845919ba147de5186c77aac66fa048a5128753c8690f13dc88b",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/parse-tiktok-export.py",
+      "sha256": "48abc7e07045453d275136ac84e7c918743ecc0c5e9d127f764fd805ab042ff0",
+      "lineCount": 40,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/preview-company-cockpit.mjs",
+      "sha256": "2dc7b07fe5172aaf4f72c96f9bfd0daaf8f4921ad9bddc0d4be19773add18bf6",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/preview-content.mjs",
+      "sha256": "03845d0a0500e227418f41a8e611d0f94ba1ff61cb7d5c3f584c0aa786372af6",
+      "lineCount": 12,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/preview-live-factory.mjs",
+      "sha256": "9554c274673114df15c3bd81fe34fa3d0fa5bbf96f664b43ae1343fb86aae820",
+      "lineCount": 18,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/preview-ticket-reports.mjs",
+      "sha256": "9d859a32e59bae810d685374c2a3e6469ddb2d095dba34468dbd957e89708ce0",
+      "lineCount": 26,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/preview-ticket-workspace.mjs",
+      "sha256": "a0c6e5c229c51209436d624493a7450de2ced3fda2325460006bbed63d9e966a",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-auth-redirect.mjs",
+      "sha256": "bc84708f7d15f9eee2bc9bd9f5d28ed850d38a6e9509be92ce7a90b8a287d12a",
+      "lineCount": 11,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-canvas.mjs",
+      "sha256": "676ae4cc3961680416052df3ad08c893134f198ff531ad2b8ea9f4a4504c598d",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-cockpit.mjs",
+      "sha256": "eb5740b959d20126db02a043656a03ccf5739663330fa76e297eec90306c3834",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-connections.mjs",
+      "sha256": "0ca939aa78a17529a4cfc516496a1cb7d4708f068c710dcae94d2bb6e07fb69c",
+      "lineCount": 21,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-ga4.mjs",
+      "sha256": "4ce4683e48ccd5c197a77f7c39ffda48ca80c9f3e1b67b81b9d38fe399563c7e",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-operations.mjs",
+      "sha256": "b4d0abcf6ee548346e1f7b09930dd67542fad5b76b3fc716abfeb89dcaa21ecf",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-social.mjs",
+      "sha256": "00e7692f5bbc7afe756dea8ad19c061afa5f2e3943400fbe603cb8ee481ad318",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-company-tickets.mjs",
+      "sha256": "2be78112049ebd5cb8677d3b30137caea88f21f47e7244509fbf63e5d21fc94e",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-content-factory.mjs",
+      "sha256": "059e326dccae10ccf8c1edff087c39801cbc04bcaa3830121401c91d4640712e",
+      "lineCount": 179,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-content-tab.mjs",
+      "sha256": "756b9aac15cd7d617db14b08c906b1296572d4e1d0d3e7dc84cf8c8c2bda4093",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-content.mjs",
+      "sha256": "ad4f67a0e4245c5c81dbcaefe71384f6411a602ff9f7c05be73e9b664492c73f",
+      "lineCount": 9,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/release-trakr-reporting.mjs",
+      "sha256": "989228450371a68758249caa32f9c228bcafe34a639c97897ad6f722c45561b4",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/serve-company-preview.mjs",
+      "sha256": "9ca3d63a51e86444cde44d5a2f6822ea05e8d7115503f95254bd2573798e2bb1",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/social-collector/package-lock.json",
+      "sha256": "0af6bda73a2ab9e8b92331db4f24b23934c3a06f755baaba8df3319f6abfefed",
+      "lineCount": 25,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/social-collector/package.json",
+      "sha256": "81eea799e4ee12a6f08c594e55ac795f66b82955a524bca9e14cadd36ae15f2c",
+      "lineCount": 1,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/stamp-release.mjs",
+      "sha256": "d8f9f101dc11bed7727d0ac5b15152c6799a04f79fe55c8b7504024f280eab5a",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-codex-session.mjs",
+      "sha256": "2076bc0074b8cd9a054865466bded1e5ed770d014712757b53ad10de779a45e4",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-coding-plan.mjs",
+      "sha256": "01f29db866db4c8bd9fecaef5b524569aa4c92324bf38ed6b6d3ec1e9801c3e7",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-daily-sweep.mjs",
+      "sha256": "7c600b5e0bed4da7d1c912cec9ebf42651c1bdf960ff8c113ca05ca129ff3c65",
+      "lineCount": 32,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-evidence-outbox.mjs",
+      "sha256": "20b71c7091f399c22cb49b7302d5007fadb0f88e2b7a7daf11d1a53a0967f343",
+      "lineCount": 20,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-evidence.mjs",
+      "sha256": "249a381dca74a0f0525441bb3418d460acdec203339f63ff37db55e173eb65a4",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-mail.mjs",
+      "sha256": "d52f0c7d97cbfe56549daf6898cd8a03f4b1f2014fbf7bc23684c53358d85430",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-operations-server.mjs",
+      "sha256": "562c5a0e63b13c3b25ab640667a838f215e44a006b595ad53e62ea9607c7c30c",
+      "lineCount": 82,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-session-log.mjs",
+      "sha256": "5aa2613fcba104f735365ac65ff066a2778c0266a8a31db4c98276d52f91aae0",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-task-progress.mjs",
+      "sha256": "98ad0cbdf043e5b8cd2732a8be32d5c5a576fd7cbf3fcd75772ab4564bef3c7e",
+      "lineCount": 85,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-terminal-draft.py",
+      "sha256": "535134764b23a820d2f54670c0dc424f1e8a0a7f773a4c75f6239bcb744ec38b",
+      "lineCount": 66,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-terminal-tiling.mjs",
+      "sha256": "eeef8d8dd5b3b03d5d1f1d031e4d0e53993dd0b2ccb14456b58df8133c9542ca",
+      "lineCount": 4,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-worker-poll.mjs",
+      "sha256": "7fbc4f97167c9f7ff8c34152e47ef2f4a4f22c958661b3dc2b412b3d8849ff7a",
+      "lineCount": 34,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/ticket-workspace.mjs",
+      "sha256": "13b5fbcb688a204f46d38231a7e62f50d91befb4886102a398b5f07c1d7f2aa8",
+      "lineCount": 26,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/tiktok-browser-source.mjs",
+      "sha256": "8b5baa19197f3e6f6800737b6dc1ce76f1b8d5080038ffc3925855d231b7de43",
+      "lineCount": 43,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-auth-runtime.mjs",
+      "sha256": "dda45b8d36e1f055eca8d5a325dad74d73598498898c8b25b4856e23717da702",
+      "lineCount": 23,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-company-analytics.py",
+      "sha256": "d350b21f3998b57383f8551df77bc39257662c8e1b5b43a4d3f0f1eae2ea0dc9",
+      "lineCount": 10,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-company-local.mjs",
+      "sha256": "1ef875f615d372d8a2f515fc20746fb56930d7943f571d26015da1bdc7a78d57",
+      "lineCount": 61,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-muninn-singleton.mjs",
+      "sha256": "5536351df9b3f0ff34dbfd4856023bfa07e3fecd2a0340095caf8d4ef0cb61ee",
+      "lineCount": 27,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-performance-canvas.mjs",
+      "sha256": "0fd654b66454dc681a8c48d72b6da3233beaebc0ed698305d9a03ca15f880d4e",
+      "lineCount": 8,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-personal-claude-live.mjs",
+      "sha256": "f979dc329e4ac2d28b2d2c64632e068df2d5117ad7aa66f68f4e64f804d6ebc2",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-codex-live.mjs",
+      "sha256": "deac65466c7a3332974189e562f1f83893c3744720d9bd498c9b97656db4a214",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-collaboration-runtime.mjs",
+      "sha256": "a04568e1346335a5641baa833ba0f15cfa9cbf9e60eabfd528603f048fd34b67",
+      "lineCount": 38,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-collaboration-ui.mjs",
+      "sha256": "3e937c28939a3b9edecb19a159c47334ddc7c33a67f2ef9467b362f6ce04eb60",
+      "lineCount": 42,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-evidence-gallery.mjs",
+      "sha256": "a3ea4b54e2fec9245ae2e5a80def74ce519acdc1ae702488268bece94870bd51",
+      "lineCount": 2,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-evidence-live.mjs",
+      "sha256": "1aafcfa7f035d0adc90d35e94a6192779539dbfccd6455645a8cc09e73d38075",
+      "lineCount": 4,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-panel-persistence.mjs",
+      "sha256": "00e82b1eb0ff24ececd0de25127ca52f085397740777f086cbedd5d59ccfed9a",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-progress-live.mjs",
+      "sha256": "4384c9d2cb3f225ad08bfcae5c815879ea117e6bb2557af25de72e660b1cf119",
+      "lineCount": 26,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-reports-live.mjs",
+      "sha256": "fd44e2a6964ec5b4f4b8a75fbc03c72e401e02f1abe2391a6a04821684ae0141",
+      "lineCount": 4,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-reports.mjs",
+      "sha256": "5d9d322b85fe75abb828362629c70ec548756143e15c61acece9e272888765fe",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-resizing.mjs",
+      "sha256": "2d6744be6b76cb247efa85ed4315c1fa6eac1a684584dda9c11372160377fc50",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-workspace-live.mjs",
+      "sha256": "5e9f4c09e7ed998316ffc2a2c1b906be10dd95aa7a5efe94c01a4c90c64c80e9",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-ticket-workspace.mjs",
+      "sha256": "a9b7277cf46ce8657dae2f28a6e99ee6d811fc28a42698cb72f5c2e8fc3109d1",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/voyage_authority.py",
+      "sha256": "3e8ebe945337197a14ae61d3e353e5e0a7fe2d7311221e45851dac29e6bf62f1",
+      "lineCount": 31,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/account-auth.js",
+      "sha256": "47b13f83e15177507d3d249bdec026ac0ce82f8de270f2236de47d4b64e764d8",
+      "lineCount": 73,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-acquisition.js",
+      "sha256": "2b94839d8d6537fae80db655cada1667c02618ddbe18ef2773bc884395f65b6d",
+      "lineCount": 40,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-events.js",
+      "sha256": "e23854d917ff091d84e0b7c562ce2695a3665ddfdd70a41210206649ce7d5f46",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-ga4-auth.js",
+      "sha256": "e02fabbd889282f668b3114896a892bbee771cc4194715879330aa3cf2c9c02f",
+      "lineCount": 42,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-ga4.js",
+      "sha256": "17d824a109903146355f28446287bd4e2658e8e98cc897ace5feae5dd25a1ff9",
+      "lineCount": 36,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-hub.js",
+      "sha256": "5c4b52d2a3b8bd28e299932edd2dd4062c55b1d20fbb35d70b73cc4d7abc20dd",
+      "lineCount": 75,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-metrics.js",
+      "sha256": "75ae77a00cd9274f3aa07203a8cb28d8651769e236659922062cfd13e44e4022",
+      "lineCount": 111,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-ops.js",
+      "sha256": "b2367248712f99bdb664107690f8743ca6bc9c25d36297a66ba5097a4d458a08",
+      "lineCount": 169,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-signing.js",
+      "sha256": "e7545e0e89d2ade86c3af40110d00664ce16b026fb8656d47c81f0099bfb9fb3",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-social.js",
+      "sha256": "ead800d742d02eae5a8fe2d8c1cde79cc745e0edd706216269a8c09a920bcd67",
+      "lineCount": 44,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-tickets.js",
+      "sha256": "f86d6645fb227b868eb4cee24294952c88f78680217c15f51b4ee1e6d3fa360c",
+      "lineCount": 92,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/company-trakr.js",
+      "sha256": "bbb48e35f109b0118cb7f4832d299b85301aba0c6dec187aaa82f6d8e85e4ad2",
+      "lineCount": 52,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-agent-docs.js",
+      "sha256": "1e7bb4cad4b765a5ce3a67305239aac2db6b847b15be260876dad52a39cc0c05",
+      "lineCount": 44,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-analytics.js",
+      "sha256": "a2f3157320e1d46bd763bf4c6420b583eb19f8574586d5c4f0e67ab5dc961a6e",
+      "lineCount": 138,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-cadence.js",
+      "sha256": "780df6ede483a3a3250efd6475be58fb8b9e4b5692335044414cfcebafc8154d",
+      "lineCount": 129,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-factory.js",
+      "sha256": "6fdfbc7d69b0e9577841e36aa67833b3c92aa61a74d037cdd55f16b6d7fc404b",
+      "lineCount": 82,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-media.js",
+      "sha256": "c24eb19b44cb9dc2c074f87b035034141830f879c6f37ee0ec46e3ecbe9ee062",
+      "lineCount": 55,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-ops.js",
+      "sha256": "1f8106be07bb925ed068dc306dbe1492acdbe932ef83270fa246bc4fb98edcf5",
+      "lineCount": 126,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-package.js",
+      "sha256": "b7ce696e0aa2c3145de670f3948a5b53b526dbb7913521abf193622e0946e835",
+      "lineCount": 2,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-pipeline.js",
+      "sha256": "2d2cc22a88e703ab022912c85754398e19078c46712958512e0efeeabbcf9f6b",
+      "lineCount": 57,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-platforms.js",
+      "sha256": "cf917de63e3318a19e92cb696a8654ec7b232b548a9490ed2e3bcbb231b87218",
+      "lineCount": 151,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-production.js",
+      "sha256": "237c817c8dd826904317af25a41e32094f5982b837be1784397532416ffb3541",
+      "lineCount": 44,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content-research.js",
+      "sha256": "165c06c73b7b8919ce7164a79a92a615b4fd73f8956da3e4bd8f1711ec0bb966",
+      "lineCount": 275,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/content.js",
+      "sha256": "bc9d322af3c5ca8db705f69eb5fd46476ca482865fe1c97f7b950344d9b9b21e",
+      "lineCount": 30,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/deals.js",
+      "sha256": "4ae91267d9bfac1e2c564327537f1d61d45216c8cc3e586e1f3235d2dfeb9ec8",
+      "lineCount": 172,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/entry.js",
+      "sha256": "46fa3d4feea261660893cbcbccf3e6681baef0fd1cfdfc6dfc74b6f07a1e0281",
+      "lineCount": 2,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ical.js",
+      "sha256": "45be1fe798c39f587af80c4ca02a16839e3aea928ae1adbedecbacfe575a25c5",
+      "lineCount": 142,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/release-info.js",
+      "sha256": "4878848b03cc7295dd4ad2727d32eea0908fa33a532fa56c2a1a9f8034980e47",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/sequences.js",
+      "sha256": "75d531e2a28c83ba53b10a44a72b78ad2d3302928553281a94a6be9fe4b5f56c",
+      "lineCount": 104,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/task-blockers.js",
+      "sha256": "da48177981f5bc505e6d62330cf46d919a4dcbdb68f1fe870a100481ae921cc5",
+      "lineCount": 19,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-collaboration.js",
+      "sha256": "effb68f46da4dba14c46443220b1769a04518e083632ef6aa05ad91bd396d877",
+      "lineCount": 74,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-digest-policy.js",
+      "sha256": "5d4da659fdb0b0ea9b00a37eeac24df1af6b508cc79df057aaa1577e4d705ce0",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-evidence.js",
+      "sha256": "618c6763bd8cd08db22892203fbc362c438528fcff8b1065b2141cb390d9a7b2",
+      "lineCount": 47,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-handoffs.js",
+      "sha256": "1b110524d28ebc42d303b3177f0b8e62bef4a1b3ed5b0bb91c32652150984ef7",
+      "lineCount": 42,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-job-queue.js",
+      "sha256": "fa3c3e67e61fb79a161d1aa528533a98138d3dc9754f292ec535d1b59507965c",
+      "lineCount": 73,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-portable.js",
+      "sha256": "6c43bdaee16f1d05eb7ad87d2185fd9431447f86171a43cb64d20966d3928e8c",
+      "lineCount": 28,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-resolution-gate.js",
+      "sha256": "aa4484fc063cad4bdb98619f4379b2ad865eda544dae7a905dc4f06baa52b4ac",
+      "lineCount": 16,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-task-progress.js",
+      "sha256": "4f4274e2a2567afc16f05b34fd3a9180a699c4075b3f3ffc22b44b419c1ba33c",
+      "lineCount": 84,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/ticket-work-report.js",
+      "sha256": "4020abe4627c5a66952461391e89d66d57b49af6a53fe1d41e94b258fe472945",
+      "lineCount": 23,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/voyage-auth.js",
+      "sha256": "01418150a5c16fd0926549904eaf2a2b78911c6264b1918588f7c017a4d54b9f",
+      "lineCount": 56,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/wonplace-tickets.js",
+      "sha256": "18202dc42ba49e0489391dad789f701598605588dd7b3cf9897bbf52d127a43f",
+      "lineCount": 30,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/worker.js",
+      "sha256": "bcf3b4ba1a5a47c83d78de564bc1a52df022fe170c639f2c95760fba3f758d90",
+      "lineCount": 1013,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/account-auth.test.js",
+      "sha256": "18bccbd5c22d76fbbba216b52d1835c35b195e9dfae2df2bba51aa2e67403c22",
+      "lineCount": 53,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-acquisition.test.js",
+      "sha256": "e2cab27f4e2a8ce5e3ee9b2da7db8058708fffcdf91804ad468ea6a0076c458e",
+      "lineCount": 7,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-ga4-auth.test.js",
+      "sha256": "178c2b4bed06ef640fa18f8e2f607be8035360d929053c82a1f5161202853460",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-ga4.test.js",
+      "sha256": "af1e3ac19921393981aea4b3206fa51a9d2a60db348e03ebd2a04c1e14102f01",
+      "lineCount": 15,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-metrics.test.js",
+      "sha256": "ac605126a49314f4c30fabf2b666ab50b2344927c0442addc1f6c40cd672df1c",
+      "lineCount": 70,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-ops.test.js",
+      "sha256": "318642f33390e1e5b1f3f7cb08f24408f62b48ee3fc64ef67aa0302e73c025d2",
+      "lineCount": 68,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-runtime.test.js",
+      "sha256": "e8547f1e1b143e618b0cabac729ab8a7cdc52ccb6772b507d7fe6c11c5f5aa78",
+      "lineCount": 9,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-social.test.js",
+      "sha256": "fc24375d267af449a0d0289e6994a7c3b45ff2b360f9f789e1501365cce1912d",
+      "lineCount": 12,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-tickets.test.js",
+      "sha256": "9652176ee79f9197b97e6042577583617762449cd2e937d91468fc3ed08cc960",
+      "lineCount": 40,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/company-trakr.test.js",
+      "sha256": "dd1a818c9158cdec4f376c1bbe643c5ca15b85c2ad45ce0d4bb82276d5383a67",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-analytics.test.js",
+      "sha256": "d6d1d8320bdcce4064d8246a0ad3e74a6938e40234d901b27ba864bd476a5ee3",
+      "lineCount": 3,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-cadence.test.js",
+      "sha256": "d1c2f8bb59726e486325c4c97757c0d77de5b1c9ebf9b8f5cacf151196b94986",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-factory.test.js",
+      "sha256": "ca03c710315a3e075d8b37171490cf3a5de29dd5b1bf13389c45d11bc57989e2",
+      "lineCount": 33,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-native-snapshots.test.js",
+      "sha256": "75aaa5ad129620225da09a1742868dfd7c7fa93ba9dc2d59a31e232b3396d466",
+      "lineCount": 3,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-native.test.js",
+      "sha256": "0ade92998a71c0ef8d4026216d3498ae5c59fc1f17658e4156f38ae4d85ea4f0",
+      "lineCount": 2,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-ops.test.js",
+      "sha256": "27e1d5cf94c7f063d8f51e532ed39716ceefa4658df36663e48e71b53935579d",
+      "lineCount": 50,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-pipeline.test.js",
+      "sha256": "3cdf04df0c3128318f9c7238489bc2349b94e82a8cfb1fca070673dc97bf7fc5",
+      "lineCount": 12,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-production.test.js",
+      "sha256": "717409f078ce35cb11ee44157950ee88690027724f4f427ebf8500e17cb10faf",
+      "lineCount": 9,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content-release.test.js",
+      "sha256": "69278eb03c9adb3635dabb367276dbc7fe68b927554fddd1572f83c0c9664b70",
+      "lineCount": 4,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/content.test.js",
+      "sha256": "38e5d40ee0fec3db83d346fef4658143c373b904a12cc41c3990984d2bac262c",
+      "lineCount": 18,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/deals.test.js",
+      "sha256": "7413413546e682d42c029f62830c06c773aaa1b315a19955d73af0fbcc504534",
+      "lineCount": 94,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/factory-native.test.py",
+      "sha256": "15b2a107150c155e00769466196628e09820682ab03d062138f652a5bbad8c74",
+      "lineCount": 29,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/guest-routes.test.js",
+      "sha256": "67eb7568014e18a228826768d6f2e89ac0ea63ceee61b553d5731c33d7162887",
+      "lineCount": 482,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/helpers/company-ga4-fixture.js",
+      "sha256": "203dcc547b27218d666270619d255b29974b1fa09635a13886371e809cd74b83",
+      "lineCount": 5,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ical.test.js",
+      "sha256": "ef49e0c0363e635941b43e5d2a1b96005dd06402f5c74bcb3931b1df8db9a9c9",
+      "lineCount": 49,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/muninn-ticket-review.test.js",
+      "sha256": "c8a07a2e6318540022e111e74be604d90f3aa26dfe3a4aca17c2635fcde26002",
+      "lineCount": 4,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/polling.test.js",
+      "sha256": "4fe24ab9f45b9e8653fb615ba92a4a89a9a2a9f3e47dc5f968c313672d999ad1",
+      "lineCount": 68,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/sequences.test.js",
+      "sha256": "4f4fa1b2c53e89520283046bd6a73943c3db593ab909043d4fa7cf75267ac112",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/task-blockers.test.js",
+      "sha256": "64426d0681e2751384ddf1e9094611ccf7195485f1fa7961f9063517aaeacfeb",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-codex-session.test.js",
+      "sha256": "66fed6706c47a395d038a866a84ed25e979b5d6456313f21817c9a7086aa3d05",
+      "lineCount": 6,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-collaboration.test.js",
+      "sha256": "2a537ef9ff18b62dc9618a0a78cae62887f831ed3f58bc86988b8d01888da71b",
+      "lineCount": 48,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-evidence.test.js",
+      "sha256": "0506416ed71e928a520b440125a04f642ed9e0dcf64e94bce5db71bf17fe9458",
+      "lineCount": 34,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-handoffs.test.js",
+      "sha256": "280f3a1a0517a197ddfb2f42f65c9e0bef4a7f1242e6feee9bf21a79c4b6d92f",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-job-queue.test.js",
+      "sha256": "925dc28d93cb974087c84f1d0eb5d571626660fe8eb922d4026da5b1fddb652b",
+      "lineCount": 32,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-portable.test.js",
+      "sha256": "6a164bd6d05bd0702f290cc7f41712a8dd464327ae36cf0fa3689bac8324b586",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-resolution-gate.test.js",
+      "sha256": "9d786455052deb61eded8e6ad82f3d01f85fbd01f554c7d901a096ec4e1d57b2",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-task-gate.test.js",
+      "sha256": "6cced235fa67e75a20de434e5ffe5dc89159e6112a8d23a75fd15898ffb6d357",
+      "lineCount": 8,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-task-outbox.test.js",
+      "sha256": "20509882d92c71957fd5c6eaf5b0b650101a072ad64854be0d4e5ed070eace18",
+      "lineCount": 12,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-task-progress.test.js",
+      "sha256": "a1bf7703ab180c79caca33b744f5cc3f2b2cb30f70eefe18603783c836632571",
+      "lineCount": 18,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-terminal-pty.py",
+      "sha256": "8ac0694179f7384c2c9450e8c2492f1999e64679bb1c623b6e7215d54d9bb29a",
+      "lineCount": 22,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/ticket-work-report.test.js",
+      "sha256": "b824d62901ba834f9d244f91cd368d83f8ae932f3205c5d6564a75e713faa50b",
+      "lineCount": 10,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/tiktok-export.test.js",
+      "sha256": "d2b7f8797aa527c4af7f7fd48d50fe9542c9e4012d98b24ff72391d3a5e27e92",
+      "lineCount": 2,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/voyage-auth.test.js",
+      "sha256": "73ff724e89d53a0941ea3938c944868c57875ee3f858a9687b0d78efaa36185c",
+      "lineCount": 14,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/wonplace-tickets.test.js",
+      "sha256": "ef789b6778940312a8a350835339d6ce1c7a595da2b4266dd33bb403b7fd6e76",
+      "lineCount": 43,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/worker.test.js",
+      "sha256": "8b82e11895cca0b3f39423f1ee4be96a45c02ce71e3be2e7cd81cd630e2112f6",
+      "lineCount": 122,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "wrangler.jsonc",
+      "sha256": "f2c9bdfe5f93f8da08dca9a391043d6243679d5f97edfb36cfb0141816f92798",
+      "lineCount": 62,
+      "check": "JSONC structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/ASTRA-NEXT.md",
+      "sha256": "b3e4ae7f3b8e04904cca369e7429dbfc693589f95fea1ffd652031d99804665a",
+      "lineCount": 40,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/COVERAGE.md",
+      "sha256": "f943b35b8f443366a6f3259aaa2bc83c93cbca9c856ed76df62e17c5e4d78854",
+      "lineCount": 11,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/REPAIR-VALIDATION.md",
+      "sha256": "b3ae6441250cb69989cdb9206bb43a7401586b90d1c8e4182b2e1f5330d51341",
+      "lineCount": 39,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/REPORT.md",
+      "sha256": "ececc1d6565bd63d055e89919928b02aaf50df285f192838f1fb516dd953628d",
+      "lineCount": 262,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/START-HERE.md",
+      "sha256": "25b97cc3bbec932d0fb8b74c214482b6e86f1f718fc516c634f9750aa571f5ca",
+      "lineCount": 7,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/VALIDATION.md",
+      "sha256": "32fd9ca47c174cddcd243d0622aeb8e3325999ce7830ae010658872bdcb93a04",
+      "lineCount": 37,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/client-probes.mjs",
+      "sha256": "ffb1d9468b3c995b9b295a12e3524d088cfa218f3c9c65dd0c82eef34d96ec4b",
+      "lineCount": 8,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/client-results.jsonl",
+      "sha256": "bf5f4201c1a8792f35a03c99c89ef6c853c7520f1f472a124cd5e52af8876cd2",
+      "lineCount": 2,
+      "check": "inventory",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/coverage-ledger.json",
+      "sha256": "1a11b7b9389538925f139a4d58cf743b854dbd72c227f5cad03c72fd9a526fe3",
+      "lineCount": 5116,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/current-factory-dependency-audit.json",
+      "sha256": "6cf77190b733363ae56cdd09ff623a7ee7b764af8c4f6f6be8829e091aebf804",
+      "lineCount": 577,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/current-worker-results.json",
+      "sha256": "20537b68fdfe0c71541a1c167e2c8b65a7e1dabd0f633bfe38749785ac279eeb",
+      "lineCount": 12,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/factory-dependency-audit.json",
+      "sha256": "4fba2c1c751fd7c3f7521875b37e21ea807a6990dfc088db2cc8ed331116805b",
+      "lineCount": 684,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/findings.json",
+      "sha256": "b674ab50c74c1940d0a3aa1b2b3849eacf9f2b3150dbbc6094a7ecd0a2bc699a",
+      "lineCount": 273,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/inventory.json",
+      "sha256": "a3f8002e114d6aa43238a66b303c88ae5eb95456928ad890aeb041889d8f03c9",
+      "lineCount": 4528,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/repair-status.json",
+      "sha256": "362e11a9ab4032822f8688708eda843205279b1c73173e04e8723aa00b148cd6",
+      "lineCount": 107,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/root-dependency-audit.json",
+      "sha256": "5f5261d055c794e69691b6c1e222bfd566f22ab3ed5cb580dcfef2b911296b9b",
+      "lineCount": 22,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/screenshots/failed-note-preserved.png",
+      "sha256": "958a8a72ada6dd94906204331f402f7de0308dc83ef22c037a73c94dad7b068d",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/screenshots/mobile-line-editor.png",
+      "sha256": "c4502d8f20938edb2b5ef2b0a3f0edf0f38e16f6e47c2f420bcc5841ffa6b6cd",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/screenshots/repair-ui.png",
+      "sha256": "0462bfd43e00b4c3f905aede953e89fb48d36d8629e29fca696aced5bb73a982",
+      "lineCount": 0,
+      "check": "binary identity",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/verification-results.json",
+      "sha256": "012cba18b246f726caebfda8f01c5fca25e53ccbf269af2db04a48b9cf61928c",
+      "lineCount": 41,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "docs/audits/2026-11-01-astra/worker-results.json",
+      "sha256": "425c9426e9b20a9ce7ad6fd1bf48929bf09b081eb50db6106ca8d668098b62f9",
+      "lineCount": 12,
+      "check": "JSON structure",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "prototypes/content-factory/src/live/StationBoard.test.tsx",
+      "sha256": "382eaf617d58b9de9a8b04d817e90b99841b500dbf6f85db2851e4535ed14bf1",
+      "lineCount": 20,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/live-CBsPIYVN.css",
+      "sha256": "ff6331d6a736a0faf65111488ff36d77628c7efcfff4db2d2b428a69ea534b02",
+      "lineCount": 2,
+      "check": "full-file CSS syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "public/factory/assets/live-DHHY37fQ.js",
+      "sha256": "9a229e7ef1f0cbacbeeb2314e0b1891acdcc1eb5338453c29c56f70f9c40bdba",
+      "lineCount": 11,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/audit-crm-reproductions.mjs",
+      "sha256": "e8d2eba47a99521c479bf4870295d2d27d7ce767a2c74de5fb902e9a54d58725",
+      "lineCount": 23,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/audit-remaining-runtime.mjs",
+      "sha256": "cc647d844f1855a4d58b068855ec5a90c19fc68054ec8bf2e981601cf580b858",
+      "lineCount": 24,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/audit-source-check.mjs",
+      "sha256": "225175194671b0638536dd10a2a8a799ac8d35fd48787abf5bb9d4436bb8ffcc",
+      "lineCount": 29,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/audit-source-inventory.py",
+      "sha256": "2aa467d5c4285fc663eebf0092810c4cb23e71c880b6f13fdb95a2a96fa95428",
+      "lineCount": 22,
+      "check": "full-file Python AST syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-audit-report.mjs",
+      "sha256": "9c27d7faf5ff1b63e9d492dbb35d58a38850f70dd0f8c7b7b4ca8459ec91fa87",
+      "lineCount": 35,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "scripts/verify-audit-ui.mjs",
+      "sha256": "e121f062d2c9efef9b0c33b2b0fe0dcc09f266fe7107abacf69c8a3ba485a807",
+      "lineCount": 27,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "src/bounded-body.js",
+      "sha256": "bfc12ac9ad53e8c958288f6f089749d19e348cdb6c4d83e4059ce0bfa3eac272",
+      "lineCount": 17,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    },
+    {
+      "path": "tests/audit-repairs.test.js",
+      "sha256": "05eddbc657aa8793a036eef3e25448299606e393f6e372b47c004d94cbaa555e",
+      "lineCount": 61,
+      "check": "full-file JavaScript/TypeScript/JSX syntax",
+      "warnings": [],
+      "accepted": true
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "baseline": "eda8dfb094dddba0664de4ad6d376f5b27664edb",
+  "task": "1609fce96919",
+  "productionAcceptance": false,
+  "findings": [
+    {
+      "id": "CRM-01",
+      "status": "repaired-local",
+      "result": "Failed note saves retain text and stable retry identity; form closing/history follow acknowledged writes."
+    },
+    {
+      "id": "CRM-02",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-03",
+      "status": "partially-repaired",
+      "result": "Name/stage/path identity, contact email and cross-account activity changes guarded; full merged schemas remain."
+    },
+    {
+      "id": "CRM-04",
+      "status": "partially-repaired",
+      "result": "Hidden/offline/terminal/backoff panel polling and unchanged terminal task reposting fixed; active-priority scheduling remains."
+    },
+    {
+      "id": "CRM-05",
+      "status": "repaired-local",
+      "result": "Structured authentication_required stops expired-session polling."
+    },
+    {
+      "id": "CRM-06",
+      "status": "repaired-local",
+      "result": "Client guest matrix matches own-profile and contact PATCH server policy."
+    },
+    {
+      "id": "CRM-07",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-08",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-09",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-10",
+      "status": "repaired-local",
+      "result": "Streaming limits precede full allocation; calendar redirect destinations are revalidated."
+    },
+    {
+      "id": "CRM-11",
+      "status": "reclassified-contract",
+      "result": "Cross-product financial ingestion is explicitly supported by docs/company-operations.md; do not break it as a presumed bug."
+    },
+    {
+      "id": "CRM-12",
+      "status": "repaired-local",
+      "result": "Bounded tail preserves initialization metadata, newest messages and command acknowledgments."
+    },
+    {
+      "id": "CRM-13",
+      "status": "partially-repaired",
+      "result": "Successful bridge exit now returns zero; durable command acceptance/recovery remains."
+    },
+    {
+      "id": "CRM-14",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-15",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-16",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-17",
+      "status": "repaired-local",
+      "result": "Canonical URL and brand produce stable evidence IDs across ingestion and reads."
+    },
+    {
+      "id": "CRM-18",
+      "status": "partially-repaired",
+      "result": "Selection veto, library selection, stage scroll and busy draft guards fixed; URL/history remains."
+    },
+    {
+      "id": "CRM-19",
+      "status": "open",
+      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+    },
+    {
+      "id": "CRM-20",
+      "status": "partially-repaired",
+      "result": "Vite updated 8.1.5 to 8.3.5 and rebuilt; remaining advisory graph requires a scoped toolchain upgrade."
+    }
+  ]
+}
