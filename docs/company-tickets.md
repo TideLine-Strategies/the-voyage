@@ -57,7 +57,7 @@ No Instinct account or third-party agent credentials are provisioned here.
 
 ## Kanban stages
 
-The default Tickets view is a six-lane board: Backlog → Open → In progress →
+The workspace queue/detail/agent panes are the current default. The Kanban option is a six-lane board: Backlog → Open → In progress →
 Blocked → In review → Resolved. Each lane displays its actual filtered count.
 Drag a card to a lane or use its Move to selector (keyboard/touch friendly).
 Moves use the existing expected-revision API and only repaint after a confirmed

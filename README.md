@@ -4,7 +4,7 @@ The production TideLine CRM is hosted at https://voyage.tidelinestrats.com/ on a
 
 ## Development and deployment
 
-Quan and Cody work in short-lived branches and review each other's pull requests. See [CONTRIBUTING.md](CONTRIBUTING.md). Cloudflare Workers Builds deploys `main` from `TideLine-Strategies/the-voyage` after `npm run check`; preview builds are disabled. Confirm the Cloudflare build and Worker receipt after a merge.
+Quan and Cody may publish tested changes directly to main under the October 24 policy; PRs and mutual review are optional. Managed agents still publish through the isolated-worktree coordinator. See [CONTRIBUTING.md](CONTRIBUTING.md). Cloudflare Workers Builds deploys `main` from `TideLine-Strategies/the-voyage` after `npm run check`; preview builds are disabled. Confirm the Cloudflare build and Worker receipt after a merge.
 
 Run `npm ci` and `npm run check` locally. SQL migrations are separate from code deployment. Apply a reviewed migration to TideLine D1 **before** merging code that depends on it: `npm run migrate:remote` uses the `tideline` Wrangler profile and the D1 binding in `wrangler.jsonc`. Do not commit exports, CRM data, invitation links, or guest personal addresses.
 

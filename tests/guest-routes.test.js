@@ -460,3 +460,23 @@ test("contacts: every task and meeting names who it was with, from the same acco
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true })).status, 400, "but not completed without a contact");
   assert.equal((await call("b", "PATCH", "/api/document/activities/old", { done: true, contactId: pat })).status, 200);
 });
+
+test('contact patches reject invalid email and activity account moves revalidate the contact',async()=>{
+ const {call,seed}=fixture();seed('opps','a',{name:'A'});seed('opps','b',{name:'B'});seed('contacts','c',{oppId:'a',name:'Contact',email:'valid@example.invalid'});seed('activities','task',{oppId:'a',contactId:'c',kind:'task',done:false});
+ assert.equal((await call('b','PATCH','/api/document/contacts/c',{email:'not-an-email'})).status,400);
+ assert.equal((await call('b','PATCH','/api/document/activities/task',{oppId:'b'})).status,400);
+ assert.equal((await call('b','PATCH','/api/document/contacts/c',{email:''})).status,200);
+});
+test('calendar redirects cannot leave the supported provider allowlist',async t=>{
+ const {call,sqlite}=fixture();sqlite.exec(fs.readFileSync('migrations/0005_audit_calendar.sql','utf8'));
+ sqlite.prepare('INSERT INTO external_calendars(member_id,url,updated_at) VALUES(?,?,?)').run('QS','https://calendar.google.com/calendar/ical/synthetic/basic.ics',Date.now());
+ const original=globalThis.fetch,calls=[];t.after(()=>{globalThis.fetch=original;});
+ globalThis.fetch=async(url,options)=>{calls.push(String(url));assert.equal(options.redirect,'manual');return new Response(null,{status:302,headers:{location:'https://unsupported.example/private'}});};
+ const response=await call('a','GET','/api/me/external-calendar');assert.equal(response.status,200);const body=await response.json();assert(body.error);assert.equal(calls.length,1);assert.deepEqual(body.events,[]);
+});
+test('malformed account names, stages and spoofed document IDs cannot corrupt shared views',async()=>{
+ const {call,seed}=fixture();seed('opps','a',{name:'Original',stage:0});
+ for(const patch of [{name:{bad:true}},{name:''},{stage:99},{stage:'2'},{id:'another-account'}])assert.equal((await call('b','PATCH','/api/document/opps/a',patch)).status,400);
+ assert.equal((await(await call('a','GET','/api/document/opps/a')).json()).data.name,'Original');
+ assert.equal((await call('a','POST','/api/collection/opps',{stage:0})).status,400);
+});

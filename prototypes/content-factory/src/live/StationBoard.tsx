@@ -50,7 +50,7 @@ export function StationBoard({
   ops: State | null;
   assets: Asset[];
   selected: string;
-  onSelect: (id: string) => void;
+  onSelect: (id: string) => boolean;
   onInspect: (id: string) => void;
   onPresent: (id: string) => void;
   onNew: () => void;
@@ -108,17 +108,19 @@ export function StationBoard({
     if (c) {
       setFocus(stageOf(c));
       setLocal(c.id);
+      strip.current?.querySelector('[data-stage="' + stageOf(c) + '"]')?.scrollIntoView?.({block:"nearest",inline:"center",behavior:"instant"});
     }
   }, [selected]);
   const pick = (c: Card) => {
+    if (!onSelect(c.id)) return false;
     setLocal(c.id);
     setFocus(stageOf(c));
-    if (c.kind !== "library") onSelect(c.id);
+    return true;
   };
   const focusStation = (id: string) => {
-    setFocus(id);
     const c = all.find((c) => stageOf(c) === id);
-    if (c) pick(c);
+    if (c && !pick(c)) return;
+    setFocus(id);
     strip.current?.querySelector('[data-stage="' + id + '"]')?.scrollIntoView({
       block: "nearest",
       inline: "center",

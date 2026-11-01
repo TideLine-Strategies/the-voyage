@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 test.beforeEach(async ({ page }) => {
-  await page.goto("/__local-review");
+  await page.request.get("/__local-review");
+  await page.goto("/factory/?embedded=1");
   await expect(page.getByRole("heading", { name: "Content factory." })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Saved in Voyage");
 });
@@ -8,7 +9,7 @@ test("real source baseline, usable tools, measured research and no external page
   page,
 }, info) => {
   await expect(page.getByRole("region", { name: "Content assembly line" })).toBeVisible();
-  await expect(page.locator(".factory-station")).toHaveCount(7);
+  await expect(page.locator(".concept-lane")).toHaveCount(7);
   await page.getByLabel("Select content").selectOption({ label: "Training / Retaining" });
   await expect(page.locator("#inspector")).toContainText("Families rarely leave a gym");
   await page.getByRole("button", { name: "Close content details" }).click();
@@ -23,7 +24,7 @@ test("real source baseline, usable tools, measured research and no external page
     true,
   );
   await page.getByRole("button", { name: "Assembly line", exact: true }).click();
-  const action = page.locator('.factory-station[data-focused="true"] .factory-card-action');
+  const action = page.locator('.concept-lane[data-focused="true"] .concept-preview-hit');
   const bounds = await action.boundingBox();
   expect(bounds).toBeTruthy();
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
@@ -169,7 +170,7 @@ test("construction receipts move the saved card; filming is a thumbnail and edit
   });
   await page.reload();
   await page.locator(".factory-station-picker button").filter({ hasText: "Filming" }).click();
-  const filming = page.getByRole("article", { name: "Filming station" });
+  const filming = page.locator('.concept-lane[data-stage="filming"]');
   await expect(filming.locator("img")).toHaveCount(1);
   await expect(filming.locator("video")).toHaveCount(0);
   const editing = await request({
@@ -181,7 +182,7 @@ test("construction receipts move the saved card; filming is a thumbnail and edit
   expect(editing.stage).toBe("editing");
   await page.reload();
   await page.locator(".factory-station-picker button").filter({ hasText: "Editing" }).click();
-  const video = page.getByRole("article", { name: "Editing station" }).locator("video");
+  const video = page.locator('.concept-lane[data-stage="editing"] video');
   await expect(video).toBeVisible();
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
