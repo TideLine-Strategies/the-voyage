@@ -1,0 +1,273 @@
+{
+  "baseline": "eda8dfb094dddba0664de4ad6d376f5b27664edb",
+  "findings": [
+    {
+      "id": "CRM-01",
+      "priority": "P1",
+      "title": "Failed note saves discard the only draft and create a phantom saved note",
+      "status": "VM-reproduced",
+      "source": [
+        "public/index.html:1554-1565",
+        "public/index.html:1360-1362"
+      ],
+      "evidence": "saveNote clears dirty state, removes nDrafts, adds a note to local saved state and renders before awaiting storage. write swallows the rejection. A VM executing the actual extracted function with a rejected save confirmed all three state changes. Other account/task forms close before receipt; logAct and lastTouch can advance independently of the actual change.",
+      "repair": "Keep the exact draft and editor open until an acknowledged durable write. Make write return a typed result or throw; update saved state and history only after success. Add navigation protection and a recoverable draft store with explicit discard. Apply the same receipt discipline to account, task and activity forms.",
+      "acceptance": "Offline, 403, 409 and 500 must preserve exact text and dirty state; no success history or lastTouch change. A successful retry saves once, clears the draft once and survives reload. Test existing-note and new-note paths."
+    },
+    {
+      "id": "CRM-02",
+      "priority": "P1",
+      "title": "Core CRM writes silently overwrite another editor or agent",
+      "status": "local Worker/Miniflare reproduced",
+      "source": [
+        "src/worker.js:884-946",
+        "src/worker.js:355-449",
+        "public/voyage-db.js"
+      ],
+      "evidence": "Core document reads do not expose a write precondition; PUT upserts and PATCH json_patch increment revisions without a compare-and-swap. A later stale full snapshot can restore old values. Workflow read/check/save sequences also lack atomic preconditions. Existing revision counters alone do not prevent this.",
+      "repair": "Expose authoritative revisions; require expectedRevision for updates and deletes; atomically compare it in D1. Return 409 with a safe current snapshot on conflict. Preserve the local draft and offer explicit merge/reload. Apply separate CAS guards to workflow transitions and idempotency keys to retries.",
+      "acceptance": "Two clients load revision N: first save succeeds; stale second save returns 409 and cannot change any field. Repeat through both PUT and PATCH and simultaneous deal transitions. A conflict never silently closes an editor."
+    },
+    {
+      "id": "CRM-03",
+      "priority": "P1",
+      "title": "Core document validation accepts corrupt types and inconsistent relationships",
+      "status": "local Worker/Miniflare reproduced",
+      "source": [
+        "src/worker.js:118-163",
+        "src/worker.js:454-483",
+        "src/worker.js:70-79"
+      ],
+      "evidence": "Validation is incomplete for opps, activities, activity, notes and channels. Existing location restrictions are effective, but arbitrary account name types and out-of-range stages are not similarly rejected. Contact PATCH truncates email without create-time format validation. Activity PATCH can change oppId without rechecking the retained contact. Stored data.id can also override a mapped authoritative ID in consumers using {id,...data}.",
+      "repair": "Define explicit bounded schemas and writable fields per collection and role. Validate the merged post-update record; keep identity fields server-owned. Validate account/contact ownership whenever relationships change. Inventory existing invalid rows read-only; quarantine or explicitly migrate them rather than blindly coercing records.",
+      "acceptance": "Reject object names, invalid stages/email/dates, spoofed IDs and cross-account contact links with no mutation or audit success. Positive guest profile/contact cases still work. Render all known historical variants without crashing."
+    },
+    {
+      "id": "CRM-04",
+      "priority": "P1",
+      "title": "Idle panels and terminal tasks keep consuming background requests",
+      "status": "source-confirmed",
+      "source": [
+        "public/company-tickets.js:70-112",
+        "scripts/ticket-task-progress.mjs:31-47"
+      ],
+      "evidence": "The 2.5-second embedded-agent poll checks connection/closed state but not page visibility, hidden panel, terminal state or offline/backoff. Hiding or removing the panel does not consistently perform the same close cleanup. Task progress re-posts unchanged linked terminal tasks at least once per minute. Audit-time local inventory had 113 complete/cancelled links; their cadence permits about 162,720 terminal POSTs/day if continuously awake. This is an estimate, not measured billing. One continually polled panel permits 34,560 reads/day.",
+      "repair": "Centralize panel lifecycle cancellation; suspend hidden/offline/terminal work, back off errors and resume on visibility/user action. Send terminal task progress once per substantive transition/report, not periodic heartbeats. Prioritize active work with bounded concurrency/batches and observable queue latency.",
+      "acceptance": "Thirty hidden minutes produce no panel polling; an unchanged terminal task produces no repeated POST. Reopening refreshes once. Large terminal history and a slow failed request must not starve an active task. Verify provider request counts before/after."
+    },
+    {
+      "id": "CRM-05",
+      "priority": "P2",
+      "title": "Expired sessions retry instead of entering an explicit sign-in state",
+      "status": "VM-reproduced",
+      "source": [
+        "src/worker.js:988",
+        "public/voyage-db.js:22-44",
+        "public/voyage-db.js:77"
+      ],
+      "evidence": "Unauthenticated API requests return 403; the adapter special-cases 401/429 and drops the HTTP status for generic failures. A VM with the actual adapter confirmed undefined error.status and another protected request after backoff.",
+      "repair": "Define a consistent authentication failure code/status, preserve HTTP status and structured errors, stop protected polling on session expiry, and offer sign-in without dropping drafts. Keep permission-denied 403 distinct from expired authentication.",
+      "acceptance": "Expired sessions cause one clear reauthentication state and no retry storm; an authorized user denied one resource does not get logged out. After sign-in, preserved drafts and subscriptions resume safely."
+    },
+    {
+      "id": "CRM-06",
+      "priority": "P2",
+      "title": "Guest profile/contact edits disagree between client and server",
+      "status": "VM-reproduced",
+      "source": [
+        "public/voyage-db.js:53-64",
+        "src/worker.js:70-79"
+      ],
+      "evidence": "The server permits a guest to patch their own profile and existing contacts; checkGuestWrite blocks those collections. The actual adapter VM confirmed own-profile edits fail locally before the permitted server operation.",
+      "repair": "Use a shared permission contract or accurately mirror the server matrix. Retain the server as the authority. Do not broaden guest create/delete, vendor, deal or other-member permissions.",
+      "acceptance": "A guest edits their own profile and permitted existing contact; cannot edit another profile, create/delete restricted records or alter protected account location data."
+    },
+    {
+      "id": "CRM-07",
+      "priority": "P1",
+      "title": "Collection limits silently hide older records and make exports incomplete",
+      "status": "local Worker/Miniflare reproduced",
+      "source": [
+        "src/worker.js:884-892",
+        "public/voyage-db.js",
+        "public/index.html:2028-2037",
+        "src/company-ops.js:28"
+      ],
+      "evidence": "Generic collection reads cap at 2,000 without continuation/hasMore; clients treat the result as the collection. CSV exports use those loaded arrays. Company records independently cap at 500, so financial totals can eventually omit older rows. Some sales UI warns about partial data, but this is not a consistent contract.",
+      "repair": "Implement stable cursor pagination and server-side filtering/search. Export and financial aggregation must cover the authoritative requested range independently of a UI page. Surface partial coverage and total/asOf explicitly.",
+      "acceptance": "Seed 2,001 core records and 501 financial facts. Every record is discoverable; export counts and aggregate totals match SQL. Updates during paging cannot duplicate/skip records, and partial reads never masquerade as complete."
+    },
+    {
+      "id": "CRM-08",
+      "priority": "P2",
+      "title": "Multi-record deal and sequence transitions can partially commit or duplicate work",
+      "status": "source-confirmed",
+      "source": [
+        "src/worker.js:355-449",
+        "src/worker.js:506-615",
+        "src/worker.js:645-679"
+      ],
+      "evidence": "Winning/reopening a deal mutates an account before saving the deal. Sequence scheduling/enrollment/task completion spans independent writes and catches some hook failures after completion. File chunks and metadata are written/deleted separately. A mid-operation failure can leave divergent account/deal state, duplicate/missing follow-up work or orphaned chunks.",
+      "repair": "Use D1 atomic batches where possible, unique logical operation keys, CAS state transitions and a durable outbox for recoverable follow-up work. Distinguish failed from uncertain external delivery. Add bounded orphan reconciliation without deleting referenced evidence.",
+      "acceptance": "Inject a failure after every statement and retry concurrently. Either all business invariants commit or a durable recoverable operation remains. Exactly one next task/enrollment; signed evidence remains accessible; no false won/complete state."
+    },
+    {
+      "id": "CRM-09",
+      "priority": "P2",
+      "title": "Recurring calendar events can disappear or land on the wrong day",
+      "status": "local Worker/Miniflare reproduced",
+      "source": [
+        "src/ical.js:62-110"
+      ],
+      "evidence": "Recurrence iteration starts at DTSTART with a 3,000-step ceiling. A daily series beginning in 2000 has no November 2026 occurrence. Monthly expansion does not implement ordinal BYDAY: a series beginning 2026-10-12 with BYDAY=2MO moves to November 12 rather than November 9.",
+      "repair": "Use a standards-tested recurrence implementation or explicitly reject unsupported rules. Seek to the requested window before bounded expansion. Preserve timezone, EXDATE and recurrence override/cancellation semantics.",
+      "acceptance": "Cover old daily series, second-Monday monthly rules, BYSETPOS/BYMONTH support or explicit unsupported status, DST boundaries, all-day events and cancelled exceptions. Availability must not silently treat an unsupported series as free."
+    },
+    {
+      "id": "CRM-10",
+      "priority": "P2",
+      "title": "Response-size guards allocate the entire body before rejecting it",
+      "status": "source-confirmed",
+      "source": [
+        "src/worker.js:299-302",
+        "src/worker.js:645",
+        "src/worker.js:715-717"
+      ],
+      "evidence": "Audit labeling parses a cloned JSON body before bounded handling; file upload uses arrayBuffer before its size check; calendar fetch follows redirects and buffers text before its cap. These limits do not bound peak allocation. Redirect handling also deserves destination revalidation; no private-network exploit was established in this audit.",
+      "repair": "Validate origin/authorization before parsing. Use streaming byte limits with cancellation, bounded decoding and explicit redirect policies. Revalidate every redirect destination according to the intended source allowlist; limit decompressed response bytes as well.",
+      "acceptance": "Chunked oversized bodies abort at the configured bound without a whole-body allocation or DB write. Unauthorized bodies are not parsed. Redirect and oversized calendar fixtures fail safely; ordinary uploads still work."
+    },
+    {
+      "id": "CRM-11",
+      "priority": "P2",
+      "title": "Product-scoped source secrets can write cross-product finance facts",
+      "status": "local Worker/Miniflare reproduced",
+      "source": [
+        "src/company-ops.js:19-25",
+        "src/company-ops.js:108-123"
+      ],
+      "evidence": "Signed ingestion authenticates a company source, but financialRecord permits every TideLine product and ingestion stores into the common ledger without binding product to the authenticated source. A Loki source can therefore submit a Voyage revenue fact. This is an internal capability boundary, not an anonymous endpoint exploit.",
+      "repair": "Define the intended authority explicitly: bind each product source to its product, or issue a separate documented brand-finance capability for legitimate aggregation. Namespace source-owned IDs and preserve manually edited facts. Do not connect payment permissions as part of this repair.",
+      "acceptance": "A product source cannot insert/replace another product financial fact; an explicitly authorized brand ledger import can. Replays are idempotent and manual corrections remain protected."
+    },
+    {
+      "id": "CRM-12",
+      "priority": "P2",
+      "title": "Long-running agent conversations freeze on the first 2 MiB of log",
+      "status": "source-confirmed",
+      "source": [
+        "scripts/ticket-operations-server.mjs:38"
+      ],
+      "evidence": "The reader allocates at most 2 MiB but reads from position zero. Once the log exceeds that size, new deltas and command receipts never enter the returned transcript.",
+      "repair": "Tail a bounded range on complete record boundaries; keep thread/control metadata in separate durable state so tailing does not lose initialization. Expose truncation and last durable event cursor.",
+      "acceptance": "A log over 2 MiB shows the newest message/status/ack while retaining correct thread metadata. Partial trailing lines, UTF-8 boundaries and rotation are safe."
+    },
+    {
+      "id": "CRM-13",
+      "priority": "P2",
+      "title": "Agent bridge can lose commands and misclassify a normal exit",
+      "status": "source-confirmed",
+      "source": [
+        "scripts/ticket-codex-session.mjs:23-29"
+      ],
+      "evidence": "process.exit(code||1) maps a normal child exit 0 to failure 1. A queued command is renamed .accepted before the RPC executes; a crash in that interval leaves it looking consumed without a durable provider acknowledgement.",
+      "repair": "Preserve zero exit codes and explicitly represent signal termination. Introduce processing/acknowledged/uncertain command states with durable operation IDs and provider reconciliation. Never blindly replay an uncertain message or interrupt.",
+      "acceptance": "A stub child exit 0 is success and nonzero/signal remains failure. Crash at each command boundary: no silent loss, no duplicate message, and the UI distinguishes queued, accepted, failed and uncertain."
+    },
+    {
+      "id": "CRM-14",
+      "priority": "P2",
+      "title": "Autonomous filming does not follow the approved issue or shot list",
+      "status": "source-confirmed",
+      "source": [
+        "scripts/content-production-pass.mjs:17-23"
+      ],
+      "evidence": "WonPlace/Spring requests use the same short Schedule-to-Families capture recipe regardless of the saved pain point, feature claim or proposed shot list. A changed title overlay does not prove the requested product capability.",
+      "repair": "Resolve each brief to a verified feature/route/action/result capture recipe. Consume the shot list and preserve a capture manifest with product revision, route, actions, assertions and privacy-safe evidence. Hold unsupported shots rather than substituting generic footage.",
+      "acceptance": "Two materially different feature briefs produce matching, distinct actual demonstrations. Unsupported claims stay held. Test with synthetic families and no customer PII; do not publish during validation."
+    },
+    {
+      "id": "CRM-15",
+      "priority": "P2",
+      "title": "Publisher acceptance followed by sync failure leaves an unreconciled campaign",
+      "status": "source-confirmed",
+      "source": [
+        "scripts/content-production-pass.mjs:39-43",
+        "src/content-production.js:13-19",
+        "src/content-production.js:28-37"
+      ],
+      "evidence": "Native intake can succeed before content snapshot synchronization and production_complete. If the latter steps fail, production_fail holds the job without linking campaignId to the editorial item. Publication reconciliation depends on that link, so an accepted or later published campaign can remain stranded.",
+      "repair": "Persist a dispatch intent and deterministic source key before intake; retain accepted campaign identity independently of later sync. Reconcile the publisher by identity after ambiguous failures before allowing any retry. Resume linkage from durable receipts.",
+      "acceptance": "Fault-inject after intake acceptance and before each later step. Recovery links exactly the accepted campaign and publication receipt with no second dispatch. Unknown acceptance remains visibly uncertain, never automatically republished."
+    },
+    {
+      "id": "CRM-16",
+      "priority": "P2",
+      "title": "Approval verifier does not bind the actual publishing brand/destination",
+      "status": "source-confirmed authority gap",
+      "source": [
+        "src/content-production.js:7-9",
+        "scripts/voyage_authority.py"
+      ],
+      "evidence": "production_verify compares current stage, package fingerprint, media and copy, but ignores the dispatch row brand/profile/destinations. The local manifest check compares local values with each other rather than server-authoritative destinations. A relabeled local row can pass the current copy/media check. Normal current producer behavior does not demonstrate an actual wrong-brand publication.",
+      "repair": "Return and verify the authoritative approved brand and exact destination profile identifiers, along with the full approved package hash and current revision. Reject unknown or relabeled queue fields before dispatch; preserve human approval provenance.",
+      "acceptance": "Changing only brand, profile, platform or destination after approval is denied before intake. Exact approved destinations pass. Synthetic queue tests must not send to real social accounts."
+    },
+    {
+      "id": "CRM-17",
+      "priority": "P2",
+      "title": "Analytics evidence identifiers collide across ingestion runs",
+      "status": "source-confirmed",
+      "source": [
+        "src/content-platforms.js:83-123",
+        "prototypes/content-factory/src/live/OperationsPanel.tsx:200-208",
+        "src/content-ops.js:50-55"
+      ],
+      "evidence": "Persisted observation value IDs use platform-brand-accepted, with accepted reset for each request, while DB row keys hash the URL. Separate one-post runs can therefore store different URLs under identical evidence IDs. Maps and LLM citations using those IDs can resolve to the wrong post.",
+      "repair": "Use a stable brand/platform/canonical-URL identity; deduplicate and migrate existing references with provenance. Validate globally unique evidence IDs before decision input assembly.",
+      "acceptance": "Two one-post ingestion runs produce two distinct stable evidence IDs and correct links. Reingesting the same post preserves identity and latest-known metric semantics; stale decisions retain their original evidence snapshot."
+    },
+    {
+      "id": "CRM-18",
+      "priority": "P2",
+      "title": "Factory selection and CRM navigation can diverge from what is saved or in the URL",
+      "status": "source-confirmed",
+      "source": [
+        "prototypes/content-factory/src/live/StationBoard.tsx",
+        "prototypes/content-factory/src/live/LiveFactoryPage.tsx",
+        "public/index.html:3016-3030",
+        "public/index.html:3172"
+      ],
+      "evidence": "StationBoard updates its local selection before the parent may reject selection because of an unsaved draft. Separately, go changes CRM views without updating history, requestedView is only initial state, and there is no matching popstate routing contract. Refresh/bookmark/back can open a different view from the one displayed.",
+      "repair": "Make selection controlled or commit it only after parent acceptance. Centralize route state, URL history, product/ticket selection and draft guards. Background agent presence must never steal the human selected ticket or composer.",
+      "acceptance": "Cancel a dirty-card switch: editor and highlighted card remain the same. Every CRM tab has a stable refresh/back/forward deep link. Dirty drafts and the persistent agent composer survive navigation according to explicit user choice."
+    },
+    {
+      "id": "CRM-19",
+      "priority": "P2",
+      "title": "Autonomous-work summary omits directly managed agents",
+      "status": "source-confirmed",
+      "source": [
+        "public/living-crm.js:10",
+        "src/ticket-task-progress.js",
+        "src/ticket-job-queue.js"
+      ],
+      "evidence": "The living CRM classifies running work from recent codingJobs. Tasks created directly through agent-workspace are visible in task progress/collaboration but have no codingJob, so the operations summary can call them next work instead of active. This is a projection mismatch, not evidence that the agents are stopped.",
+      "repair": "Project from canonical task progress plus real presence, preserving source and freshness. Distinguish lifecycle working from actual tool/typing activity; do not invent active animation from heartbeats alone.",
+      "acceptance": "A directly linked managed task and a handoff-launched task appear correctly in the same running/blocked/done summary. Expired presence is not reported as live tool activity. Counts match source receipts without double counting."
+    },
+    {
+      "id": "CRM-20",
+      "priority": "P2",
+      "title": "Content Factory dependency graph has high-severity advisory exposure",
+      "status": "source-confirmed",
+      "source": [
+        "prototypes/content-factory/package-lock.json",
+        "docs/audits/2026-11-01-astra/factory-dependency-audit.json"
+      ],
+      "evidence": "The audit-time npm advisory result reports 20 affected packages: 6 high and 14 moderate, zero critical. These are affected-package counts, not unique CVEs. High entries include Vite, Wrangler, Miniflare, Undici, Sharp and Zod in the resolved graph. The root production dependency audit reports zero. Build/dev dependency exposure is not proof of a publicly exploitable deployed Worker.",
+      "repair": "Map each advisory to the actual build, preview and shipped runtime paths, upgrade compatible direct/transitive dependencies and remove unused prototype tooling where justified. Preserve lockfile reproducibility; do not run blind force upgrades.",
+      "acceptance": "Repeat both audits, typecheck, Factory unit/browser tests and live build verification; compare artifact behavior. Document any retained advisory with reachability and owner rather than claiming a clean result from excluding dev dependencies."
+    }
+  ]
+}
