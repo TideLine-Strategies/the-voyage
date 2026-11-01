@@ -1,5 +1,6 @@
 // Current repair and remaining-defect probes; local synthetic data only. Never connects to production or provider accounts.
-import assert from 'node:assert/strict';import fs from 'node:fs';import {build} from 'esbuild';import {Miniflare,convertV4MiniflareOptions} from 'miniflare';import {eventsFromIcs} from '../src/ical.js';import {signedHeaders} from '../src/company-signing.js';
+import {execFileSync} from 'node:child_process';import assert from 'node:assert/strict';import fs from 'node:fs';import {build} from 'esbuild';import {Miniflare,convertV4MiniflareOptions} from 'miniflare';import {eventsFromIcs} from '../src/ical.js';import {signedHeaders} from '../src/company-signing.js';
+const sourceHead=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const built=await build({entryPoints:['src/entry.js'],bundle:true,write:false,format:'esm',platform:'browser',external:['cloudflare:workers','node:*'],target:'es2022'});
 const secret='synthetic-audit-secret-00000000000000';const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:built.outputFiles[0].text,compatibilityDate:'2026-09-29',compatibilityFlags:['nodejs_compat'],durableObjects:{COMPANY_HUB:{className:'CompanyHub',useSQLite:true}},d1Databases:{DB:'audit'},bindings:{LOKI_OPERATIONS_SECRET:secret},outboundService:()=>{throw Error('No network allowed in audit');}}));const out={};
 try{const db=await mf.getD1Database('DB');for(const n of fs.readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort())for(const sql of fs.readFileSync('migrations/'+n,'utf8').replace(/^--.*$/gm,'').split(';').map(s=>s.trim()).filter(Boolean))await db.prepare(sql).run();
@@ -19,5 +20,5 @@ const eventUrl=origin+'/api/company-events/loki',body=JSON.stringify({events:[],
 const ics=(start,rule)=>'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:synthetic\r\nDTSTART:'+start+'\r\nRRULE:'+rule+'\r\nSUMMARY:Synthetic\r\nEND:VEVENT\r\nEND:VCALENDAR';
 const old=eventsFromIcs(ics('20000101T120000Z','FREQ=DAILY'),{from:Date.parse('2026-11-01'),to:Date.parse('2026-11-03')});assert.equal(old.length,0);out.longRunningDailySeriesDisappears=true;
 const ordinal=eventsFromIcs(ics('20261012T120000Z','FREQ=MONTHLY;BYDAY=2MO'),{from:Date.parse('2026-11-01'),to:Date.parse('2026-11-30')});assert.equal(new Date(ordinal[0].start).toISOString().slice(0,10),'2026-11-12');out.secondMondayReportedAsNovember12=true;
-console.log(JSON.stringify({sourceHead:process.env.AUDIT_SOURCE_COMMIT||'working-tree',...out},null,2));
+console.log(JSON.stringify({sourceHead,...out},null,2));
 }finally{await mf.dispose();}
