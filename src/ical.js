@@ -58,26 +58,71 @@ function readEvents(text) {
   return events;
 }
 
-// Occurrence start dates for a repeating event, as wall-clock [y, mo, d] steps from the first start.
-function* repeat(rule, first, windowEnd) {
-  const r = Object.fromEntries(rule.split(";").map(part => part.split("=")));
-  const freq = r.FREQ, interval = Math.max(1, +(r.INTERVAL || 1)), count = r.COUNT ? +r.COUNT : Infinity;
-  const until = r.UNTIL ? parseWhen(r.UNTIL, {}, "UTC")?.ms ?? Infinity : Infinity;
-  const byDay = r.BYDAY ? r.BYDAY.split(",").map(d => WEEKDAYS.indexOf(d.slice(-2))).filter(d => d >= 0) : null;
+// Expand only periods intersecting the requested window. COUNT still includes earlier
+// occurrences (including EXDATEs); count their calendar pattern without converting
+// every historical date through Intl. Gregorian patterns repeat every 400 years.
+function* repeat(rule, first, windowStart, windowEnd) {
+  const r = Object.fromEntries(rule.toUpperCase().split(";").map(part => part.split("=")));
+  const freq = r.FREQ, interval = Number(r.INTERVAL || 1), count = r.COUNT ? Number(r.COUNT) : Infinity;
+  if (!Number.isSafeInteger(interval) || interval < 1 || !(count > 0) ||
+      (count !== Infinity && !Number.isSafeInteger(count))) return;
+  const byDay = r.BYDAY ? [...new Set(r.BYDAY.split(","))].map(value => {
+    const match = /^([+-]?[1-5])?(SU|MO|TU|WE|TH|FR|SA)$/.exec(value);
+    return match ? { ordinal: Number(match[1] || 0), weekday: WEEKDAYS.indexOf(match[2]) } : null;
+  }).filter(Boolean) : null;
   const base = new Date(Date.UTC(first[0], first[1], first[2]));
-  let emitted = 0;
-  for (let step = 0; step < 3000 && emitted < count; step++) {
+  const weekDay = WEEKDAYS.indexOf(r.WKST || "MO");
+  const weekBase = base.getTime() - ((base.getUTCDay() - (weekDay < 0 ? 1 : weekDay) + 7) % 7) * DAY_MS;
+  const lower = new Date(windowStart), upper = new Date(windowEnd);
+  const periodAt = date => freq === "DAILY" ? Math.floor((date - base) / DAY_MS / interval)
+    : freq === "WEEKLY" ? Math.floor((date - weekBase) / (7 * DAY_MS) / interval)
+    : freq === "MONTHLY" ? Math.floor(((date.getUTCFullYear() - first[0]) * 12 + date.getUTCMonth() - first[1]) / interval)
+    : Math.floor((date.getUTCFullYear() - first[0]) / interval);
+  if (!["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].includes(freq)) return;
+  const begin = Math.max(0, periodAt(lower)), end = periodAt(upper);
+  if (end < begin) return;
+  function candidates(step) {
     let days;
-    if (freq === "DAILY") days = [new Date(base.getTime() + step * interval * DAY_MS)];
-    else if (freq === "WEEKLY") {
-      const weekStart = new Date(base.getTime() + (step * interval * 7 - base.getUTCDay()) * DAY_MS);
-      days = (byDay || [base.getUTCDay()]).slice().sort((a, b) => a - b).map(wd => new Date(weekStart.getTime() + wd * DAY_MS)).filter(d => d >= base);
-    } else if (freq === "MONTHLY") days = [new Date(Date.UTC(first[0], first[1] + step * interval, first[2]))].filter(d => d.getUTCDate() === first[2]);
-    else if (freq === "YEARLY") days = [new Date(Date.UTC(first[0] + step * interval, first[1], first[2]))].filter(d => d.getUTCDate() === first[2]);
-    else return;
-    for (const day of days) {
-      if (day.getTime() > windowEnd || day.getTime() > until || emitted >= count) return;
-      emitted++;
+    if (freq === "DAILY") {
+      const date = new Date(base.getTime() + step * interval * DAY_MS);
+      days = !byDay || byDay.some(day => day.weekday === date.getUTCDay()) ? [date] : [];
+    } else if (freq === "WEEKLY") {
+      const weekdays = [...new Set((byDay || [{ weekday: base.getUTCDay() }]).map(day => day.weekday))];
+      days = weekdays.map(wd => new Date(weekBase + (step * interval * 7 + (wd - (weekDay < 0 ? 1 : weekDay) + 7) % 7) * DAY_MS));
+    } else if (freq === "MONTHLY" && byDay) {
+      const month = new Date(Date.UTC(first[0], first[1] + step * interval, 1));
+      const last = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0)).getUTCDate();
+      days = [];
+      for (let d = 1; d <= last; d++) {
+        const date = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), d));
+        if (byDay.some(day => day.weekday === date.getUTCDay() && (!day.ordinal ||
+            (day.ordinal > 0 ? Math.ceil(d / 7) === day.ordinal : -Math.ceil((last - d + 1) / 7) === day.ordinal)))) days.push(date);
+      }
+    } else {
+      const date = new Date(Date.UTC(first[0] + (freq === "YEARLY" ? step * interval : 0), first[1] + (freq === "MONTHLY" ? step * interval : 0), first[2]));
+      days = date.getUTCDate() === first[2] ? [date] : [];
+    }
+    return days.sort((a, b) => a - b).filter(date => date >= base && Number.isFinite(+date));
+  }
+  let emitted = 0;
+  if (count !== Infinity && begin) {
+    const gcd = (a, b) => b ? gcd(b, a % b) : a;
+    const period = { DAILY: 7, WEEKLY: 1, MONTHLY: 4800, YEARLY: 400 }[freq];
+    const cycle = period / gcd(period, interval);
+    // Period zero may omit weekdays before DTSTART; only subsequent periods repeat.
+    emitted = candidates(0).length;
+    const remaining = begin - 1, cycles = Math.floor(remaining / cycle), tail = remaining % cycle;
+    let cycleCount = 0;
+    for (let step = 1; step <= (cycles ? cycle : tail); step++) {
+      const size = candidates(step).length;
+      cycleCount += size;
+      if (step <= tail) emitted += size;
+    }
+    emitted += cycles * cycleCount;
+  }
+  for (let step = begin; step <= end && emitted < count; step++) {
+    for (const day of candidates(step)) {
+      if (emitted++ >= count) return;
       yield [day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()];
     }
   }
@@ -85,6 +130,7 @@ function* repeat(rule, first, windowEnd) {
 
 // Events overlapping [from, to] (UTC ms), at most `limit`, sorted by start.
 export function eventsFromIcs(text, { from, to, fallbackZone = "America/Chicago", limit = 1500 }) {
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || !(limit > 0)) return [];
   const out = [];
   const overrides = new Set();
   const raw = readEvents(text);
@@ -116,10 +162,16 @@ export function eventsFromIcs(text, { from, to, fallbackZone = "America/Chicago"
     const rule = get("RRULE")?.value;
     if (!rule || get("RECURRENCE-ID")) { push(start.ms); continue; }
     const wall = start.wall || (() => { const d = new Date(start.ms); return [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()]; })();
-    for (const [y, mo, d] of repeat(rule, wall, to)) {
+    const untilText = /(?:^|;)UNTIL=([^;]+)/i.exec(rule)?.[1];
+    const until = untilText ? parseWhen(untilText, {}, start.zone || "UTC")?.ms : Infinity;
+    if (until == null || until < from - Math.max(0, length)) continue;
+    // A wall date can differ from UTC by one day. Include that margin and the
+    // event duration so long/midnight-spanning occurrences are not skipped.
+    for (const [y, mo, d] of repeat(rule, wall, from - Math.max(0, length) - DAY_MS, Math.min(to, until) + DAY_MS)) {
       const occurrence = start.allDay ? Date.UTC(y, mo, d)
         : start.zone ? zonedToUtc(y, mo, d, wall[3], wall[4], wall[5], start.zone)
         : Date.UTC(y, mo, d, wall[3], wall[4], wall[5]);
+      if (occurrence > until) continue;
       if (excluded.has(occurrence) || overrides.has(`${uid}|${occurrence}`)) continue;
       push(occurrence);
       if (out.length >= limit) break;
