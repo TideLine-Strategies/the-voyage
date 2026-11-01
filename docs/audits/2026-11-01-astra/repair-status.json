@@ -45,8 +45,8 @@
     },
     {
       "id": "CRM-09",
-      "status": "open",
-      "result": "See ASTRA-NEXT.md and historical REPORT.md acceptance contract."
+      "status": "partially-repaired",
+      "result": "Window seeking removes the 3000-period horizon; monthly ordinal BYDAY, WKST, exact UNTIL and finite COUNT are regression-tested. See CALENDAR-REPAIR.md for local proof and remaining RFC subset limits."
     },
     {
       "id": "CRM-10",
