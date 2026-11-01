@@ -294,7 +294,7 @@ export function LiveFactoryPage() {
     0,
     cards.findIndex((x) => x.id === selected),
   );
-  const mayLeave = () => !dirty || window.confirm("Discard your unsaved edits?");
+  const mayLeave = () => !busy && (!dirty || window.confirm("Discard your unsaved edits?"));
   function choose(id: string) {
     if (!mayLeave()) return;
     setInspectorOpen(true);
@@ -344,11 +344,12 @@ export function LiveFactoryPage() {
     });
   }
   function pick(id: string) {
-    if (!mayLeave()) return;
+    if (!mayLeave()) return false;
     setSelected(id);
     setDraft(data?.items.find((i) => i.id === id) || null);
     setDirty(false);
     setNote("");
+    return true;
   }
   function newItem(brief?: Brief) {
     if (!mayLeave()) return;
@@ -719,7 +720,7 @@ export function LiveFactoryPage() {
                     </p>
                   </>
                 ) : draft ? (
-                  <>
+                  <fieldset disabled={busy} style={{ display: "contents" }}>
                     <div className="live-panel-head">
                       <div>
                         <span className="live-eyebrow">
@@ -913,6 +914,8 @@ export function LiveFactoryPage() {
                         <button
                           disabled={dirty || busy || !draft.id || !campaignLink}
                           onClick={async () => {
+                            if (busy) return;
+                            setBusy(true);
                             try {
                               const saved = await api({
                                 action: "link_campaign",
@@ -925,7 +928,7 @@ export function LiveFactoryPage() {
                               await refresh();
                             } catch (e) {
                               setMessage((e as Error).message);
-                            }
+                            } finally { setBusy(false); }
                           }}
                         >
                           Link saved campaign
@@ -938,7 +941,7 @@ export function LiveFactoryPage() {
                         ))}
                       </>
                     )}
-                  </>
+                  </fieldset>
                 ) : (
                   <>
                     <h2>Select a post or create a brief.</h2>
@@ -959,10 +962,11 @@ export function LiveFactoryPage() {
                   onPanelChange={setOperationsPanel}
                   brand={brand}
                   onAttach={async (assetId) => {
-                    if (!draft?.id || dirty) {
+                    if (!draft?.id || dirty || busy) {
                       setMessage("Save the selected item before attaching footage.");
                       return;
                     }
+                    setBusy(true);
                     try {
                       const value = await api({
                         action: "attach_media",
@@ -975,7 +979,7 @@ export function LiveFactoryPage() {
                       await refresh();
                     } catch (e) {
                       setMessage((e as Error).message);
-                    }
+                    } finally { setBusy(false); }
                   }}
                 />
               </div>

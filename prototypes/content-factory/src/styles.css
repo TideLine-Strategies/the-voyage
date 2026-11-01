@@ -1,8 +1,8 @@
 @import "@fontsource-variable/figtree";
 @import "@fontsource-variable/newsreader";
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 

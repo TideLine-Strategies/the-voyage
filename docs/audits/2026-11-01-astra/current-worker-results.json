@@ -1,0 +1,12 @@
+{
+  "sourceHead": "24d4ca7d4f3164dca20692933a32840e789b71e7",
+  "staleCrmOverwriteAccepted": true,
+  "crossAccountActivityPatchRejected": true,
+  "invalidContactEmailPatchRejected": true,
+  "invalidAccountShapeRejected": true,
+  "collectionTruncatedWithoutContinuation": true,
+  "expiredSessionUses403": true,
+  "crossProductFinancialImportAllowedByCurrentContract": true,
+  "longRunningDailySeriesDisappears": true,
+  "secondMondayReportedAsNovember12": true
+}

@@ -28,9 +28,10 @@ master, avatar and verified profile; unconfirmed music rights block approval.
 The WonPlace avatar currently belongs to the owned X profile; that is not proof
 of the LinkedIn showcase-page identity.
 
-The capture step currently recommends evidence and shots. It does not control a
-browser. Existing real footage is imported, not represented as a newly executed
-capture. New capture workflows must use exact-window browser leases, allowlisted
+LLM capture passes recommend evidence and shots. The deterministic production
+worker can also record the fictional WonPlace preview; its current fixed recipe
+is limited and must not be treated as proof of an unrelated requested feature.
+Imported footage and newly recorded footage retain distinct provenance. New capture workflows must use exact-window browser leases, allowlisted
 read-only actions, privacy-safe aggregate screens, and an actual recording
 receipt. A missing or failed action cannot become a success claim. The earlier
 Spring navigation/invoice failures remain failures.
@@ -39,8 +40,10 @@ Release uses the managed coordinator, tests and direct-main publication. The rel
 imports private media and research only after provider revision reconciliation,
 then installs the operator. Live acceptance requires signed-in playback,
 publisher identity, dated research, a real completed LLM pass and its persisted
-living note, alongside the existing editorial/approval checks. No social posts
-are sent by this page or by the scheduled operator.
+living note, alongside the existing editorial/approval checks. LLM passes never publish. A saved named human approval can authorize the exact
+package for deterministic dispatch to the existing native publisher. Account,
+route, rights and independent delivery receipts remain separate gates; see
+CRM-14 through CRM-16 in the audit for outstanding proof and authority gaps.
 
 Stop background decisions with `launchctl bootout gui/$(id -u)
 ~/Library/LaunchAgents/com.tideline.content-factory-operator.plist`. This preserves

@@ -15,7 +15,7 @@
     window.addEventListener(event, () => { lastActivity = Date.now(); }, { passive: true });
   }
   function syncFailure(error) {
-    if ([401, 429].includes(error.status)) blocked = true;
+    if ([401, 429].includes(error.status) || error.code === "authentication_required") blocked = true;
     else retryAt = Date.now() + Math.min(300000, 15000 * 2 ** Math.min(failures++, 5));
     window.dispatchEvent(new CustomEvent("voyage-sync-error", { detail: error.message }));
   }
@@ -37,10 +37,14 @@
     }
     let result;
     try { result = await response.json(); }
-    catch { throw new Error("The Voyage session has expired. Reload to sign in again."); }
+    catch { const error = Object.assign(new Error("Live data returned an unreadable response. Try again when the connection is available."), { status: response.status || 502 }); syncFailure(error); throw error; }
     if (!response.ok) {
       const error = new Error(result.error || `Request failed (${response.status})`);
-      if (result.error === "Guest action not allowed") error.code = "guest_forbidden";
+      error.status = response.status;
+      error.code = result.code || (result.error === "Guest action not allowed" ? "guest_forbidden" : undefined);
+      // Recognize the pre-code server contract while an older tab/server is still deployed.
+      if (response.status === 403 && result.error === "Sign in with the approved TideLine account") error.code = "authentication_required";
+      syncFailure(error);
       throw error;
     }
     return result;
@@ -52,10 +56,10 @@
     }
   }
 
-  function checkGuestWrite(collection, method) {
+  function checkGuestWrite(collection, method, id) {
     if (member?.role !== "guest") return;
-    const allowed = collection === "reads" || collection === "channels" || collection === "messages" ||
-      (method === "PATCH" && ["opps", "activities", "activity", "notes"].includes(collection));
+    const allowed = (collection === "profiles" && id === member.id) || collection === "reads" || collection === "channels" || collection === "messages" ||
+      (method === "PATCH" && ["opps", "activities", "activity", "notes", "contacts"].includes(collection));
     if (allowed) return;
     for (const watcher of watchers) watcher.resync();
     const error = new Error("Guests cannot create or delete CRM entries");
@@ -104,9 +108,9 @@
     const url = `/api/document/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
     return {
       id,
-      async set(data) { checkGuestWrite(collection, "PUT"); await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(collection); },
-      async update(data) { checkGuestWrite(collection, "PATCH"); await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(collection); },
-      async delete() { checkGuestWrite(collection, "DELETE"); await request(url, { method: "DELETE" }); notifyWatchers(collection); },
+      async set(data) { checkGuestWrite(collection, "PUT", id); await request(url, { method: "PUT", body: JSON.stringify(data) }); notifyWatchers(collection); },
+      async update(data) { checkGuestWrite(collection, "PATCH", id); await request(url, { method: "PATCH", body: JSON.stringify(data) }); notifyWatchers(collection); },
+      async delete() { checkGuestWrite(collection, "DELETE", id); await request(url, { method: "DELETE" }); notifyWatchers(collection); },
       onSnapshot(callback, onError) { return watch(url, docSnapshot, callback, onError); },
     };
   }

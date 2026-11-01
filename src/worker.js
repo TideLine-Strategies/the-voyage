@@ -1,3 +1,4 @@
+import {readBoundedBytes} from './bounded-body.js';
 import {handleCollaboration,sourceCollaboration} from './ticket-collaboration.js';
 import {sourceTaskProgress} from './ticket-task-progress.js';
 import {sendPasswordLink} from './voyage-auth.js';
@@ -89,25 +90,9 @@ function error(message, status) {
 
 async function readJson(request) {
   if (!request.body) throw new Error("Missing JSON body");
-  const reader = request.body.getReader();
-  const chunks = [];
-  let size = 0;
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel();
-      throw new Error("JSON body is too large");
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+  let bytes;
+  try { bytes = await readBoundedBytes(request, MAX_BODY_BYTES); }
+  catch (cause) { if(cause instanceof RangeError) throw new Error("JSON body is too large"); throw cause; }
   let data;
   try { data = JSON.parse(new TextDecoder().decode(bytes)); }
   catch { throw new Error("Invalid JSON"); }
@@ -118,6 +103,11 @@ async function readJson(request) {
 export function validateDocument(collection, id, data, actor, method) {
   if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) throw new Error("Unknown document path");
   if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected an object");
+  if(Object.hasOwn(data,"id"))throw new Error("Unknown document identity field");
+  if(collection==="opps"){
+    if((method!=="PATCH"||Object.hasOwn(data,"name"))&&(typeof data.name!=="string"||!data.name.trim()||data.name.length>200))throw new Error("Invalid account name");
+    if(Object.hasOwn(data,"stage")&&(!Number.isInteger(data.stage)||data.stage<0||data.stage>6))throw new Error("Invalid account stage");
+  }
   if (collection === "settings") throw new Error("Team settings cannot be changed here");
   if (collection === "reads" && id !== actor.id) throw new Error("Wrong member");
   if (collection === "profiles") {
@@ -289,17 +279,12 @@ export async function audit(env, memberId, action, collection, docId, label) {
 }
 
 // A short, human label for the record being changed. Chat text is never recorded.
-async function auditLabel(request, env, actor, path) {
-  const pick = data => data && (data.name || data.oppName || data.title || data.type || null);
+async function auditLabel(env, actor, path, id=path[3]) {
   if (path[2] === "messages") return "Chat message";
   if (path[2] === "profiles") return "Own profile";
-  if (request.method === "DELETE" || request.method === "PATCH") {
-    const current = path[3] && await getDocument(env.DB, storageCollection(actor, path[2]), path[3]).catch(() => null);
-    if (request.method === "DELETE") return pick(current);
-    const body = await request.clone().json().catch(() => null);
-    return pick(current) || pick(body);
-  }
-  return pick(await request.clone().json().catch(() => null));
+  const current = id && await getDocument(env.DB, storageCollection(actor, path[2]), id).catch(() => null);
+  const label=current && (current.name || current.oppName || current.title || current.type);
+  return typeof label === "string" ? label.slice(0,200) : null;
 }
 
 const icsText = value => String(value || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
@@ -458,6 +443,7 @@ export function sanitizeContact(data, method) {
     for (const [key, max] of [["name", 120], ["title", 120], ["email", 200], ["phone", 40], ["notes", 1000]]) if (Object.hasOwn(data, key)) out[key] = t(data[key], max);
     if (Object.hasOwn(data, "role")) out.role = CONTACT_ROLES.has(data.role) ? data.role : "Other";
     if (Object.hasOwn(data, "primary")) out.primary = Boolean(data.primary);
+    if (out.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(out.email)) throw new Error("Invalid contact: check the email address");
     if (Object.hasOwn(out, "name") && !out.name) throw new Error("Invalid contact: a name is required");
     return out;
   }
@@ -470,11 +456,11 @@ export function sanitizeContact(data, method) {
 }
 // Saving a task or meeting, or marking one done, requires a contact from the same account.
 async function activityContactProblem(request, env, path, method) {
-  const body = await request.clone().json().catch(() => null);
+  const body = await readJson(request.clone()).catch(() => null);
   if (!body || typeof body !== "object") return null;
   const existing = path[3] ? await getDocument(env.DB, "activities", path[3]).catch(() => null) : null;
   const merged = { ...(existing || {}), ...body };
-  const needed = method !== "PATCH" || (body.done === true && !existing?.done) || Object.hasOwn(body, "contactId");
+  const needed = method !== "PATCH" || (body.done === true && !existing?.done) || Object.hasOwn(body, "contactId") || Object.hasOwn(body, "oppId");
   if (!needed) return null;
   if (!merged.contactId) return "Pick who this was with: choose a contact or add a new one";
   const contact = await getDocument(env.DB, "contacts", String(merged.contactId)).catch(() => null);
@@ -642,7 +628,8 @@ async function handleDealFiles(request, env, actor, dealId, fileId) {
       const kind = params.get("kind") === "other" ? "other" : "signed";
       const declared = Number(request.headers.get("content-length") || 0);
       if (declared > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
-      const bytes = new Uint8Array(await request.arrayBuffer());
+      let bytes;
+      try { bytes=await readBoundedBytes(request,MAX_FILE_BYTES); } catch(cause) { if(cause instanceof RangeError)return error("Files can be up to 15 MB",413);throw cause; }
       if (!bytes.length) return error("The file is empty", 400);
       if (bytes.length > MAX_FILE_BYTES) return error("Files can be up to 15 MB", 413);
       const type = detectFileType(bytes, name);
@@ -712,9 +699,18 @@ async function handleExternalCalendar(request, env, actor) {
     const profile = await getDocument(env.DB, "profiles", actor.id).catch(() => null);
     let text;
     try {
-      const response = await fetch(row.url, { headers: { accept: "text/calendar" }, redirect: "follow", signal: AbortSignal.timeout(10000), cf: { cacheTtl: 300 } });
+      let address=calendarAddress(row.url),response;
+      const signal=AbortSignal.timeout(10000);
+      for(let redirects=0;redirects<=4;redirects++){
+        if(!address)throw new Error("Unsupported calendar destination");
+        response=await fetch(address,{headers:{accept:"text/calendar"},redirect:"manual",signal,cf:{cacheTtl:300}});
+        if(![301,302,303,307,308].includes(response.status))break;
+        const location=response.headers.get("location");void response.body?.cancel().catch(()=>{});
+        if(!location||redirects===4)throw new Error("Calendar redirect limit");
+        address=calendarAddress(new URL(location,address).href);
+      }
       if (!response.ok) throw new Error(String(response.status));
-      text = await response.text();
+      text = new TextDecoder().decode(await readBoundedBytes(response,5_000_000));
       if (text.length > 5_000_000 || !text.includes("BEGIN:VCALENDAR")) throw new Error("not a calendar");
     } catch {
       return reply({ connected: true, provider: provider(row.url), error: "Couldn't read your calendar right now. Check that the private address is still valid.", events: [] });
@@ -985,7 +981,7 @@ export default {
     if (pathName.startsWith("/invite/")) return Response.redirect(new URL("/login", request.url), 303);
     if (pathName.startsWith("/cal/") && request.method === "GET") return calendarFeed(env, pathName.slice(5));
     const actor = await verifyAccess(request, env) || await memberForSession(request, env);
-    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage(env) : error("Sign in with the approved TideLine account", 403);
+    if (!actor) return request.method === "GET" && pathName === "/" ? signInPage(env) : reply({error:"Sign in with the approved TideLine account",code:"authentication_required"}, 403);
     const path = parsePath(new URL(request.url).pathname);
     if (!path) {
       if (pathName.startsWith("/factory") && actor.role !== "edit") return error("Not available to guests",403);
@@ -996,20 +992,21 @@ export default {
       return new Response(asset.body, { status: asset.status, headers });
     }
     try {
+      if(request.method!=="GET"&&!checkWriteOrigin(request))return error("Origin not allowed",403);
       const change = request.method !== "GET" && (path[1] === "collection" || path[1] === "document") && path[2] !== "reads" && path[2] !== "activity";
-      const label = change ? await auditLabel(request, env, actor, path) : null;
+      const label = change ? await auditLabel(env, actor, path) : null;
       const watched = change && (path[2] === "activities" || path[2] === "opps") && path[3];
       const before = watched ? await getDocument(env.DB, path[2], path[3]).catch(() => null) : null;
       const response = await handleApi(request, env, actor, path);
       if (change && response.ok) {
         const id = path[3] || (await response.clone().json().catch(() => ({}))).id || null;
         if (path[2] === "activities" || path[2] === "opps") await sequenceHooks(env, actor, request.method, path[2], id, before);
-        await audit(env, actor.id, { POST: "Created", PUT: "Saved", PATCH: "Updated", DELETE: "Deleted" }[request.method], path[2], id, label);
+        await audit(env, actor.id, { POST: "Created", PUT: "Saved", PATCH: "Updated", DELETE: "Deleted" }[request.method], path[2], id, label || await auditLabel(env, actor, path, id));
       }
       return response;
     }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence|Invalid contact)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence|Invalid contact|Invalid account)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

@@ -1,0 +1,12 @@
+{
+  "baseline": "eda8dfb094dddba0664de4ad6d376f5b27664edb",
+  "staleCrmOverwriteAccepted": true,
+  "crossAccountActivityPatchAccepted": true,
+  "invalidContactEmailPatchAccepted": true,
+  "invalidAccountShapeAccepted": true,
+  "collectionTruncatedWithoutContinuation": true,
+  "expiredSessionUses403": true,
+  "lokiSecretCanWriteVoyageFinancialFact": true,
+  "longRunningDailySeriesDisappears": true,
+  "secondMondayReportedAsNovember12": true
+}

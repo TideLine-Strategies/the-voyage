@@ -1,0 +1,41 @@
+{
+  "applicationRepairCommit": "3c570ab9dc32fee3f7ae90642c90b0e7d177717a",
+  "verificationToolHead": "24d4ca7d4f3164dca20692933a32840e789b71e7",
+  "root": {
+    "passed": 242,
+    "failed": 0,
+    "workerdAuthAccepted": true,
+    "workerdTwoTaskCollaborationAccepted": true
+  },
+  "factory": {
+    "typecheck": "passed",
+    "testsPassed": 2,
+    "vite": "8.3.5",
+    "build": "passed",
+    "generatedBundleVerifier": "passed"
+  },
+  "repairBrowser": {
+    "accepted": true,
+    "syntheticOnly": true,
+    "failedNoteDraftPreserved": true,
+    "unsavedNavigationBlocked": true,
+    "desktopAndMobileLineEditing": true,
+    "dealColumnsUnaffectedByDeviceTable": true,
+    "externalRequests": 0
+  },
+  "workspaceBrowser": {
+    "accepted": true,
+    "viewports": 4,
+    "threePanes": true,
+    "priorityCollapse": true,
+    "tableSorting": true,
+    "selectionPreserved": true,
+    "unsavedGuard": true,
+    "savedReadback": true,
+    "noteReadback": true,
+    "modelCalls": 0
+  },
+  "remainingRuntimeProbe": "current-worker-results.json",
+  "productionOwnerAcceptance": false,
+  "localHelperInstalled": false
+}

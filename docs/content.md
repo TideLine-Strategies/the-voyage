@@ -1,8 +1,13 @@
-# Content
+# Content snapshot integration
+
+This document describes the snapshot synchronizer. The current editorial, private
+media, decision and approved-dispatch layers are documented in
+[Content Factory live](content-factory-live.md). Statements below about the
+synchronizer having no publishing authority do not describe the entire Factory.
 
 Content is the editor-only publishing workspace in The Voyage. It uses the existing CRM type, colors, navigation and Muninn conversation. Both brands share the path from useful content to qualified conversations, with distinct audiences, positioning, channel ownership and campaign queues. WonPlace is credited to TideLine. Real sales conversations belong in Accounts with a contact and next step; followers and route checks are not leads or conversions.
 
-The page reads `/api/content`. Each brand has one bounded snapshot in the existing D1 `documents` table (`content_snapshots`), so no migration is needed. No private campaign fixture, customer export, credentials or local filesystem paths are shipped in static assets. Actual captions and campaign evidence are imported after release from the existing publishing runtime. Media is identified by filename, dimensions, duration and hash; the CRM does not expose the Mac's filesystem or host the video. Local master files remain in the existing private content package.
+The page reads `/api/content`. Each brand has one bounded snapshot in the existing D1 `documents` table (`content_snapshots`), so no migration is needed. No private campaign fixture, customer export, credentials or local filesystem paths are shipped in static assets. Actual captions and campaign evidence are imported after release from the existing publishing runtime. Snapshots identify media by filename, dimensions, duration and hash without exposing the Mac's filesystem. The separate authenticated private-media layer can serve imported footage from bounded D1 storage; local masters retain their original provenance.
 
 `scripts/content-sync.mjs` reads the existing loopback publishing dashboard and explicitly exports a whitelist. `--send` signs each brand separately with the existing company-operations key from the existing mode-0600 `COMPANY_OPERATIONS_CONFIG`. The scoped `/api/content-source/:brand` route checks HMAC, method, path, timestamp and brand, then rejects outdated exports and prevents an older snapshot from replacing a newer one. There is no unsigned ingestion, arbitrary proxy, new credential vault or publishing command. The native publishing worker and its approvals, source verification, reservations and reconciliation remain authoritative. The snapshot synchronizer has no write access to that queue.
 

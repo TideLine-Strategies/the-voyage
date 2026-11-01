@@ -78,7 +78,21 @@
     const send=btn('Send',async()=>{if(sending)return;if(!composer.value.trim()){sessionState.textContent='Write a message or attach context first.';return;}sending=true;send.disabled=true;try{if(!job){const initialMessage=composer.value;const v=await post({...queueSpec,mode:'interactive',initialMessage});show(v.job);if(composer.value===initialMessage){composer.value='';codingDrafts.delete(draftKey);}}else{if(!composer.value.trim())return;pendingMessage||={id:crypto.randomUUID(),text:composer.value};const submitted=pendingMessage.text;await post({action:'control',company:requestSpec.company,jobId:job.id,commandId:pendingMessage.id,command:'message',text:pendingMessage.text});pendingMessage=null;if(composer.value===submitted){composer.value='';codingDrafts.delete(draftKey);}sessionState.textContent='Message queued for this Codex session.';}send.textContent='Send';void refresh();}catch(e){sessionState.textContent=e.message;}finally{sending=false;send.disabled=!!job&&!['admitted','running'].includes(job.state);}}),interrupt=btn('Interrupt',async()=>{interrupt.disabled=true;try{await post({action:'control',company:requestSpec.company,jobId:job.id,commandId:crypto.randomUUID(),command:'interrupt'});sessionState.textContent='Interrupt requested.';}catch(e){sessionState.textContent=e.message;}});interrupt.disabled=true;
     const terminalRequest={...queueSpec,mode:'terminal_draft',requestId:crypto.randomUUID()},terminal=btn('Open in new Terminal',async()=>{terminal.disabled=true;try{const v=await post(terminalRequest);sessionState.textContent='Terminal draft queued · job '+v.job.id+'. It will launch codex --yolo from your home directory, tile the window, and fill an expanded, editable prompt without submitting. Press Enter there only when ready.';void refresh();}catch(e){sessionState.textContent=e.message;terminal.disabled=false;}});actions.append(send,interrupt);evidence.append(terminal);composer.disabled=false;
     dialog.addEventListener('close',()=>{closed=true;});
-    const poll=async()=>{if(closed)return;if(!dialog.isConnected){setTimeout(poll,2500);return;}try{if(!job){const r=await fetch('/api/ticket-handoff?company='+requestSpec.company+'&ticket='+requestSpec.id,{credentials:'same-origin',cache:'no-store'}),v=await r.json(),existing=(v.jobs||[]).find(j=>j.mode==='interactive'&&j.execution==='root'&&['queued','claimed','admitted','running'].includes(j.state));if(existing){show(existing);send.textContent='Send';}}else{const r=await fetch('/api/ticket-handoff/'+job.id+'?company='+requestSpec.company,{credentials:'same-origin',cache:'no-store'}),v=await r.json();if(v.job)show(v.job);}}catch(e){sessionState.textContent='Session connection unavailable. '+e.message;}if(!closed)setTimeout(poll,2500);};void poll();
+    let pollFailures=0;
+    const poll=async()=>{
+      if(closed)return;
+      const terminal=job&&['completed','failed','blocked','delivery_uncertain','draft_opened'].includes(job.state);
+      if(terminal)return;
+      if(!dialog.isConnected||document.hidden||navigator.onLine===false||!dialog.getClientRects().length){setTimeout(poll,10000);return;}
+      try{
+        const path=job?'/api/ticket-handoff/'+job.id+'?company='+requestSpec.company:'/api/ticket-handoff?company='+requestSpec.company+'&ticket='+requestSpec.id;
+        const r=await fetch(path,{credentials:'same-origin',cache:'no-store'}),v=await r.json();
+        if(!r.ok){if(r.status===401||r.status===403)closed=true;throw Error(v.error||'Session refresh failed');}
+        if(job){if(v.job)show(v.job);}else{const existing=(v.jobs||[]).find(j=>j.mode==='interactive'&&j.execution==='root'&&['queued','claimed','admitted','running'].includes(j.state));if(existing){show(existing);send.textContent='Send';}}
+        pollFailures=0;
+      }catch(e){pollFailures++;sessionState.textContent='Session connection unavailable. '+e.message;}
+      if(!closed)setTimeout(poll,pollFailures?Math.min(60000,2500*2**Math.min(pollFailures,5)):job?2500:30000);
+    };void poll();
    }
   }catch(e){state.textContent=e.message;}
  }

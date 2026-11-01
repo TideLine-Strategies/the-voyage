@@ -35,11 +35,14 @@ export async function analyticsTargets(env) {
 }
 export async function platformObservations(env) {
   const r = await env.DB.prepare(
-    "SELECT data_json FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 100",
+    "SELECT id,data_json FROM documents WHERE collection=? ORDER BY updated_at DESC LIMIT 100",
   )
     .bind("content_platform_observations")
     .all();
-  return r.results.map((r) => JSON.parse(r.data_json));
+  return r.results.map((r) => {
+    const value = JSON.parse(r.data_json);
+    return {...value, id: "platform-" + value.brand + "-" + r.id};
+  });
 }
 export async function ingestPlatformObservations(env, body) {
   const targets = await analyticsTargets(env),
@@ -101,6 +104,7 @@ export async function ingestPlatformObservations(env, body) {
     const id = [...new Uint8Array(hash)]
       .map((v) => v.toString(16).padStart(2, "0"))
       .join("");
+    value.id = "platform-" + target.brand + "-" + id;
     const prior = await env.DB.prepare(
       "SELECT data_json FROM documents WHERE collection=? AND id=?",
     )
@@ -110,6 +114,7 @@ export async function ingestPlatformObservations(env, body) {
       ...(prior ? [JSON.parse(prior.data_json)] : []),
       value,
     ])[0];
+    preserved.id = value.id;
     await env.DB.prepare(
       "INSERT INTO documents(collection,id,data_json,revision,updated_at) VALUES(?,?,?,1,?) ON CONFLICT(collection,id) DO UPDATE SET data_json=excluded.data_json,revision=documents.revision+1,updated_at=excluded.updated_at",
     )

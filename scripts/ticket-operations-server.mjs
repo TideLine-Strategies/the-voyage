@@ -9,7 +9,7 @@ import {startTicketPolling} from './ticket-worker-poll.mjs';
 import {launchArgs,codingEnv,interactiveArgs,terminalCommand} from './ticket-coding-plan.mjs';
 import {tileTerminalDisplay} from './ticket-terminal-tiling.mjs';
 import {evidenceContext,evidenceInstructions} from './ticket-evidence-outbox.mjs';
-import {sessionLog} from './ticket-session-log.mjs';
+import {sessionLog,readSessionLog} from './ticket-session-log.mjs';
 import {signedHeaders,verifySource} from '../src/company-signing.js';
 const origin='https://voyage.tidelinestrats.com',port=38918;
 const home=os.homedir(),runtime=process.env.TICKET_OPERATIONS_HOME||path.dirname(path.dirname(fileURLToPath(import.meta.url))),stateRoot=path.join(runtime,'state');
@@ -35,7 +35,7 @@ createServer(async(req,res)=>{
   if(req.headers['x-ticket-worker']!==workerToken){respond(res,403,{error:'Owner Mac queue worker authentication required'});return;}
   const match=req.url.match(/^\/jobs\/([0-9a-f-]{36})(\/control)?$/i);
   if(match){const nonceFile=path.join(stateRoot,match[1]+'.json'),job=await get(nonceFile);if(!job){respond(res,404,{error:'Job not found'});return;}
-   let log='';try{const f=await fs.open(path.join(stateRoot,job.id,'agent.log'));try{const stat=await f.stat(),bytes=Buffer.alloc(Math.min(stat.size,2*1024*1024));await f.read(bytes,0,bytes.length,0);log=bytes.toString();}finally{await f.close();}}catch{}
+   let log='';try{log=await readSessionLog(path.join(stateRoot,job.id,'agent.log'));}catch{}
    const draft=job.mode==='terminal_draft'?await get(path.join(stateRoot,job.id,'draft-status.json')):null;
    const taskId=draft?.taskId||job.task||log.match(/Queued task ([a-f0-9]{12})/)?.[1];let task=null;if(taskId)try{const q=JSON.parse(execFileSync('agent-workspace',['queue',taskId],{encoding:'utf8',timeout:10000}));task={id:q.id,state:q.state,stage:q.stage};}catch{}
    const session=sessionLog(log);

@@ -361,7 +361,7 @@ textarea{min-height:70px;resize:vertical}
 .fbars i{display:block;width:100%;max-width:46px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px}
 .fbars b{font-size:11px;color:var(--text);font-weight:600;white-space:nowrap}
 @media (max-width:980px){.dlgrid{grid-template-columns:1fr}.dlside{position:static}}
-@media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:minmax(0,1fr) 5rem 28px}.dllines .row>:nth-child(n+2):not(:nth-child(6)):not(:last-child){display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
+@media (max-width:860px){.dlsec .grid3{grid-template-columns:1fr}.dllines .row{grid-template-columns:repeat(3,minmax(0,1fr))}.dllines .row>:first-child{grid-column:1/-1}.dllines .row.hd{display:none}.dtbl .row{grid-template-columns:minmax(0,1fr) 6rem 6rem}.dtbl .row>:nth-child(n+4){display:none}.ctbl .row{grid-template-columns:minmax(0,1fr) 6rem}.ctbl .row>:nth-child(n+3){display:none}}
 .pphead{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
 .ppres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 .ppres>div{background:var(--card);border-radius:10px;padding:10px 12px}.ppres span{display:block;font-size:12px;color:var(--muted)}.ppres b{font-size:18px;font-variant-numeric:tabular-nums}
@@ -465,7 +465,7 @@ dialog.wide{width:min(860px,calc(100% - 24px))}
 @media (max-width:860px){.pinfo{grid-template-columns:1fr}}
 .pset{grid-template-columns:minmax(0,10rem) minmax(0,1fr)!important}
 .pset select{justify-self:start;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;color:var(--text);font-size:14px}
-.dtbl .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.dtbl .row:hover{background:none}
+.device-table .row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);cursor:default}.device-table .row:hover{background:none}
 @media (max-width:860px){.nav-profile .pn small{display:none}}
 /* Guests edit existing CRM records and use their own chat, but cannot create or delete CRM entries. */
 body.guest :is(#newBtn,#acNew,#acImport,#cxNew,#aAddContact,#bNew,#addTask,#addAppt,#aAddTask,#aAddAppt,#aAddLoc,#delBtn,#tDel,#chDel,#nsBook,.addc,.nhead .btn,.nfoot .danger,.locf .danger){display:none!important}
@@ -738,7 +738,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
       <div class="usec" id="pAdminSec" hidden><h2>Admin</h2><div class="hint">Usage, security, data health, and system details for the whole team. Only Quan and Cody see this.</div>
         <button class="btn primary" id="pAdmin">Open admin dashboard</button>
       </div>
-      <div class="usec"><h2>Signed-in devices</h2><div class="hint">Each device stays signed in for up to 180 days. Sign out of any you don't recognize.</div>
+      <div class="usec"><h2>Signed-in devices</h2><div class="hint">Remembered devices stay signed in for up to 180 days; other sessions expire after 12 hours. Sign out of any you don't recognize.</div>
         <div id="pDevices"><div class="empty">Loading…</div></div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="pOthers">Sign out other devices</button><button class="btn danger" id="pSignOut">Sign out of this device</button></div>
       </div>
@@ -1283,11 +1283,12 @@ function openT(kind,i,presetOpp,preset){
 async function toggleDone(i,done){
   if(done&&!i.contactId){toast("Pick who this was with before marking it done");renderItems();openT(i.kind,i);setTimeout(()=>{$("tContact").classList.add("need");$("tContact").focus()},60);return}
   const upd={done,doneTs:done?Date.now():null};
+  if(live&&!await write(()=>db.doc("activities/"+i.id).update(upd),done?"Marked done":"Reopened")){renderItems();return;}
   const o=opps.find(x=>x.id===i.oppId);
   if(o&&done){if(live)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});else o.lastTouch=today()}
   logAct(`${done?"Completed":"Reopened"} ${i.type}${i.kind==="appt"?" meeting":""}${i.oppName?" with "+i.oppName:""}`,i.oppId);
   if(!live){Object.assign(i,upd);renderItems();render();return}
-  await write(()=>db.doc("activities/"+i.id).update(upd),done?"Marked done":"Reopened");
+
 }
 $("taskTabs").onclick=e=>{const f=e.target.dataset.f;if(!f)return;tf.task=f;[...$("taskTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.f===f));renderItems()};
 $("apptTabs").onclick=e=>{const f=e.target.dataset.f;if(!f)return;tf.appt=f;[...$("apptTabs").children].forEach(b=>b.classList.toggle("on",b.dataset.f===f));renderItems()};
@@ -1300,18 +1301,21 @@ $("tSave").onclick=async()=>{
   const o=opps.find(x=>x.id===$("tOpp").value);
   const done=$("tDone").checked;
   const data={kind:tKind,type:types[tType],oppId:o?.id||"",oppName:o?.name||"",date:$("tDate").value||"",time:$("tTime").value.trim(),notes:$("tNotes").value.trim(),done,doneTs:done?(tEdit?.doneTs||Date.now()):null,createdTs:tEdit?.createdTs||Date.now(),owner:$("tOwner").value,shared:tEdit?.shared||[],contactId:$("tContact").value,contactName:contactName($("tContact").value)};
-  const was=tEdit;$("tdlg").close();
+  const was=tEdit;
+  if(live&&!await write(()=>was?db.doc("activities/"+was.id).update(data):db.collection("activities").add(data),was?"Saved":(tKind==="task"?"Task added":"Appointment booked")))return;
+  $("tdlg").close();
   const what=data.type+(tKind==="appt"?" meeting":"")+(data.oppName?" with "+data.oppName:"");
   logAct(was?(!was.done&&done?"Completed ":"Updated ")+what:(tKind==="task"?"Added task: ":"Booked ")+what+(data.date?" for "+fmtDate(data.date):""),data.oppId);
   if(o&&done&&!(was&&was.done)){if(live)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});else o.lastTouch=today()}
   if(!live){if(was)Object.assign(was,data);else items.push({id:"l"+Date.now(),...data});renderItems();render();toast("Saved for this session only");return}
-  await write(()=>was?db.doc("activities/"+was.id).update(data):db.collection("activities").add(data),was?"Saved":(tKind==="task"?"Task added":"Appointment booked"));
+
 };
 $("tDel").onclick=async()=>{
-  const i=tEdit;if(!confirm("Delete this "+(i.kind==="task"?"task":"appointment")+"?"))return;$("tdlg").close();
+  const i=tEdit;if(!confirm("Delete this "+(i.kind==="task"?"task":"appointment")+"?"))return;
+  if(live&&!await write(()=>db.doc("activities/"+i.id).delete(),"Deleted"))return;$("tdlg").close();
   logAct(`Deleted ${i.type}${i.kind==="appt"?" meeting":""}${i.oppName?" with "+i.oppName:""}`,i.oppId);
   if(!live){items=items.filter(x=>x!==i);renderItems();render();return}
-  await write(()=>db.doc("activities/"+i.id).delete(),"Deleted");
+
 };
 function itemLabel(i){return i.type+(i.kind==="appt"?" meeting":"")+(i.oppName?" with "+i.oppName:"")}
 function openShare(i){
@@ -1329,13 +1333,15 @@ $("sCopy").onclick=async()=>{
 };
 $("sSave").onclick=async()=>{
   const i=sItem;const shared=[...$("sWho").querySelectorAll("input:checked")].map(c=>c.value);
-  const before=i.shared||[];$("sdlg").close();
+  const before=i.shared||[];
   const added=shared.filter(x=>!before.includes(x)),removed=before.filter(x=>!shared.includes(x));
-  if(!added.length&&!removed.length)return;
+  if(!added.length&&!removed.length){$("sdlg").close();return;}
+  if(live&&!await write(()=>db.doc("activities/"+i.id).update({shared}),added.length?"Shared with "+added.map(nameOf).join(" and "):"Sharing updated"))return;
+  $("sdlg").close();
   if(added.length)logAct(`Shared ${itemLabel(i)} with ${added.map(nameOf).join(" and ")}`,i.oppId);
   if(removed.length)logAct(`Stopped sharing ${itemLabel(i)} with ${removed.map(nameOf).join(" and ")}`,i.oppId);
   if(!live){i.shared=shared;renderItems();toast("Sharing saved");return}
-  await write(()=>db.doc("activities/"+i.id).update({shared}),added.length?"Shared with "+added.map(nameOf).join(" and "):"Sharing updated");
+
 };
 $("scope").onclick=e=>{const v=e.target.dataset.s;if(!v)return;scope=v;[...$("scope").children].forEach(b=>b.classList.toggle("on",b.dataset.s===v));renderItems()};
 $("meSel").onchange=()=>{fillMe()};
@@ -1358,23 +1364,26 @@ function renderActs(){
 }
 function track(kind,action){if(live&&window.voyageUsage)window.voyageUsage.track(kind,view,action)}
 async function write(fn,okMsg){
-  try{await fn();toast(okMsg);track("action",okMsg)}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.")}
+  const dialog=document.activeElement?.closest?.("dialog"),controls=[...(dialog?.querySelectorAll("input,select,textarea,button")||[])],disabled=controls.map(n=>n.disabled);
+  controls.forEach(n=>n.disabled=true);
+  try{await fn();toast(okMsg);track("action",okMsg);return true}catch(e){toast(e&&e.code==="guest_forbidden"?"Guests can edit existing CRM entries, but cannot add or delete them.":e&&e.code==="quota_exceeded"?"The CRM is full. Delete old opps to add more.":"That didn't save. Try again.");return false}finally{controls.forEach((n,i)=>n.disabled=disabled[i]);}
 }
 $("saveBtn").onclick=async()=>{
   const data=readForm();if(!data)return;
-  const was=editing;$("dlg").close();
+  const was=editing;
   const msg=!was?`Added ${data.name} in ${STAGES[data.stage]}`:was.stage!==data.stage?`Moved ${data.name} from ${STAGES[was.stage]} to ${STAGES[data.stage]}`:`Updated ${data.name}`+(data.next&&(!was.next||was.next.label!==data.next.label||was.next.date!==data.next.date)?`, next step: ${data.next.label}${data.next.date?" on "+data.next.date:""}`:"");
-  if(!live){const id=was?was.id:"local"+Date.now();logAct(msg,id);if(was)Object.assign(was,data);else opps.push({id,...data});render();toast("Saved for this session only");return}
+  if(!live){$("dlg").close();const id=was?was.id:"local"+Date.now();logAct(msg,id);if(was)Object.assign(was,data);else opps.push({id,...data});render();toast("Saved for this session only");return}
   const ref=was?db.doc("opps/"+was.id):db.collection("opps").doc();
-  logAct(msg,ref.id);
-  await write(()=>was?ref.update(data):ref.set(data),was?"Opp saved":"Opp added");
+  if(!await write(()=>was?ref.update(data):ref.set(data),was?"Opp saved":"Opp added"))return;
+  $("dlg").close();logAct(msg,ref.id);
 };
 $("delBtn").onclick=async()=>{
-  const o=editing;if(!confirm("Delete "+o.name+"? This can't be undone."))return;$("dlg").close();
+  const o=editing;if(!confirm("Delete "+o.name+"? This can't be undone."))return;
+  if(live&&!await write(()=>db.doc("opps/"+o.id).delete(),"Opp deleted"))return;$("dlg").close();
   logAct(`Deleted ${o.name}`,o.id);
   if(view==="account"&&acctId===o.id)go(acctFrom);
   if(!live){opps=opps.filter(x=>x!==o);render();toast("Opp deleted");return}
-  await write(()=>db.doc("opps/"+o.id).delete(),"Opp deleted");
+
 };
 $("cancelBtn").onclick=()=>$("dlg").close();
 $("newBtn").onclick=()=>openDlg(null);
@@ -1389,9 +1398,10 @@ function nextFor(o){
 async function moveOpp(o,to){
   if(to<0||to>6||to===o.stage)return;
   const from=o.stage;
+  if(live&&!await write(()=>db.doc("opps/"+o.id).update({stage:to,stageTs:Date.now()}),"Moved to "+STAGES[to]))return;
   logAct(`Moved ${o.name} from ${STAGES[from]} to ${STAGES[to]}`,o.id);
   if(!live){o.stage=to;o.stageTs=Date.now();render();toast("Moved to "+STAGES[to]);return}
-  await write(()=>db.doc("opps/"+o.id).update({stage:to,stageTs:Date.now()}),"Moved to "+STAGES[to]);
+
 }
 function renderBoard(){
   const ow=$("bOwner");if(ow.options.length!==editors().length+1){const v=ow.value;ow.replaceChildren(new Option("Everyone's opps",""));editors().forEach(m=>ow.append(new Option(m.name+"'s opps",m.id)));ow.value=v}
@@ -1492,10 +1502,12 @@ $("nsOpen").onclick=()=>{$("nsdlg").close();openAccount(nsOpp.id,"dash")};
 $("nsNotes").onclick=()=>{const o=nsOpp;$("nsdlg").close();openNotes(o.id,guessType(o.next.label)||APPT_TYPES[0],{date:o.next.date})};
 $("nsBook").onclick=()=>{const o=nsOpp;$("nsdlg").close();openT("appt",null,o.id,{type:guessType(o.next.label),date:o.next.date,time:o.next.time})};
 $("nsDone").onclick=async()=>{
-  const o=nsOpp;$("nsdlg").close();
+  const o=nsOpp;
+  if(live&&!await write(()=>db.doc("opps/"+o.id).update({next:null,lastTouch:today()}),"Marked complete"))return;
+  $("nsdlg").close();
   logAct(`Completed next step "${o.next.label}" with ${o.name}`,o.id);
   if(!live){o.next=null;o.lastTouch=today();render();toast("Marked complete");return}
-  await write(()=>db.doc("opps/"+o.id).update({next:null,lastTouch:today()}),"Marked complete");
+
 };
 $("tNotesBtn").onclick=()=>{const i=tEdit;if(!i)return;$("tdlg").close();openNotes(i.oppId,i.type,{apptId:i.id,date:i.date})};
 
@@ -1553,24 +1565,34 @@ function noteCard(n,o,appts){
 }
 async function saveNote(n,v,card){
   if(!v.text){toast("Write something before saving");return}
-  const o=opps.find(x=>x.id===n.oppId);
-  const data={oppId:n.oppId,oppName:o?o.name:"",type:n.type,date:v.date||"",apptId:v.apptId||"",text:v.text,by:me,createdTs:n.createdTs||Date.now(),updatedTs:Date.now()};
-  logAct(`${n.draft?"Added":"Updated"} ${n.type} note for ${data.oppName}${data.date?" ("+fmtDate(data.date)+")":""}`,n.oppId);
-  card.classList.remove("dirty");if(document.activeElement)document.activeElement.blur();
-  if(n.draft)nDrafts=nDrafts.filter(d=>d.id!==n.id);
-  if(!live){if(n.draft)notes.push({id:"n"+Date.now(),...data});else Object.assign(notes.find(x=>x.id===n.id),data);renderNotes(true);toast("Note saved");return}
-  const ref=n.draft?db.collection("notes").doc():db.doc("notes/"+n.id);
-  if(n.draft)notes.push({id:ref.id,...data});
-  renderNotes(true);
-  await write(()=>n.draft?ref.set(data):ref.update(data),"Note saved");
+  if(n.saving)return;
+  n.saving=true;
+  const controls=[...(card.querySelectorAll?.("input,select,textarea,button")||[])],disabled=controls.map(x=>x.disabled);controls.forEach(x=>x.disabled=true);
+  try{
+    const o=opps.find(x=>x.id===n.oppId);
+    const data={oppId:n.oppId,oppName:o?o.name:"",type:n.type,date:v.date||"",apptId:v.apptId||"",text:v.text,by:me,createdTs:n.createdTs||Date.now(),updatedTs:Date.now()};
+    let id=n.id;
+    if(live){
+      // Reuse the same ID after an ambiguous network failure instead of inserting twice.
+      const ref=n.draft?db.collection("notes").doc(n.pendingId):db.doc("notes/"+n.id);
+      if(n.draft)n.pendingId=ref.id;
+      if(!await write(()=>n.draft?ref.set(data):ref.update(data),"Note saved"))return;
+      id=ref.id;
+    }else if(n.draft)id="n"+Date.now();
+    logAct(`${n.draft?"Added":"Updated"} ${n.type} note for ${data.oppName}${data.date?" ("+fmtDate(data.date)+")":""}`,n.oppId);
+    if(n.draft){nDrafts=nDrafts.filter(d=>d.id!==n.id);if(!notes.some(x=>x.id===id))notes.push({id,...data});}
+    else{const saved=notes.find(x=>x.id===n.id);if(saved)Object.assign(saved,data);}
+    card.classList.remove("dirty");
+    if(document.activeElement)document.activeElement.blur();
+    renderNotes(true);if(!live)toast("Note saved");
+  }finally{n.saving=false;controls.forEach((x,i)=>x.disabled=disabled[i]);}
 }
 async function deleteNote(n){
   if(n.draft){const card=document.querySelector(`[data-nid="${n.id}"]`);if(card&&card.querySelector("textarea").value.trim()&&!confirm("Discard this note?"))return;nDrafts=nDrafts.filter(d=>d.id!==n.id);renderNotes(true);return}
   if(!confirm("Delete this "+n.type+" note from "+fmtDate(n.date)+"?"))return;
+  if(live&&!await write(()=>db.doc("notes/"+n.id).delete(),"Note deleted"))return;
   logAct(`Deleted ${n.type} note for ${n.oppName||"an account"}`,n.oppId);
-  if(!live){notes=notes.filter(x=>x!==n);renderNotes(true);return}
   notes=notes.filter(x=>x.id!==n.id);renderNotes(true);
-  await write(()=>db.doc("notes/"+n.id).delete(),"Note deleted");
 }
 $("nAcct").onchange=()=>{if(notesDirty()&&!confirm("You have unsaved notes. Switch accounts anyway?")){$("nAcct").value=nOpp||"";return}nDrafts=[];nOpp=$("nAcct").value||null;renderNotes(true)};
 $("nOpenAcct").onclick=()=>{if(nOpp)openAccount(nOpp,"notes")};
@@ -1693,16 +1715,17 @@ $("chCancel").onclick=()=>$("chdlg").close();
 $("chSave").onclick=async()=>{
   const name=$("chName").value.trim(),oppId=$("chOpp").value;
   if(!name){toast("Give the chat a name");$("chName").focus();return}
-  $("chdlg").close();
   if(chEdit){
     const id=chEdit,ex=chDoc(id);const data={name,oppId,by:ex?ex.by:me,ts:ex?ex.ts:Date.now()};
-    if(!live){if(ex)Object.assign(ex,data);else channels.push({id,...data});renderTeam();return}
-    await write(()=>db.doc("channels/"+id).update(data),"Chat renamed");return;
+    if(!live){$("chdlg").close();if(ex)Object.assign(ex,data);else channels.push({id,...data});renderTeam();return}
+    if(await write(()=>db.doc("channels/"+id).update(data),"Chat renamed"))$("chdlg").close();return;
   }
   const data={name,oppId,by:me,ts:Date.now()};
-  if(!live){const id="c"+Date.now();channels.push({id,...data});tcCh=id;tcForceScroll=true;renderTeam();$("tcIn").focus();return}
-  const ref=db.collection("channels").doc();channels.push({id:ref.id,...data});tcCh=ref.id;tcForceScroll=true;renderTeam();$("tcIn").focus();
-  await write(()=>ref.set(data),"Chat created");
+  if(!live){$("chdlg").close();const id="c"+Date.now();channels.push({id,...data});tcCh=id;tcForceScroll=true;renderTeam();$("tcIn").focus();return}
+  const ref=db.collection("channels").doc();
+  if(!await write(()=>ref.set(data),"Chat created"))return;
+  $("chdlg").close();channels.push({id:ref.id,...data});tcCh=ref.id;tcForceScroll=true;renderTeam();$("tcIn").focus();
+
 };
 $("chDel").onclick=async()=>{
   const id=chEdit;const n=msgs.filter(m=>m.ch===id).length;
@@ -1847,15 +1870,13 @@ $("vSave").onclick=async()=>{
   const name=$("vName").value.trim();if(!name){toast("Add a name first");$("vName").focus();return}
   const was=vEdit;
   const data={name,company:$("vCompany").value.trim(),kind:$("vKind").value.trim(),email:$("vEmail").value.trim(),phone:$("vPhone").value.trim(),website:normUrl($("vWeb").value),oppId:$("vOpp").value,notes:$("vNotes").value.trim(),createdTs:was?.createdTs||Date.now(),by:was?.by||me,updatedTs:Date.now()};
-  $("vdlg").close();
-  if(!live){if(was)Object.assign(was,data);else vendors.push({id:"v"+Date.now(),...data});renderVendors();toast("Saved for this session only");return}
-  await write(()=>was?db.doc("vendors/"+was.id).set(data):db.collection("vendors").add(data),was?"Vendor saved":"Vendor added");
+  if(!live){$("vdlg").close();if(was)Object.assign(was,data);else vendors.push({id:"v"+Date.now(),...data});renderVendors();toast("Saved for this session only");return}
+  if(await write(()=>was?db.doc("vendors/"+was.id).set(data):db.collection("vendors").add(data),was?"Vendor saved":"Vendor added"))$("vdlg").close();
 };
 $("vDel").onclick=async()=>{
   const v=vEdit;if(!v||!confirm("Delete "+v.name+" from your vendors?"))return;
-  $("vdlg").close();
-  if(!live){vendors=vendors.filter(x=>x!==v);renderVendors();return}
-  await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted");
+  if(!live){$("vdlg").close();vendors=vendors.filter(x=>x!==v);renderVendors();return}
+  if(await write(()=>db.doc("vendors/"+v.id).delete(),"Vendor deleted"))$("vdlg").close();
 };
 
 const VIEW_NAMES={dash:"Home",accounts:"Accounts",account:"Account details",vendors:"Vendors",activity:"Activity",notes:"Notes",stages:"Stages",cadence:"Pillage",team:"Team chat",calendar:"Calendar",deals:"Deals",deal:"Deal builder",profile:"Profile",admin:"Admin",usage:"Admin"};
@@ -2100,7 +2121,7 @@ $("cdSave").onclick=async()=>{
     $("cdlg").close();toast(cdEdit?"Contact saved":"Contact added");track("action",cdEdit?"Edited a contact":"Added a contact");renderAccountContacts();if(cdAfter)cdAfter(saved);
   }catch(e){toast(e.message||"That didn't save")}
 };
-$("cdDel").onclick=async()=>{const c=cdEdit;if(!c)return;const used=items.filter(i=>i.contactId===c.id).length;if(!confirm(`Delete ${c.name}?`+(used?`\n${used} task${used===1?"":"s"} and meeting${used===1?"":"s"} name them; those keep the name but will need a new contact to be saved again.`:"")))return;$("cdlg").close();await write(()=>db.doc("contacts/"+c.id).delete(),"Contact deleted");contacts=contacts.filter(x=>x.id!==c.id);renderAccountContacts()};
+$("cdDel").onclick=async()=>{const c=cdEdit;if(!c)return;const used=items.filter(i=>i.contactId===c.id).length;if(!confirm(`Delete ${c.name}?`+(used?`\n${used} task${used===1?"":"s"} and meeting${used===1?"":"s"} name them; those keep the name but will need a new contact to be saved again.`:"")))return;if(!await write(()=>db.doc("contacts/"+c.id).delete(),"Contact deleted"))return;$("cdlg").close();contacts=contacts.filter(x=>x.id!==c.id);renderAccountContacts()};
 function renderAccountContacts(){
   if(view!=="account")return;const w=$("aContacts");if(!w)return;w.replaceChildren();const list=contactsFor(acctId);
   if(!list.length){w.append(el("div","empty",guest?"No contacts yet.":"No contacts yet. Add the owner or decision maker first; tasks and meetings need a contact."));return}
@@ -2133,10 +2154,11 @@ function mailtoFor(i){
 }
 async function completeStep(i,outcome){
   if(!i.contactId){toast("Pick who you reached, then log the outcome");openT(i.kind,i);setTimeout(()=>{$("tContact").classList.add("need");$("tContact").focus()},60);return}
+  if(!await write(()=>db.doc("activities/"+i.id).update({done:true,doneTs:Date.now(),outcome}),i.seq?(i.seq.step<i.seq.of?"Done. Next step scheduled":"Done. Sequence complete"):"Done"))return;
   const o=opps.find(x=>x.id===i.oppId);
   if(o)db.doc("opps/"+o.id).update({lastTouch:today()}).catch(()=>{});
   logAct(`${OUTCOME_LABEL[outcome]||"Done"}: ${i.type}${i.oppName?" with "+i.oppName:""}`,i.oppId);
-  await write(()=>db.doc("activities/"+i.id).update({done:true,doneTs:Date.now(),outcome}),i.seq?(i.seq.step<i.seq.of?"Done. Next step scheduled":"Done. Sequence complete"):"Done");
+
   track("action","Completed outreach: "+outcome);
 }
 function dueItem(i){
@@ -2240,9 +2262,9 @@ $("sqSave").onclick=async()=>{
   const name=$("sqName").value.trim();if(!name){toast("Name the sequence");$("sqName").focus();return}
   if(!sqSteps.length){toast("Add at least one step");return}
   const data={name,audience:$("sqAud").value,description:$("sqDesc").value.trim(),stopOnMeeting:$("sqStopMeet").checked,stopOnStage:$("sqStopStage").checked,active:true,steps:sqSteps.map((s,i)=>({id:s.id||"s"+Date.now().toString(36)+i,day:s.day,type:s.type,title:s.title,script:s.script}))};
-  $("sqdlg").close();await write(()=>db.doc("sequences/"+(sqEdit?.id||crypto.randomUUID())).set(data),"Sequence saved");track("action","Saved a sequence");
+  if(!await write(()=>db.doc("sequences/"+(sqEdit?.id||crypto.randomUUID())).set(data),"Sequence saved"))return;$("sqdlg").close();track("action","Saved a sequence");
 };
-$("sqDel").onclick=()=>{const s=sqEdit;if(!s)return;if(enrollments.some(e=>e.sequenceId===s.id&&["active","paused"].includes(e.status))){toast("Stop its active enrollments first (Enrolled tab)");return}if(!confirm("Delete "+s.name+"?"))return;$("sqdlg").close();write(()=>db.doc("sequences/"+s.id).delete(),"Sequence deleted")};
+$("sqDel").onclick=async()=>{const s=sqEdit;if(!s)return;if(enrollments.some(e=>e.sequenceId===s.id&&["active","paused"].includes(e.status))){toast("Stop its active enrollments first (Enrolled tab)");return}if(!confirm("Delete "+s.name+"?"))return;if(await write(()=>db.doc("sequences/"+s.id).delete(),"Sequence deleted"))$("sqdlg").close()};
 // Enroll dialog.
 let enSel=new Set();
 function openEnroll(aud,preselect,seqId){
@@ -2432,7 +2454,7 @@ function renderProcessingFinancials(w,won,open){
   const note=document.createElement("input");note.type="text";note.maxLength=500;note.placeholder="Optional";mk("Note",note);
   const fill=()=>{const r=residuals.find(x=>x.oppId===ms.value&&x.month===mo.value);vol.value=r?.volume??"";tx.value=r?.txns??"";res.value=r?.residual??"";note.value=r?.note??""};ms.onchange=fill;mo.onchange=fill;fill();
   const sv=el("button","btn primary","Save month");sv.onclick=()=>{if(!ms.value||!mo.value||res.value===""){toast("Pick the merchant and month, and enter the residual");return}
-    write(()=>db.doc(`residuals/${ms.value}_${mo.value}`).set({month:mo.value,oppId:ms.value,volume:Number(vol.value)||0,txns:Number(tx.value)||0,residual:Number(res.value)||0,note:note.value.trim(),source:"manual"}),"Month saved").then(()=>track("action","Recorded a processing month"))};
+    write(()=>db.doc(`residuals/${ms.value}_${mo.value}`).set({month:mo.value,oppId:ms.value,volume:Number(vol.value)||0,txns:Number(tx.value)||0,residual:Number(res.value)||0,note:note.value.trim(),source:"manual"}),"Month saved").then(saved=>{if(saved)track("action","Recorded a processing month")})};
   f.append(g,sv,el("div","city","Copy these from the processor's monthly residual report. Saving the same merchant and month again replaces it. When the processor's portal is connected, it will fill these in automatically."));
   sec.append(f);w.append(sec);
 }
@@ -2503,12 +2525,12 @@ function renderLines(){
   const hd=el("div","row hd");["Product or service","Billing","Qty","Price","Disc. %","Amount",""].forEach(x=>hd.append(el("span",null,x)));w.append(hd);
   if(!dl.lines.length){w.append(emptyRow(products().length?"Add a product or service below.":"Add a custom line below, or set up products under Deals › Products & rules."));return}
   dl.lines.forEach((l,ix)=>{
-    const r=el("div","row"),mk=(v,type,on)=>{const i=document.createElement("input");i.type=type;i.value=v;i.disabled=!editable;i.oninput=()=>{on(i.value);dlDirty=true;updateLineAmount(r,l);refreshSummary()};return i};
-    const nm=el("div");nm.append(mk(l.name,"text",v=>l.name=v));if(l.listPrice&&l.price<l.listPrice)nm.append(el("div","list","List "+usd(l.listPrice)));
-    const b=document.createElement("select");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,t])=>b.append(new Option(t,v)));b.value=l.billing;b.disabled=!editable;b.onchange=()=>{l.billing=b.value;dlDirty=true;updateLineAmount(r,l);refreshSummary()};
-    const q=mk(l.qty,"number",v=>l.qty=Math.max(0,Number(v)||0));q.min=0;
-    const p=mk(l.price,"number",v=>l.price=Math.max(0,Number(v)||0));p.min=0;p.step="0.01";
-    const ds=mk(l.discount||0,"number",v=>l.discount=Math.min(100,Math.max(0,Number(v)||0)));ds.min=0;ds.max=100;
+    const r=el("div","row"),mk=(v,type,on,label)=>{const i=document.createElement("input");i.setAttribute("aria-label",label);i.type=type;i.value=v;i.disabled=!editable;i.oninput=()=>{on(i.value);dlDirty=true;updateLineAmount(r,l);refreshSummary()};return i};
+    const nm=el("div");nm.append(mk(l.name,"text",v=>l.name=v,"Line name"));if(l.listPrice&&l.price<l.listPrice)nm.append(el("div","list","List "+usd(l.listPrice)));
+    const b=document.createElement("select");b.setAttribute("aria-label","Billing frequency");[["monthly","Monthly"],["annual","Yearly"],["once","One-time"]].forEach(([v,t])=>b.append(new Option(t,v)));b.value=l.billing;b.disabled=!editable;b.onchange=()=>{l.billing=b.value;dlDirty=true;updateLineAmount(r,l);refreshSummary()};
+    const q=mk(l.qty,"number",v=>l.qty=Math.max(0,Number(v)||0),"Quantity");q.min=0;
+    const p=mk(l.price,"number",v=>l.price=Math.max(0,Number(v)||0),"Unit price");p.min=0;p.step="0.01";
+    const ds=mk(l.discount||0,"number",v=>l.discount=Math.min(100,Math.max(0,Number(v)||0)),"Discount percent");ds.min=0;ds.max=100;
     const x=el("button","lx","×");x.title="Remove line";x.disabled=!editable;x.onclick=()=>{dl.lines.splice(ix,1);dlDirty=true;renderLines();refreshSummary()};
     r.append(nm,b,q,p,ds,el("span","amt",""),x);updateLineAmount(r,l);w.append(r);
   });
@@ -2605,7 +2627,7 @@ $("dlAddCustom").onclick=()=>{dl.lines.push({productId:"",name:"",billing:"month
 $("dcStart").addEventListener("input",()=>{$("dlStart").value=$("dcStart").value});$("dlStart").addEventListener("input",()=>{$("dcStart").value=$("dlStart").value});
 ["ppVol","ppTx","ppAmex","ppRate","ppPer","ppMon","ppCurRate","ppCurTx","ppCurMon","ppIc","ppBatch","dlName","dlClose","dlProb","dlStart","dcStart","dlMonths","dlFree","dlSpecial","dlNotes","dcDate","dcName","dcTitle","dcEmail","dcBilling","dcHandoff"].forEach(id=>$(id).addEventListener("input",()=>{dlDirty=true;refreshSummary();if(id==="dlName")$("dlTitle").textContent=$("dlName").value||"New deal"}));
 ["ppOn","ppHosted","dlOwner","dlPay","dlBill","dlRenew","dcSigned","dcPay"].forEach(id=>$(id).addEventListener("change",()=>{dlDirty=true;refreshSummary()}));
-window.addEventListener("beforeunload",e=>{if(view==="deal"&&dlDirty){e.preventDefault();e.returnValue=""}});
+window.addEventListener("beforeunload",e=>{if((view==="deal"&&dlDirty)||(view==="notes"&&notesDirty())){e.preventDefault();e.returnValue=""}});
 // Implementation is always in the product dropdown: a catalog item if one exists, otherwise a one-time line to price.
 function isImpl(p){return /implementation/i.test(p.name)}
 // Signed documents: uploaded to the deal; closing won requires at least one signed agreement.
@@ -2686,7 +2708,7 @@ function cxChip(e,withTime){
 function cxDrop(cell,date){
   cell.ondragover=ev=>{if(cxDrag){ev.preventDefault();cell.classList.add("over")}};
   cell.ondragleave=()=>cell.classList.remove("over");
-  cell.ondrop=ev=>{ev.preventDefault();cell.classList.remove("over");const e=cxDrag;cxDrag=null;if(e&&e.date!==date){logAct(`Rescheduled ${e.title} to ${fmtDate(date)}`,e.ref?.oppId||(e.k==="next"?e.ref.id:""));e.move(date);track("action","Rescheduled on calendar")}};
+  cell.ondrop=async ev=>{ev.preventDefault();cell.classList.remove("over");const e=cxDrag;cxDrag=null;if(e&&e.date!==date&&await e.move(date)){logAct(`Rescheduled ${e.title} to ${fmtDate(date)}`,e.ref?.oppId||(e.k==="next"?e.ref.id:""));track("action","Rescheduled on calendar")}};
 }
 function cxRange(){
   if(cxMode==="month"){const first=new Date(cxAnchor.getFullYear(),cxAnchor.getMonth(),1),s=startOfWeek(first);return [s,addDays(s,41)]}
@@ -2967,9 +2989,8 @@ $("briefBtn").onclick=()=>{openChat("Give me my daily brief for today: what is d
 $("peCancel").onclick=()=>$("pdlg").close();
 $("peSave").onclick=async()=>{
   const data={title:$("peTitle").value.trim(),phone:$("pePhone").value.trim(),location:$("peLoc").value.trim(),timezone:$("peTz").value,hours:$("peHours").value.trim(),contact:$("peContact").value,linkedin:normUrl($("peLi").value),focus:$("peFocus").value.trim(),bio:$("peBio").value.trim()};
-  $("pdlg").close();
-  if(!live){profiles=[...profiles.filter(p=>p.id!==me),{id:me,...data}];renderProfile();toast("Saved for this session only");return}
-  await write(()=>db.doc("profiles/"+me).set(data),"Profile saved");
+  if(!live){$("pdlg").close();profiles=[...profiles.filter(p=>p.id!==me),{id:me,...data}];renderProfile();toast("Saved for this session only");return}
+  if(await write(()=>db.doc("profiles/"+me).set(data),"Profile saved"))$("pdlg").close();
 };
 async function loadProfile(){
   renderProfile();loadCalendar();
@@ -2989,7 +3010,7 @@ function renderProfile(){
   $("pWork").replaceChildren(work);renderMyInfo();renderDirectory();
   const d=$("pDevices");
   if(!profile){d.replaceChildren(el("div","empty","Loading…"));return}
-  d.replaceChildren(adTable("dtbl",["Device","Signed in","Stays signed in until"],profile.devices.map(x=>{const r=el("div","row");r.append(el("span","nm",x.current?"This device":"Another device"),cell(fmtDay(x.created_at)),cell(fmtDay(x.expires_at)));return r})));
+  d.replaceChildren(adTable("device-table",["Device","Signed in","Stays signed in until"],profile.devices.map(x=>{const r=el("div","row");r.append(el("span","nm",x.current?"This device":"Another device"),cell(fmtDay(x.created_at)),cell(fmtDay(x.expires_at)));return r})));
   $("pOthers").disabled=profile.devices.filter(x=>!x.current).length===0;
 }
 $("pTheme").onchange=()=>{const v=$("pTheme").value;try{v?localStorage.setItem("voyage-theme",v):localStorage.removeItem("voyage-theme")}catch(_){}applyTheme(v);track("action","Changed appearance")};
@@ -3014,6 +3035,7 @@ const SOON={
 window.addEventListener("voyage-company-account",event=>{if(guest||typeof event.detail!=="string")return;const account=opps.find(o=>o.id===event.detail);if(account)openAccount(account.id,"accounts");});
 window.addEventListener("voyage-content-navigate",event=>{if(guest)return;const {view:next,contentItem}=event.detail||{};if(!["dash","accounts","company","content"].includes(next))return;go(next);if(next==="content"&&/^[a-zA-Z0-9_-]{1,100}$/.test(contentItem||""))window.dispatchEvent(new CustomEvent("voyage-company-investigate",{detail:"Review Content for saved editorial item "+contentItem+". Use the actual source posts, research evidence and saved package. Do not invent claims, media or analytics. Do not publish."}));});
 function go(v){
+  if(view==="notes"&&v!=="notes"&&notesDirty()&&!confirm("Leave your unsaved notes? Copy or save them before leaving."))return;
   if(v==="tickets"&&guest)return;
   const ticketRoute=v==="tickets";if(ticketRoute)v="company";
   if(v==="oden"){openChat();track("action","Opened Muninn");return}

@@ -1,0 +1,11 @@
+# Coverage ledger and limits
+
+The original 343-file, 37,870-text-line manifest is preserved in inventory.json. coverage-ledger.json assigns every baseline file a review method, current identity/line count where present, depth and rationale. current-source-check.json also includes newly tracked files and tombstones for replaced generated assets. No file is silently omitted from the baseline ledger.
+
+The repair pass extended source review through the remaining legacy HTML/CSS/deal/calendar/profile code, standalone styles, Factory presentation/selection/save paths, archived server/error wrappers, install/release/native capture scripts, configuration and policy documents. Unit-test and operational verification contracts were examined, and obsolete selectors and policy statements were corrected. Defects discovered in the extra UI review include the deal/device table CSS collision and hidden mobile deal inputs; both have browser evidence.
+
+Every JavaScript/MJS/TypeScript/TSX file is parsed in full; all inline HTML script bodies and CSS are parsed; Python AST and shell syntax are checked without executing installation scripts. JSON/JSONC is parsed. Text policy/SQL/YAML/TOML files receive byte inventory and source/contract review, not a claimed YAML/SQL interpreter check. Fresh local D1 runtime probes apply all migrations. Binary files use byte identity. Generated bundles are rebuilt from reviewed sources; locks receive dependency analysis. These are distinct coverage methods.
+
+**No certified exhaustive manual semantic review of every line is claimed.** Test/verification contracts have varying review depth; imported UI wrappers and generated artifacts were not manually reconstructed as upstream implementations. A parser accepting all lines does not establish authorization correctness, transaction safety, browser accessibility, complete provider behavior or production acceptance. Remaining architectural findings and deeper uncertainty are listed in ASTRA-NEXT.md rather than hidden by the coverage count.
+
+This ledger closes the untracked coverage gap by identifying the method and limits for every file. It does not turn that accounting into a false assurance. Review unresolved behavior at the exact current revision before changing it, and preserve per-file evidence when a deeper pass is performed.
