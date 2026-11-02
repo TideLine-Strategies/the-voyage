@@ -176,3 +176,13 @@ independent runtime to `~/Library/Application Support/TideLine/Social Analytics`
 The new LaunchAgent is `com.tideline.social-analytics` (08:15 local and RunAtLoad).
 The existing F100RD access helper is reused for its original persistent profile;
 no legacy publishing permission is granted or changed by this collector.
+
+Native YouTube and LinkedIn reporting now uses the original Atlas session through
+its governed task controller. The existing daily social job runs Meta, then the
+independent page collector, then TikTok. YouTube reports native subscribers and
+28-day views; TideLine LinkedIn reports followers and Content Highlights with
+its own dates. The differently dated engagement table is not merged into those
+totals. Company Social shows source dates, capture freshness, baseline deltas and
+original analytics links. Daily observations feed trends without adding rolling
+windows together. The runtime's `page-social-last-sync.json` is the operational
+receipt; profile presence alone is not a successful reporting connection.
