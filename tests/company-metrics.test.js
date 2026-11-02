@@ -68,3 +68,12 @@ test('CRM delivery target counts overdue source handoffs only, with unavailable 
  assert.equal(metric(build({...acquisition,waitlist:{...row,unlinkedOver10Minutes:null}}),'crm.unlinked').status,'unknown');
  assert.equal(metric(buildCockpit(summary({company:'wonplace',acquisition}),{},[],now),'crm.unlinked').status,'unknown');
 });
+
+test('provisioned staff counts stay scoped and separate from recently active users',()=>{
+ const source={connected:true,access:{status:'connected',asOf:now,total:9,active:6,invited:2,suspended:1,coverage:'Configured organization only'}};
+ const m=buildCockpit(summary({company:'wonplace'}),source,[],now);
+ assert.equal(metric(m,'app.accounts.active').current,6);assert.equal(metric(m,'app.accounts.invited').current,2);assert.equal(metric(m,'staff.active').current,null);
+ assert.equal(metric(buildCockpit(summary({company:'tideline'}),source,[],now),'app.accounts.active').current,null);
+ assert.equal(metric(buildCockpit(summary({company:'wonplace'}),{...source,connected:false},[],now),'app.accounts.active').current,null);
+ assert.equal(metric(buildCockpit(summary({company:'wonplace'}),{connected:true,access:{status:'unavailable'}},[],now),'app.accounts.active').current,null);
+});

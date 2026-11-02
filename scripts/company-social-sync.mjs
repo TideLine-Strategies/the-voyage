@@ -10,6 +10,13 @@ const helperRun=args=>{try{return parseObjects(execFileSync('/usr/bin/python3',[
 async function sourceRequest(method,payload){const url='https://voyage.tidelinestrats.com/api/company-events/wonplace',body=payload?JSON.stringify(payload):'';const r=await fetch(url,{method,headers:await signedHeaders(config.secrets.wonplace,method,url,'tiktok-native-collector',body),...(payload?{body}:{}),redirect:'manual',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('Source receipt unavailable');return r.json();}
 async function main(){
  const configFile=process.env.COMPANY_OPERATIONS_CONFIG;if(!configFile||(await fs.stat(configFile)).mode&0o077)throw Error('Private existing source configuration required');config=JSON.parse(await fs.readFile(configFile,'utf8'));if(config.voyageOrigin!=='https://voyage.tidelinestrats.com'||typeof config.secrets?.wonplace!=='string'||config.secrets.wonplace.length<32)throw Error('Wrong company source configuration');
+ // Meta refresh is independent of TikTok browser admission; retain each source's own time.
+ try{
+  const native=JSON.parse(execFileSync('/usr/bin/python3',[path.join(root,'scripts/wonplace-meta-insights.py')],{encoding:'utf8',timeout:90000,stdio:['ignore','pipe','pipe']}));
+  const accounts=(native.reports||[]).filter(r=>r.status==='connected');
+  if(accounts.length){await sourceRequest('POST',{events:[],socialAccounts:accounts});const remote=await sourceRequest('GET');for(const account of accounts){const stored=remote.social?.accounts?.find(a=>a.platform===account.platform)?.latest;if(stored?.accountId!==account.accountId||stored?.observedAt!==account.observedAt)throw Error('Meta receipt unavailable');}}
+  await atomic(path.join(root,'meta-last-sync.json'),{checkedAt:Date.now(),status:native.status,platforms:(native.reports||[]).map(r=>({platform:r.platform,status:r.status,observedAt:r.observedAt||null}))});
+ }catch{await atomic(path.join(root,'meta-last-sync.json'),{checkedAt:Date.now(),status:'unavailable',reason:'native_read_or_receipt_unavailable'});}
  const access=JSON.parse(await fs.readFile(path.join(path.dirname(helper),'../jim/config/content_access.json'),'utf8'));broker=access.broker_url;if(new URL(broker).hostname!=='127.0.0.1')throw Error('Unsupported browser broker');
  const previous=JSON.parse(await fs.readFile(stateFile,'utf8').catch(()=>'{"status":"new"}'));
  if(previous.status==='sending'){const remote=await sourceRequest('GET');if(remote.social?.latest?.observedAt===previous.observedAt)await atomic(stateFile,{status:'reconciled',observedAt:previous.observedAt,checkedAt:Date.now()});else if(!(remote.social?.latest?.observedAt>previous.observedAt))throw Error('Prior source delivery needs reconciliation');}
