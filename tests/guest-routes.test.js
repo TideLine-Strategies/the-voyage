@@ -39,6 +39,16 @@ function fixture() {
   return { sqlite, call, seed };
 }
 
+test("historical referral records remain editor-only and validate before persistence", async () => {
+  const {call,seed}=fixture();
+  seed('referral_leads','legacy-a',{name:'Private parent'});
+  for(const [method,path,data]of [['GET','/api/collection/referral_leads'],['GET','/api/document/referral_leads/legacy-a'],['PATCH','/api/document/referral_leads/legacy-a',{name:'Changed'}],['DELETE','/api/document/referral_leads/legacy-a'],['POST','/api/collection/referral_leads',{name:'New'}]])assert.equal((await call('b',method,path,data)).status,403);
+  assert.equal((await call('a','GET','/api/collection/referral_leads')).status,200);
+  assert.equal((await call('a','POST','/api/collection/referral_leads',{name:'Missing classifications'})).status,400);
+  assert.equal((await call('a','PATCH','/api/document/referral_leads/legacy-a',{send:true})).status,400);
+  assert.equal((await (await call('a','GET','/api/document/referral_leads/legacy-a')).json()).data.name,'Private parent');
+});
+
 test("guest sees the full CRM and Muninn context but only the guest chat", async () => {
   const { call, seed } = fixture();
   seed("opps", "account", { name: "Gym", stage: 1 });
