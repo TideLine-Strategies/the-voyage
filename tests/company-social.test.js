@@ -10,3 +10,21 @@ test('signed HTTP ingestion enforces product boundary; report and baseline are e
 test('native social metrics keep their own window and do not change website page views or another product',async()=>{const {env}=fixture();await saveSocial(env,'wonplace',snapshot(),now);const social=await readSocial(env,'wonplace',now);const summary={company:'wonplace',asOf:now,social,providers:[],financials:[],live:{events:[],activeUsers:[]}};const model=buildCockpit(summary,{},[],now);assert.equal(model.metrics.find(m=>m.id==='social.tiktok.views').current,70);assert.equal(model.metrics.find(m=>m.id==='social.tiktok.views').window,'platform7d');assert.equal(model.metrics.find(m=>m.id==='content.views').current,null);assert.equal(buildCockpit({...summary,company:'tideline'}, {},[],now).metrics.find(m=>m.id==='social.tiktok.views').current,null);});
 test('rounded UI counts remain unknown and helper parsing handles concatenated routing JSON without eval',()=>{assert.equal(exactCount('2,736'),2736);assert.equal(exactCount('2.7K'),null);assert.equal(exactCount('—'),null);assert.deepEqual(parseObjects('notice {"x":{"quoted":"a } b"}}\n{"status":"ready"}'),[{x:{quoted:'a } b'}},{status:'ready'}]);});
 test('a rounded latest follower count cannot silently reuse an earlier precise count',async()=>{const {env}=fixture();await saveSocial(env,'wonplace',snapshot(now-86400000),now);const current={...snapshot(now),account:{followers:null,following:9,likes:null}};await saveSocial(env,'wonplace',current,now);const social=await readSocial(env,'wonplace',now),m=buildCockpit({company:'wonplace',social,providers:[],financials:[],live:{events:[]}}, {},[],now).metrics.find(m=>m.id==='social.tiktok.followers');assert.equal(m.current,null);assert.equal(m.status,'unknown');assert.equal(social.growth.followers,null);});
+
+test('Meta account counters pin product and account IDs, retain baseline and reject stale overwrite',async()=>{
+ const {accountSnapshot,saveBrandAccounts}=await import('../src/company-social.js');const {env}=fixture();
+ const row={platform:'instagram',accountId:'17841474678217484',label:'wonplaceapp',observedAt:Date.now(),counts:{followers_count:487,media_count:120},status:'connected',coverage:'native'};
+ assert.equal(accountSnapshot(row).counts.followers_count,487);
+ for(const patch of [{accountId:'wrong'},{platform:'youtube'},{counts:{followers_count:1,email:'private'}},{observedAt:Date.now()+120000}])assert.throws(()=>accountSnapshot({...row,...patch}));
+ await assert.rejects(saveBrandAccounts(env,'tideline',[row]));await assert.rejects(saveBrandAccounts(env,'wonplace',[row,row]));
+ await saveBrandAccounts(env,'wonplace',[row]);await saveBrandAccounts(env,'wonplace',[{...row,observedAt:row.observedAt-1000,counts:{followers_count:1}}]);
+ const result=await readSocial(env,'wonplace');const account=result.accounts.find(a=>a.platform==='instagram');assert.equal(account.latest.counts.followers_count,487);assert.equal(account.baseline.counts.followers_count,487);
+ const model=buildCockpit({company:'wonplace',providers:[],financials:[],social:result},{});assert.equal(model.metrics.find(m=>m.id==='social.instagram.followers').current,487);
+});
+
+test('signed Meta ingestion rejects another product and confirms stored account identity',async()=>{
+ const {env}=fixture();const sample={platform:'facebook',accountId:'681105458418105',label:'Native page label',observedAt:Date.now(),counts:{followers_count:52,fan_count:52},status:'connected',coverage:'native'};
+ const send=async(company,key,accounts)=>{const url='https://voyage.example/api/company-events/'+company,body=JSON.stringify({events:[],socialAccounts:accounts});return ingestCompany(new Request(url,{method:'POST',headers:await signedHeaders(key,'POST',url,'test-meta',body),body}),env,r=>r.json());};
+ const response=await send('wonplace',secret,[sample]);assert.equal(response.status,200);assert.equal((await response.json()).socialAccounts[0].accountId,sample.accountId);
+ assert.equal((await send('tideline',secret+'tideline',[sample])).status,400);assert.equal((await send('wonplace',secret,[sample,sample])).status,400);
+});

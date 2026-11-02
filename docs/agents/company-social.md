@@ -58,3 +58,9 @@ Validation for this implementation includes actual native export capture, signed
 source isolation, baseline/replay/failure tests, exact release checks, live source
 readback and visual review of the Company Social inspector. A new browser login
 challenge is an owner handoff, not an excuse to replace the profile.
+
+## WonPlace Meta accounts — owner confirmed November 2, 2026
+
+Quan confirms the former F10.0RD accounts now belong to WonPlace. The native reader pins Instagram ID17841474678217484 and Facebook Page681105458418105. The returned Instagram handle is wonplaceapp; Facebook still returned the legacy display name. Display the returned identity; do not rename accounts as an analytics test. The existing Keychain connector remains private. Native follower/media counters are account totals, including inherited audience. They do not establish reach, conversions, or gym-owner identity.
+
+The signed WonPlace source accepts validated socialAccounts snapshots for these two IDs only. Baselines are immutable, newer observations alone replace latest, and missing reads become stale rather than zero. The daily reader refreshes Meta independently before TikTok browser admission and verifies persisted readback. meta-last-sync.json retains the latest attempt. YouTube requires the original channel session; LinkedIn requires Page analytics permission. No browser cookies are converted into API credentials.

@@ -1,4 +1,4 @@
-import {socialSnapshot,saveSocial,readSocial,socialAttempt,saveSocialAttempt} from './company-social.js';
+import {socialSnapshot,saveSocial,readSocial,socialAttempt,saveSocialAttempt,accountSnapshot,saveBrandAccounts} from './company-social.js';
 import {startTrakrConnection,disconnectTrakr} from './company-trakr.js';
 import {acquisitionReport} from './company-acquisition.js';
 import {buildCockpit,cockpitSettings,measurement,providerMeasurements} from './company-metrics.js';
@@ -113,14 +113,16 @@ export async function ingestCompany(request,env,readJson) {
   if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
   try {
     const social=data.social?socialSnapshot(data.social):null,attempt=data.socialAttempt?socialAttempt(data.socialAttempt):null;if(social&&attempt)throw Error('Ambiguous social input');if((social||attempt)&&company!=='wonplace')throw Error('Wrong social company');
+    const accounts=data.socialAccounts;if(accounts!==undefined){if(company!=='wonplace'||!Array.isArray(accounts)||!accounts.length||accounts.length>2)throw Error('Wrong social account scope');accounts.forEach(v=>accountSnapshot(v));if(new Set(accounts.map(a=>a.platform)).size!==accounts.length)throw Error('Duplicate account');}
     const providers=(data.providers||[]).map(providerSnapshot);
     const measurements=[...(data.measurements||[]).map(value=>measurement(value)),...providers.flatMap(providerMeasurements)];
     const financials=(data.financials||[]).map(value=>{if(!identifier.test(value.id||''))throw Error('Invalid financial ID');return {id:value.id,...financialRecord(value),source:'signed-import'};});
     const accepted=await companyStub(env,company).ingest(data.events,measurements);
+    const socialAccounts=accounts?await saveBrandAccounts(env,company,accounts):[];
     if(social)await saveSocial(env,company,data.social);if(attempt)await saveSocialAttempt(env,company,attempt);
     for(const provider of providers)await store(env,company,'providers',provider.provider,provider,{id:'signed-source'});
     for(const financial of financials){const {id,...value}=financial;await store(env,'tideline','financials',id,value,{id:'signed-source'});}
-    return reply({...accepted,providers:providers.length,financials:financials.length,social:social?{handle:social.handle,observedAt:social.observedAt}:null});
+    return reply({...accepted,providers:providers.length,financials:financials.length,socialAccounts,social:social?{handle:social.handle,observedAt:social.observedAt}:null});
   }catch{return reply({error:'Invalid company source batch or storage unavailable'},400);}
 }
 async function wonplaceDiagnostics(env,actor) {

@@ -1,6 +1,13 @@
 // Explicit units and windows prevent rolling provider totals being sold as per-minute traffic.
 export const AIM='Grow paying WonPlace customers while keeping service reliable and costs controlled.';
 export const METRICS=[
+ ['social.instagram.reach','Instagram accounts reached','Social','accounts','platform30d','Native total-value reach over the exact 30-day source window; includes legacy content and inherited audience.','instagram'],
+ ['social.instagram.views','Instagram views','Social','views','platform30d','Native total-value views over the exact 30-day source window; not unique people.','instagram'],
+ ['social.instagram.profile_links_taps','Instagram profile-link taps','Acquisition','taps','platform30d','Native profile-link tap events over the exact 30-day source window; not website sessions or CRM inquiries.','instagram'],
+ ['social.instagram.followers','Instagram followers','Social','followers','gauge','Native current account followers, including inherited audience; not unique gym owners or reach.','instagram'],
+ ['social.facebook.followers','Facebook followers','Social','followers','gauge','Native current Page followers, including inherited audience; not impressions or leads.','facebook'],
+ ['app.accounts.active','Enabled staff accounts','Usage','accounts','instant','Current enabled staff accounts in the configured WonPlace organization; separate from recent activity and family/parent portal access.','app'],
+ ['app.accounts.invited','Invited staff accounts','Usage','accounts','instant','Current invited account statuses, not sent invitation receipts or activated users.','app'],
  ['social.tiktok.followers','TikTok followers','Social','followers','gauge','Observed account followers. Baseline includes the former floordstudios audience; change is account growth, not customer attribution.','tiktok'],
  ['social.tiktok.views','TikTok video views','Social','views','platform7d','Views in the latest available seven native TikTok reporting days. Includes legacy content; separate from website page views.','tiktok'],
  ['customers.paying','Paying customers','Growth','customers','gauge','A billing-provider count of active paying WonPlace organizations.','billing'],
@@ -92,6 +99,13 @@ export function buildCockpit(summary,source={},history=[],now=Date.now()){
  }
  const live=summary.live||{},events=live.events||[],active=new Set((live.activeUsers||[]).filter(e=>now-e.at<90000).map(e=>e.userId));
  if(events.length){add('staff.active',[{at:live.asOf||now,value:active.size}],{freshAt:Math.max(...events.map(e=>e.at)),freshFor:90000});for(const [id,predicate]of [['staff.actions',e=>e.kind==='activity'],['incidents.errors',e=>e.kind==='incident'&&e.severity==='error']]){const hours=new Map();for(const e of events.filter(predicate)){const at=Math.floor(e.at/3600000)*3600000;hours.set(at,(hours.get(at)||0)+1);}if(!hours.size)hours.set(Math.floor(now/3600000)*3600000,0);add(id,[...hours].map(([at,value])=>({at,value})),{freshAt:Math.max(...events.map(e=>e.at)),freshFor:90000});}}
+ for(const account of summary.company==='wonplace'?summary.social?.accounts||[]:[]){
+  const id='social.'+account.platform+'.followers';if(byId[id]&&account.latest&&Number.isSafeInteger(account.latest.counts?.followers_count))add(id,[{at:account.latest.observedAt,value:account.latest.counts.followers_count}],{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage});
+  for(const row of account.latest?.insights||[]){const key='social.'+account.platform+'.'+row.metric;if(byId[key]&&Number.isFinite(row.value))add(key,[{at:row.to,value:row.value}],{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage+' Native report: '+new Date(row.from).toISOString()+' — '+new Date(row.to).toISOString()+'.'});}
+ }
+
+ const access=summary.company==='wonplace'?source.access:null;
+ if(source.connected===true&&access?.status==='connected'&&Number.isFinite(access.asOf))for(const [id,key]of [['app.accounts.active','active'],['app.accounts.invited','invited']])if(Number.isSafeInteger(access[key])&&access[key]>=0)add(id,[{at:access.asOf,value:access[key]}],{freshAt:access.asOf,coverage:access.coverage});
  const marketing=summary.company==='wonplace'?source.marketing:null;
  if(marketing?.connected)for(const [id,key]of [['site.visits','sessions'],['content.views','pageviews']])add(id,(marketing.daily||[]).map(d=>({at:Date.parse(d.day+'T00:00:00Z'),value:Number(d[key]||0)})),{freshAt:marketing.asOf,coverage:marketing.coverage});
  if(source.connected){
