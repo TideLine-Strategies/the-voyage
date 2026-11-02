@@ -186,3 +186,9 @@ totals. Company Social shows source dates, capture freshness, baseline deltas an
 original analytics links. Daily observations feed trends without adding rolling
 windows together. The runtime's `page-social-last-sync.json` is the operational
 receipt; profile presence alone is not a successful reporting connection.
+
+LinkedIn reporting now uses Quan's verified Super admin session through an exact
+Safari window binding in the private social runtime. The collector checks the
+owner profile's editing controls before reading the pinned TideLine Page report.
+A busy/changed tab or draft defers that source; it does not fall back to Cody's
+session. YouTube's original Atlas channel session remains independent.
