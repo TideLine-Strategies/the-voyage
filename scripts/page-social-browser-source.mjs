@@ -10,7 +10,7 @@ export function parseYouTube(text,observedAt=Date.now()){
  return {platform:'youtube',accountId:CHANNEL,label:'WonPlace · @wonplaceapp',status:'connected',observedAt,counts:{subscribers_count:number(subs[1])},report:{start,end,metrics:{views:number(views[1])}},evidenceSha256:createHash('sha256').update(text).digest('hex')};
 }
 export function parseLinkedIn(text,observedAt=Date.now()){
- const t=text.replaceAll('\u00a0',' '),f=t.match(/\nTideLine Strategies LLC\n(?:Verify with Premium\n)?([\d,]+) followers\n/),range=t.match(/Highlights\nData for (\d{1,2})\/(\d{1,2})\/(\d{4}) - (\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!f||!range||!t.includes('Content engagement'))return fail();
+ const t=text.replaceAll('\u00a0',' ').split('\n').map(v=>v.trim()).join('\n').replace(/\n{2,}/g,'\n'),f=t.match(/\nTideLine Strategies LLC\n(?:Verify with Premium\n)?([\d,]+) followers\n/),range=t.match(/Highlights\nData for (\d{1,2})\/(\d{1,2})\/(\d{4}) - (\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!f||!range||!t.includes('Content engagement'))return fail();
  const start=date(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(range[1])-1],range[2],range[3]),end=date(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(range[4])-1],range[5],range[6]);
  const highlight=t.slice(t.indexOf('Highlights'),t.indexOf('\nMetrics\n')),metrics={};for(const [key,label]of [['impressions','Impressions'],['reactions','Reactions'],['comments','Comments'],['reposts','Reposts']]){const m=highlight.match(new RegExp('\\n([\\d,]+)\\n+'+label+'(?:\\n|$)'));if(!m)return fail();metrics[key]=number(m[1]);}
  return {platform:'linkedin',accountId:PAGE,label:'TideLine Strategies LLC',status:'connected',observedAt,counts:{followers_count:number(f[1])},report:{start,end,metrics},evidenceSha256:createHash('sha256').update(text).digest('hex')};
@@ -21,7 +21,7 @@ export async function collectPageSocial({controller,chromium,archiveDir}){
  const browser=await chromium.connectOverCDP(ws.href);let page;for(const context of browser.contexts())for(const p of context.pages()){const s=await context.newCDPSession(p),{targetInfo}=await s.send('Target.getTargetInfo');await s.detach();if(targetInfo.targetId===controller.page_target_id)page=p;}if(!page)throw Error('Exact admitted target missing');
  const url=new URL(page.url());if(url.hostname!=='studio.youtube.com'||!url.pathname.startsWith('/channel/'+CHANNEL))throw Error('Wrong channel target');
  const output=[];await fs.mkdir(archiveDir,{recursive:true,mode:0o700});
- for(const [company,platform,target,parse]of [['wonplace','youtube',`https://studio.youtube.com/channel/${CHANNEL}/analytics/tab-overview/period-default`,parseYouTube],['tideline','linkedin',`https://www.linkedin.com/company/${PAGE}/admin/analytics/updates`,parseLinkedIn]]){
+ for(const [company,platform,target,parse]of [['wonplace','youtube',`https://studio.youtube.com/channel/${CHANNEL}/analytics/tab-overview/period-default`,parseYouTube]]){
   try{await page.goto(target,{waitUntil:'domcontentloaded',timeout:30000});let value,text;for(let i=0;i<40;i++){text=await page.locator('body').innerText().catch(()=>'');try{value=parse(text);break;}catch{}await page.waitForTimeout(750);}if(!value)throw Error('Reporting unavailable');await fs.writeFile(path.join(archiveDir,platform+'.txt'),text,{mode:0o600});output.push({company,platform,status:'connected',value});}
   catch{output.push({company,platform,status:'unavailable'});}
  }

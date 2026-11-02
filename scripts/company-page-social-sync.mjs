@@ -1,5 +1,6 @@
 // Daily read-only owner-visible YouTube and LinkedIn reporting, with signed readback.
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';import {execFileSync} from 'node:child_process';import {fileURLToPath} from 'node:url';
+import {collectLinkedInSafari,linkedinBinding} from './linkedin-safari-source.mjs';
 import {collectPageSocial} from './page-social-browser-source.mjs';import {signedHeaders} from '../src/company-signing.js';import {accountSnapshot} from '../src/company-social.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),file=path.join(root,'page-social-last-sync.json'),lock=path.join(root,'.page-social.lock');let handle,controller,exitCode=0;
 const atomic=async value=>{await fs.writeFile(file+'.tmp',JSON.stringify(value),{mode:0o600});await fs.rename(file+'.tmp',file);};
@@ -11,14 +12,17 @@ try{
  const previous=JSON.parse(await fs.readFile(file,'utf8').catch(()=>'{}')),pending=[];
  for(const item of Array.isArray(previous.pending)?previous.pending:previous.pending?[previous.pending]:[]){try{const remote=await request(item.company,'GET'),stored=remote.social?.accounts?.find(a=>a.platform===item.account.platform)?.latest;if(!stored||stored.observedAt<item.account.observedAt)pending.push(item);}catch{pending.push(item);}}
 
- const helper=process.env.TIKTOK_ACCESS_HELPER||path.join(os.homedir(),'Downloads/JIM/scripts/f100rd_access.py');controller=JSON.parse(execFileSync('/usr/bin/python3',[path.join(root,'scripts/claim-page-social.py'),helper,...process.argv.slice(2)],{encoding:'utf8',timeout:120000,stdio:['ignore','pipe','pipe']}));
- const {chromium}=await import('playwright-core'),reports=await collectPageSocial({controller,chromium,archiveDir:path.join(root,'evidence',new Date().toISOString().replaceAll(':','-'))}),results=[];
- for(const report of reports){if(report.status!=='connected'){results.push({company:report.company,platform:report.platform,status:'unavailable'});continue;}
+ const reports=[],results=[],archiveDir=path.join(root,'evidence',new Date().toISOString().replaceAll(':','-'));
+ // Quan's own Safari session is independent of YouTube's original Atlas profile.
+ try{const file=path.join(root,'linkedin-browser-binding.json');if((await fs.stat(file)).mode&0o077)throw Error('Private owner binding required');const binding=linkedinBinding(JSON.parse(await fs.readFile(file,'utf8')));reports.push(await collectLinkedInSafari({binding,archiveDir}));}catch{reports.push({company:'tideline',platform:'linkedin',status:'unavailable',reason:'owner_binding_or_session_unavailable'});}
+ try{const helper=process.env.TIKTOK_ACCESS_HELPER||path.join(os.homedir(),'Downloads/JIM/scripts/f100rd_access.py');controller=JSON.parse(execFileSync('/usr/bin/python3',[path.join(root,'scripts/claim-page-social.py'),helper,...process.argv.slice(2)],{encoding:'utf8',timeout:120000,stdio:['ignore','pipe','pipe']}));const {chromium}=await import('playwright-core');reports.push(...await collectPageSocial({controller,chromium,archiveDir}));}catch{reports.push({company:'wonplace',platform:'youtube',status:'unavailable'});}
+
+ for(const report of reports){if(report.status!=='connected'){results.push({company:report.company,platform:report.platform,status:'unavailable',reason:report.reason||'read_failed'});continue;}
   if(pending.some(p=>p.company===report.company&&p.account.platform===report.platform)){results.push({company:report.company,platform:report.platform,status:'reconciliation_required'});continue;}
   const account=accountSnapshot(report.value,Date.now(),report.company),item={company:report.company,account};pending.push(item);await atomic({status:'sending',pending,checkedAt:Date.now(),results});
   try{
    try{await request(report.company,'POST',{events:[],socialAccounts:[account]});}catch{}
-   const remote=await request(report.company,'GET'),stored=remote.social?.accounts?.find(a=>a.platform===account.platform)?.latest;if(stored?.observedAt!==account.observedAt||stored.evidenceSha256!==account.evidenceSha256)throw Error('Persisted native report differs');pending.splice(pending.indexOf(item),1);results.push({company:report.company,platform:report.platform,status:'connected',observedAt:account.observedAt});
+   const remote=await request(report.company,'GET'),stored=remote.social?.accounts?.find(a=>a.platform===account.platform)?.latest;if(stored?.observedAt!==account.observedAt||stored.evidenceSha256!==account.evidenceSha256)throw Error('Persisted native report differs');pending.splice(pending.indexOf(item),1);results.push({company:report.company,platform:report.platform,status:'connected',observedAt:account.observedAt,...(report.ownerProfileVerified?{ownerProfileVerified:report.ownerProfileVerified}:{})});
   }catch{results.push({company:report.company,platform:report.platform,status:'reconciliation_required'});exitCode=1;}
   await atomic({status:pending.length?'reconciliation_required':'verified',pending,checkedAt:Date.now(),results});
  }
