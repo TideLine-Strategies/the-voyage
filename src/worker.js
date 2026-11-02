@@ -1,4 +1,5 @@
 import {readBoundedBytes} from './bounded-body.js';
+import {sanitizeReferralLead} from '../public/referral-leads-model.js';
 import {handleCollaboration,sourceCollaboration} from './ticket-collaboration.js';
 import {sourceTaskProgress} from './ticket-task-progress.js';
 import {sendPasswordLink} from './voyage-auth.js';
@@ -18,11 +19,11 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { calendarAddress, eventsFromIcs } from "./ical.js";
 import { STARTER_SEQUENCES, nextStepDate, sanitizeSequence, stepTask, OUTCOMES } from "./sequences.js";
 import { DEFAULT_RULES, EDITABLE, MAX_FILE_BYTES, approvalFlags, calculateProcessing, calculateTotals, closeProblems, detectFileType, sanitizeDeal, sanitizeProcessingSettings, submitProblems } from "./deals.js";
-const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals", "sequences", "enrollments", "contacts"]);
+const COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "channels", "messages", "settings", "reads", "vendors", "profiles", "deals", "catalog", "residuals", "sequences", "enrollments", "contacts", "referral_leads"]);
 // Profile fields each member can fill in about themselves, with maximum lengths.
 const PROFILE_FIELDS = { title: 100, phone: 40, location: 100, timezone: 60, hours: 100, contact: 40, linkedin: 300, focus: 300, bio: 1500 };
 // Editors only: guests can neither see nor change these.
-const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals", "sequences", "enrollments"]);
+const EDITOR_COLLECTIONS = new Set(["vendors", "deals", "catalog", "residuals", "sequences", "enrollments", "referral_leads"]);
 const CRM_COLLECTIONS = new Set(["opps", "activities", "activity", "notes", "contacts"]);
 const CHAT_COLLECTIONS = new Set(["channels", "messages"]);
 const storageCollection = (actor, collection) => actor.role === "guest" && CHAT_COLLECTIONS.has(collection) ? `guest_${collection}` : collection;
@@ -104,6 +105,7 @@ export function validateDocument(collection, id, data, actor, method) {
   if (!COLLECTIONS.has(collection) || !ID_PATTERN.test(id)) throw new Error("Unknown document path");
   if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Expected an object");
   if(Object.hasOwn(data,"id"))throw new Error("Unknown document identity field");
+  if(collection==='referral_leads')return sanitizeReferralLead(data,method);
   if(collection==="opps"){
     if((method!=="PATCH"||Object.hasOwn(data,"name"))&&(typeof data.name!=="string"||!data.name.trim()||data.name.length>200))throw new Error("Invalid account name");
     if(Object.hasOwn(data,"stage")&&(!Number.isInteger(data.stage)||data.stage<0||data.stage>6))throw new Error("Invalid account stage");
@@ -1006,7 +1008,7 @@ export default {
       return response;
     }
     catch (cause) {
-      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence|Invalid contact|Invalid account)/.test(cause.message)) return error(cause.message, 400);
+      if (cause instanceof Error && /^(Missing JSON|JSON body|Invalid JSON|Expected|Unknown document|Invalid message|Only reactions|Only chat|Messages cannot|Wrong member|Team settings|Invalid vendor|Invalid profile|Invalid residual|Invalid sequence|Invalid contact|Invalid account|Invalid referral)/.test(cause.message)) return error(cause.message, 400);
       return error("Request failed", 500);
     }
   },

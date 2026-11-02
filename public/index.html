@@ -38,6 +38,11 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Figtree,"Segoe UI",system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.45}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
+#referralLeadSection{margin:0 0 20px;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+#referralLeadSection>summary{font-weight:600;cursor:pointer}
+#referralLeadSection .bhead{flex-wrap:wrap}
+.referral-lead-list>details{padding:12px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.referral-lead-list>details>summary{cursor:pointer;line-height:1.6}
 :focus-visible{outline:2px solid var(--red-soft);outline-offset:2px}
 .app{display:grid;grid-template-columns:180px minmax(0,1fr);gap:20px;max-width:1680px;margin:0 auto;padding:20px}
 .side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;height:fit-content;position:sticky;top:calc(20px + env(safe-area-inset-top,0px))}
@@ -569,6 +574,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
     </section>
 
     <section id="view-accounts" hidden>
+      <details id="referralLeadSection" hidden></details>
       <div class="head"><div><h1>Accounts</h1><div class="sub">Every organization in The Voyage. Click one to open it.</div></div><div style="display:flex;gap:8px"><button class="btn" id="acImport">Import</button><button class="btn primary" id="acNew">+ New account</button></div><input type="file" id="acFile" accept=".csv,text/csv" hidden></div>
       <div class="bhead">
         <input id="acSearch" type="search" placeholder="Find an account or city" aria-label="Find an account or city">
@@ -1451,6 +1457,7 @@ const EMP_LABEL=v=>{const e=EMP.find(x=>x[0]===v);return (e?e[1]:v)+" employees"
 const SIZE_LINE=o=>[o.employees?EMP_LABEL(o.employees):"",o.activeStudents?RLABEL(ACT,o.activeStudents,"active students"):"",o.inactiveStudents?RLABEL(INACT,o.inactiveStudents,"inactive"):""].filter(Boolean).join(", ");
 const VER={owner_confirmed:"Owner confirmed",google_verified:"Google verified",needs_review:"Needs review"};
 function renderAccounts(){
+  window.VoyageReferralLeads?.mount($("referralLeadSection"),{guest});
   const es=$("acEmp");if(es.options.length===1)EMP.forEach(([v,l])=>es.append(new Option(l+" employees",v)));
   const sr=$("acSrc");if(sr.options.length===1){LEAD_SOURCES.forEach(s=>sr.append(new Option(s)));sr.append(new Option("Not set","_none"))}
   const cs=$("acCms");if(cs.options.length===1){CMS_OPTIONS.forEach(x=>cs.append(new Option(x)));cs.append(new Option("Not set","_none"))}
@@ -1474,6 +1481,7 @@ function renderAccounts(){
     r.onclick=()=>openAccount(o.id,"accounts");w.append(r);
   });
 }
+window.addEventListener('voyage-referrals-ready',()=>{if(view==='accounts')renderAccounts();});
 ["acSearch"].forEach(id=>$(id).oninput=renderAccounts);
 ["acStage","acVer","acEmp","acAct","acOwner","acSrc","acCms","acSort"].forEach(id=>$(id).onchange=renderAccounts);
 $("acNew").onclick=()=>openDlg(null);
@@ -3201,6 +3209,7 @@ window.VoyagePulseSnapshot=()=>({view,guest,items:items.map(x=>({id:x.id,title:x
 window.addEventListener('voyage-pulse-open',e=>{const {type,id}=e.detail||{};if(type==='item'){const i=items.find(x=>x.id===id);if(i)openT(i.kind,i);}if(type==='account'&&opps.some(x=>x.id===id))openAccount(id,'accounts');if(type==='deal'&&deals.some(x=>x.id===id))openDeal(id);});
 setInterval(()=>{render();renderItems()},60000);
 </script>
+<script type="module" src="/referral-leads.js"></script>
 <script src="/living-crm.js" defer></script>
 </body>
 </html>
