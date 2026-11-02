@@ -3,8 +3,22 @@
 import importlib.util,json,subprocess,sys,urllib.error
 from pathlib import Path
 helper=Path(sys.argv[1]);args=sys.argv[2:]
+def governed(ready):
+ wall=Path.home()/'Library/Application Support/Loki/instant-runtime/bin/agent-wall'
+ r=subprocess.run([str(wall),'controller',ready['task_id'],ready['lease_id']],capture_output=True,text=True,timeout=30)
+ if r.returncode:raise ValueError('Governed controller unavailable')
+ gateway=json.loads(r.stdout)
+ if gateway.get('taskId')!=ready['task_id'] or gateway.get('pageTargetId')!=ready['page_target_id']:raise ValueError('Controller target changed')
+ ready['endpoint']=gateway['endpoint'];print(json.dumps(ready))
+
 r=subprocess.run(['/usr/bin/python3',str(helper),*args],capture_output=True,text=True,timeout=60)
-if r.returncode==0 or args!=['claim','tiktok']:
+if r.returncode==0:
+ decoder=json.JSONDecoder();text=r.stdout.strip();objects=[]
+ while text:
+  obj,end=decoder.raw_decode(text);objects.append(obj);text=text[end:].strip()
+ ready=next(v for v in reversed(objects) if v.get('status')=='controller_ready_identity_check_required')
+ governed(ready);sys.exit(0)
+if args!=['claim','tiktok']:
  print(r.stdout,end='');sys.exit(r.returncode)
 # The legacy helper may choose an executed lease which the broker can no longer
 # resume. Reconcile current broker state before requesting a new task in place.
@@ -17,7 +31,7 @@ try:
  worker=workers[0];old=m.released_session(binding,snapshot,worker['id'])
  if not old:raise ValueError('No rejected released session')
  try:
-  resumed=m.resume_session(old);ready=m.validate_session(binding,m.state(),old['id'],old['lease']['id']);print(json.dumps(resumed));print(json.dumps(ready));sys.exit(0)
+  resumed=m.resume_session(old);ready=m.validate_session(binding,m.state(),old['id'],old['lease']['id']);governed(ready);sys.exit(0)
  except urllib.error.HTTPError as error:
   body=json.loads(error.read())
   if error.code!=400 or body.get('error')!='Released persistent session, matching lease and free original worker required':raise ValueError('Resume failure requires review')
@@ -27,6 +41,6 @@ try:
  if binding.get('social_profile'):cmd.append(binding['social_profile'])
  claim=subprocess.run(cmd,capture_output=True,text=True,timeout=60);print(claim.stdout,end='')
  if claim.returncode:sys.exit(claim.returncode)
- receipt=json.loads(claim.stdout);ready=m.validate_session(binding,m.state(),receipt['taskId'],receipt['lease']['id']);print(json.dumps(ready))
+ receipt=json.loads(claim.stdout);ready=m.validate_session(binding,m.state(),receipt['taskId'],receipt['lease']['id']);governed(ready)
 except Exception:
  print(json.dumps({'status':'blocked','error':'Exact released-profile recovery unavailable'}));sys.exit(2)

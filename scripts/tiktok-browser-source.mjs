@@ -6,7 +6,7 @@ export function parseObjects(text){const out=[];let start=-1,depth=0,quoted=fals
 const problem=code=>Object.assign(Error(code),{code});
 export async function collectTikTok({controller,archiveDir,chromium,parser}){
  if(new URL(controller.endpoint).hostname!=='127.0.0.1')throw problem('read_failed');
- const browser=await chromium.connectOverCDP(controller.endpoint);let page;
+ const endpoint=new URL(controller.endpoint);if(!endpoint.pathname.startsWith('/cdp/'))throw problem('browser_busy');const version=await(await fetch(controller.endpoint+'/json/version',{signal:AbortSignal.timeout(10000)})).json(),ws=new URL(version.webSocketDebuggerUrl);if(ws.host!==endpoint.host||!ws.pathname.startsWith(endpoint.pathname+'/devtools/browser/'))throw problem('browser_busy');const browser=await chromium.connectOverCDP(ws.href);let page;
  for(const context of browser.contexts())for(const candidate of context.pages()){const session=await context.newCDPSession(candidate);const {targetInfo}=await session.send('Target.getTargetInfo');await session.detach();if(targetInfo.targetId===controller.page_target_id)page=candidate;}
  if(!page)throw problem('browser_busy');
  const initial=page.url();if(new URL(initial).hostname!=='www.tiktok.com')throw problem('account_mismatch');
