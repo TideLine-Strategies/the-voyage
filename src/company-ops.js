@@ -69,7 +69,7 @@ export async function handleCompany(request,env,actor,path,readJson) {
   if(request.method==='POST'&&operation==='trakr-disconnect')return company==='tideline'?disconnectTrakr(request,env,actor):reply({error:'Not found'},404);
   if(request.method==='GET'&&operation==='trakr')return company==='tideline'&&env.COMPANY_HUB?reply(await companyStub(env,'tideline-finance').trakrReport()):reply({error:'Not found'},404);
   if(request.method==='POST'&&operation==='ga4-connect')return company==='tideline'?startGA4Connection(request,env,actor):reply({error:'Not found'},404);
-  if(request.method==='GET'&&operation==='social')return company==='wonplace'?reply(await readSocial(env,company)):reply({error:'TikTok account belongs to WonPlace'},404);
+  if(request.method==='GET'&&operation==='social')return ['wonplace','tideline'].includes(company)?reply(await readSocial(env,company)):reply({error:'No brand social account configured'},404);
   if(request.method==='GET'&&operation==='ga4')return company==='tideline'?reply(await readGA4(env)):reply({error:'GA4 reports belong to the TideLine website'},404);
   if(request.method==='GET'&&operation==='acquisition')return company==='tideline'?reply(await acquisitionReport(env)):reply({error:'Acquisition belongs to TideLine'},404);
   if(request.method==='GET'&&operation==='source')return companySource(env,company,actor);
@@ -113,7 +113,7 @@ export async function ingestCompany(request,env,readJson) {
   if(!env.COMPANY_HUB)return reply({error:'Live stream is not configured'},503);
   try {
     const social=data.social?socialSnapshot(data.social):null,attempt=data.socialAttempt?socialAttempt(data.socialAttempt):null;if(social&&attempt)throw Error('Ambiguous social input');if((social||attempt)&&company!=='wonplace')throw Error('Wrong social company');
-    const accounts=data.socialAccounts;if(accounts!==undefined){if(company!=='wonplace'||!Array.isArray(accounts)||!accounts.length||accounts.length>2)throw Error('Wrong social account scope');accounts.forEach(v=>accountSnapshot(v));if(new Set(accounts.map(a=>a.platform)).size!==accounts.length)throw Error('Duplicate account');}
+    const accounts=data.socialAccounts;if(accounts!==undefined){if(!['wonplace','tideline'].includes(company)||!Array.isArray(accounts)||!accounts.length||accounts.length>3)throw Error('Wrong social account scope');accounts.forEach(v=>accountSnapshot(v,Date.now(),company));if(new Set(accounts.map(a=>a.platform)).size!==accounts.length)throw Error('Duplicate account');}
     const providers=(data.providers||[]).map(providerSnapshot);
     const measurements=[...(data.measurements||[]).map(value=>measurement(value)),...providers.flatMap(providerMeasurements)];
     const financials=(data.financials||[]).map(value=>{if(!identifier.test(value.id||''))throw Error('Invalid financial ID');return {id:value.id,...financialRecord(value),source:'signed-import'};});

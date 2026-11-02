@@ -1,6 +1,11 @@
+import {BRAND_ACCOUNTS} from './company-social.js';
 // Explicit units and windows prevent rolling provider totals being sold as per-minute traffic.
 export const AIM='Grow paying WonPlace customers while keeping service reliable and costs controlled.';
 export const METRICS=[
+ ['social.youtube.subscribers','YouTube subscribers','Social','subscribers','gauge','Native current channel subscribers, including inherited audience; not gym-owner leads.','youtube'],
+ ['social.youtube.views','YouTube views','Social','views','platform28d','Views during the exact native YouTube reporting dates. Includes inherited content; not unique viewers or website visits.','youtube'],
+ ['social.linkedin.followers','LinkedIn followers','Social','followers','gauge','Native current TideLine Page followers.','linkedin'],
+ ...['impressions','clicks','reactions','comments','reposts'].map(key=>['social.linkedin.'+key,'LinkedIn '+key,'Social',key,'platformPeriod','Native LinkedIn Page reporting in the displayed calendar window; not unique people, CRM leads or sales.','linkedin']),
  ['social.instagram.reach','Instagram accounts reached','Social','accounts','platform30d','Native total-value reach over the exact 30-day source window; includes legacy content and inherited audience.','instagram'],
  ['social.instagram.views','Instagram views','Social','views','platform30d','Native total-value views over the exact 30-day source window; not unique people.','instagram'],
  ['social.instagram.profile_links_taps','Instagram profile-link taps','Acquisition','taps','platform30d','Native profile-link tap events over the exact 30-day source window; not website sessions or CRM inquiries.','instagram'],
@@ -99,8 +104,10 @@ export function buildCockpit(summary,source={},history=[],now=Date.now()){
  }
  const live=summary.live||{},events=live.events||[],active=new Set((live.activeUsers||[]).filter(e=>now-e.at<90000).map(e=>e.userId));
  if(events.length){add('staff.active',[{at:live.asOf||now,value:active.size}],{freshAt:Math.max(...events.map(e=>e.at)),freshFor:90000});for(const [id,predicate]of [['staff.actions',e=>e.kind==='activity'],['incidents.errors',e=>e.kind==='incident'&&e.severity==='error']]){const hours=new Map();for(const e of events.filter(predicate)){const at=Math.floor(e.at/3600000)*3600000;hours.set(at,(hours.get(at)||0)+1);}if(!hours.size)hours.set(Math.floor(now/3600000)*3600000,0);add(id,[...hours].map(([at,value])=>({at,value})),{freshAt:Math.max(...events.map(e=>e.at)),freshFor:90000});}}
- for(const account of summary.company==='wonplace'?summary.social?.accounts||[]:[]){
-  const id='social.'+account.platform+'.followers';if(byId[id]&&account.latest&&Number.isSafeInteger(account.latest.counts?.followers_count))add(id,[{at:account.latest.observedAt,value:account.latest.counts.followers_count}],{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage});
+ for(const account of (summary.social?.accounts||[]).filter(a=>Object.hasOwn(BRAND_ACCOUNTS[summary.company]||{},a.platform))){
+  const observations=[...(account.history||[]).filter(v=>v.observedAt!==account.latest?.observedAt),...(account.latest?[account.latest]:[])],id='social.'+account.platform+(account.platform==='youtube'?'.subscribers':'.followers'),counter=account.latest?.counts?.[account.platform==='youtube'?'subscribers_count':'followers_count'];if(byId[id]&&Number.isSafeInteger(counter))add(id,observations.map(v=>({at:v.observedAt,value:v.counts?.[account.platform==='youtube'?'subscribers_count':'followers_count']})),{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage});
+  for(const [key,value]of Object.entries(account.latest?.report?.metrics||{})){const id='social.'+account.platform+'.'+key;if(byId[id])add(id,observations.map(v=>({at:v.observedAt,value:v.report?.metrics?.[key]})),{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage+' Native calendar report: '+account.latest.report.start+' — '+account.latest.report.end+'.'});}
+  const nativeUrl={youtube:'https://studio.youtube.com/channel/UCSwOxf0QZOXpfrSjN46pm7A/analytics/tab-overview/period-default',linkedin:'https://www.linkedin.com/company/109054255/admin/analytics/updates'}[account.platform];if(nativeUrl)for(const m of metrics.filter(m=>m.source===account.platform))m.levers.push({label:'Open native '+account.platform+' analytics',url:nativeUrl});
   for(const row of account.latest?.insights||[]){const key='social.'+account.platform+'.'+row.metric;if(byId[key]&&Number.isFinite(row.value))add(key,[{at:row.to,value:row.value}],{freshAt:account.latest.observedAt,freshFor:36*3600000,coverage:account.latest.coverage+' Native report: '+new Date(row.from).toISOString()+' — '+new Date(row.to).toISOString()+'.'});}
  }
 
