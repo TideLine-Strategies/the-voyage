@@ -86,3 +86,5 @@ Each pass verifies the current tab is the expected analytics page and has no dra
 ## YouTube navigation readiness and failure evidence
 
 The Studio target may exist before initial channel navigation settles. Wait for the channel navigation drawer, then permit one bounded retry if analytics navigation is superseded or the report remains incomplete. The exact channel ID and native 28-day range remain mandatory; loading placeholders and rounded counters never become zero. Do not retry a login redirect or a different channel. A failed read stores a private reason and channel-only body capture in the evidence directory; never capture Google login pages or another account. The page collector propagates the specific failure reason into its runtime status while retaining the last verified report.
+
+An admitted target may briefly be `about:blank` while Studio opens. Permit that exact owned target to hydrate before validating its channel; never permit another initial channel or origin. On success restore the pinned channel, not a blank placeholder. Initial scope failures also write a safe diagnostic reason without archiving another account's content.

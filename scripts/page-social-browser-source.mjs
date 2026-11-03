@@ -38,13 +38,13 @@ export async function collectPageSocial({controller,chromium,archiveDir}){
  const endpoint=new URL(controller.endpoint);if(endpoint.hostname!=='127.0.0.1'||!endpoint.pathname.startsWith('/cdp/'))throw Error('Governed controller required');
  const version=await(await fetch(controller.endpoint+'/json/version',{signal:AbortSignal.timeout(10000)})).json();const ws=new URL(version.webSocketDebuggerUrl);if(ws.host!==endpoint.host||!ws.pathname.startsWith(endpoint.pathname+'/devtools/browser/'))throw Error('Wrong controller gateway');
  const browser=await chromium.connectOverCDP(ws.href);let page;for(const context of browser.contexts())for(const p of context.pages()){const s=await context.newCDPSession(p),{targetInfo}=await s.send('Target.getTargetInfo');await s.detach();if(targetInfo.targetId===controller.page_target_id)page=p;}if(!page)throw Error('Exact admitted target missing');
- const initial=page.url();channelScope(initial);await fs.mkdir(archiveDir,{recursive:true,mode:0o700});
- try{const {value,text}=await readYouTubeReport(page);await fs.writeFile(path.join(archiveDir,'youtube.txt'),text,{mode:0o600});return [{company:'wonplace',platform:'youtube',status:'connected',value}];}
+ const initial=page.url(),restore=initial==='about:blank'?`https://studio.youtube.com/channel/${CHANNEL}`:initial;await fs.mkdir(archiveDir,{recursive:true,mode:0o700});
+ try{if(initial!=='about:blank')channelScope(initial);const {value,text}=await readYouTubeReport(page);await fs.writeFile(path.join(archiveDir,'youtube.txt'),text,{mode:0o600});return [{company:'wonplace',platform:'youtube',status:'connected',value}];}
  catch(error){
   const reason=['login_required','account_mismatch','navigation_failed','navigation_superseded','report_parse_failed','report_not_ready'].includes(error.code)?error.code:'read_failed';
   // Capture only channel reporting. Never archive a Google login or another account.
   let sourceUrl=null;try{channelScope(page.url());sourceUrl=page.url();await fs.writeFile(path.join(archiveDir,'youtube-failed.txt'),await page.locator('body').innerText(),{mode:0o600});}catch{}
   await fs.writeFile(path.join(archiveDir,'youtube-failure.json'),JSON.stringify({reason,url:sourceUrl,observedAt:Date.now()}),{mode:0o600});return [{company:'wonplace',platform:'youtube',status:'unavailable',reason}];
  }
- finally{try{channelScope(page.url());if(page.url()!==initial)await page.goto(initial,{waitUntil:'domcontentloaded',timeout:15000});}catch{}}
+ finally{try{channelScope(page.url());if(page.url()!==restore)await page.goto(restore,{waitUntil:'domcontentloaded',timeout:15000});}catch{}}
 }
