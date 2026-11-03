@@ -603,7 +603,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
           <div id="opsChart" class="canvas-chart"></div><div id="opsReadout" class="canvas-readout" aria-live="off"></div><div class="canvas-chart-foot"><span id="opsFreshness">Waiting for source</span><button id="opsInvestigate">Investigate with Muninn ↗</button></div>
         </section>
         <section id="canvasTimeline" class="canvas-cell canvas-timeline" aria-label="Horizontal timeline"><div class="canvas-timeline-head"><button id="canvasDateSettings" title="Change the date range"><strong id="canvasDateLabel">Last 30 days</strong> ▾</button><span id="canvasDateCoverage">UTC · blue marks are recorded samples</span><button id="canvasResetDates">Reset range</button></div><div id="canvasDays" class="canvas-days" aria-label="Inspect a day"></div><div class="canvas-brush"><div id="canvasBrushSelection"></div><input id="canvasRangeStart" type="range" min="0" max="29" value="0" aria-label="First day in chart"><input id="canvasRangeEnd" type="range" min="0" max="29" value="29" aria-label="Last day in chart"></div></section>
-        <section id="canvasContext" class="canvas-cell canvas-context"><div class="canvas-cell-head"><h2>Evidence → next move</h2><button id="canvasContextOpen">Explore ↗</button></div><div id="canvasContextBody"></div></section>
+        <section id="canvasContext" class="canvas-cell canvas-context"><div class="canvas-cell-head"><h2>Next moves <span id="canvasActionCount"></span></h2><button id="canvasContextOpen">View plan ↗</button></div><div id="canvasContextBody"></div></section>
         <section id="canvasChannels" class="canvas-cell canvas-channels"><div class="canvas-cell-head"><h2>Pages &amp; acquisition</h2><button data-canvas-open="website">Explore ↗</button></div><div id="canvasChannelBody"></div></section>
         <section id="canvasInspector" class="canvas-cell canvas-inspector" hidden aria-label="Canvas detail panel"><header><div><span id="canvasInspectorEyebrow" class="canvas-kicker">INSPECT</span><h2 id="canvasInspectorTitle"></h2></div><div><button id="canvasExpandPanel" aria-pressed="false" aria-label="Expand detail panel">Expand</button><button id="canvasClosePanel" aria-label="Close detail panel">×</button></div></header><div id="canvasInspectorBody" tabindex="-1"></div></section>
         <footer class="canvas-footer"><button data-canvas-open="connections" id="canvasSourceState">Source coverage</button><span id="opsLoadState" role="status"></span><button data-canvas-open="settings" id="canvasAimButton">Company aim ↗</button></footer>
@@ -1110,6 +1110,7 @@ body.guest .nav[data-view="tickets"],body.guest #view-tickets,body.guest .nav[da
 <script src="/ticket-splitters.js"></script>
 <script src="/ticket-collaboration.js"></script>
 <script src="/company-tickets.js"></script>
+<script src="/company-actions.js"></script>
 <script src="/company-cockpit.js"></script>
 <script src="/company-ops.js"></script>
 <script src="/content.js"></script>
