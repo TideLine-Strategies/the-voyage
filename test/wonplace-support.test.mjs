@@ -23,3 +23,11 @@ test('manual requests cannot create a second active or uncertain coding job for 
   assert.equal((await request(uuid(2))).status,202);assert.equal((await request(uuid(3))).status,409);sql.exec("UPDATE documents SET data_json=json_set(data_json,'$.state','delivery_uncertain') WHERE collection='company_ticket_jobs'");assert.equal((await request(uuid(4))).status,409);assert.equal(sql.prepare("SELECT count(*) n FROM documents WHERE collection='company_ticket_jobs'").get().n,1);
  }finally{sql.close();}
 });
+test('a release job can refresh only the unchanged reviewed content and requires a new approval',async()=>{
+ const original={id:uuid(8),sourceCommit:'a'.repeat(40),tree:'b'.repeat(40),mainCommit:'c'.repeat(40)},job={runtimeId:uuid(1),task:{id:'123456789abc'},support:{kind:'release',ticketId:uuid(2),runtimeId:uuid(1),claimToken:uuid(3),outboxId:uuid(4)}},candidate={...original,id:uuid(9),mainCommit:'e'.repeat(40),devCommit:'d'.repeat(40),taskId:'123456789abc',checks:{status:'passed'}};
+ const env={WONPLACE_TICKETS_ORIGIN:'https://premieros-preview.signallabs.workers.dev',WONPLACE_TICKETS_SECRET:'a'.repeat(40)},operations=[];
+ const transport=async(url,opt={})=>{if(String(url).includes('__dev/status'))return Response.json({commit:candidate.devCommit});const body=JSON.parse(opt.body);operations.push(body.operation);if(body.operation==='approval')return Response.json({approved:true,candidate:original});if(body.operation==='candidate')return Response.json({ok:true});throw Error('Unexpected callback');};
+ assert.equal((await forwardSupportDelivery(env,job,uuid(1),{operation:'candidate',taskId:'123456789abc',candidate},transport)).ok,true);assert.deepEqual(operations,['approval','candidate']);
+ await assert.rejects(forwardSupportDelivery(env,job,uuid(1),{operation:'candidate',taskId:'123456789abc',candidate:{...candidate,tree:'f'.repeat(40)}},transport),/unchanged reviewed/);
+ await assert.rejects(forwardSupportDelivery(env,job,uuid(1),{operation:'candidate',taskId:'123456789abc',candidate:{...candidate,mainCommit:original.mainCommit}},transport),/unchanged reviewed/);
+});
