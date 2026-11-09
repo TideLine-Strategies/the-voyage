@@ -1,3 +1,4 @@
+import {receiveWonPlaceWebhook,flushWonPlaceCallbacks} from './wonplace-webhooks.js';
 import {readBoundedBytes} from './bounded-body.js';
 import {sanitizeReferralLead} from '../public/referral-leads-model.js';
 import {handleCollaboration,sourceCollaboration} from './ticket-collaboration.js';
@@ -825,7 +826,7 @@ async function handleAdmin(request, env, actor, path) {
   });
 }
 
-async function handleApi(request, env, actor, path) {
+async function handleApi(request, env, actor, path, executionContext) {
   const method = request.method;
   if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) return error("Method not allowed", 405);
   if (method !== "GET" && !checkWriteOrigin(request)) return error("Origin not allowed", 403);
@@ -854,7 +855,7 @@ async function handleApi(request, env, actor, path) {
   if (path.length === 2 && path[1] === "usage") return handleUsage(request, env, actor);
   if(path[1]==="ticket-handoff")return handleTicketQueue(request,env,actor,path,readJson);
   if (path[1] === "ticket-collaboration") return handleCollaboration(request,env,actor,path);
-  if (path[1] === "company-tickets") return handleCompanyTickets(request, env, actor, path);
+  if (path[1] === "company-tickets") return handleCompanyTickets(request, env, actor, path, executionContext);
   if (path[1] === "tickets") return handleWonPlaceTickets(request, env, actor, path);
   if (path[1] === "admin") return handleAdmin(request, env, actor, path);
   if (path.length === 3 && path[1] === "me") return handleProfile(request, env, actor, path);
@@ -948,7 +949,8 @@ async function handleApi(request, env, actor, path) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, executionContext) {
+    if(new URL(request.url).pathname==='/api/wonplace-support-webhook'){const response=await receiveWonPlaceWebhook(request,env);if(response.ok&&executionContext)executionContext.waitUntil(flushWonPlaceCallbacks(env).catch(()=>{}));return response;}
     const pathName = new URL(request.url).pathname;
     if(pathName === "/__release.json" && request.method === "GET") return releaseInfo(request,env);
     if (pathName === "/login" || pathName.startsWith("/auth/")) return handleAccountAuth(request, env, { memberForSession, readJson, audit });
@@ -999,7 +1001,7 @@ export default {
       const label = change ? await auditLabel(env, actor, path) : null;
       const watched = change && (path[2] === "activities" || path[2] === "opps") && path[3];
       const before = watched ? await getDocument(env.DB, path[2], path[3]).catch(() => null) : null;
-      const response = await handleApi(request, env, actor, path);
+      const response = await handleApi(request, env, actor, path, executionContext);
       if (change && response.ok) {
         const id = path[3] || (await response.clone().json().catch(() => ({}))).id || null;
         if (path[2] === "activities" || path[2] === "opps") await sequenceHooks(env, actor, request.method, path[2], id, before);

@@ -1,3 +1,4 @@
+import {taskStaffUpdateStatements} from './wonplace-webhooks.js';
 import {taskLabel,validateBlocker} from './task-blockers.js';
 import {taskPresence,taskColor} from './ticket-collaboration.js';
 import {readTicket} from './ticket-handoffs.js';
@@ -73,12 +74,14 @@ export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  }
  if(Object.keys(value).some(k=>!['action','taskId','runtimeId','sequence','snapshot'].includes(k))||!Number.isSafeInteger(value.sequence)||value.sequence<1)return reply({error:'Invalid progress event'},400);
  let snapshot;try{snapshot=progressSnapshot(value.snapshot);}catch(error){return reply({error:error.message},400);}
- if(value.sequence===existing.sequence)return JSON.stringify(snapshot)===JSON.stringify(existing.snapshot)?reply({accepted:true,duplicate:true,sequence:value.sequence}):reply({error:'Sequence already has different content'},409);
+ if(value.sequence===existing.sequence){if(JSON.stringify(snapshot)!==JSON.stringify(existing.snapshot))return reply({error:'Sequence already has different content'},409);return reply({accepted:true,duplicate:true,sequence:value.sequence});}
  if(value.sequence!==existing.sequence+1)return reply({error:'Progress sequence changed; reconcile before retry'},409);
  const substantive=snapshot.milestones.length>0||JSON.stringify({...snapshot,heartbeatAt:null,milestones:[]})!==JSON.stringify({...existing.snapshot,heartbeatAt:null,milestones:[]});
  if(snapshot.milestones.length&&snapshot.milestones[0].id<=(existing.eventCursor||0))return reply({error:'Milestone cursor already accepted'},409);
  const next={...existing,eventCursor:snapshot.milestones.at(-1)?.id||existing.eventCursor||0,milestones:[...(existing.milestones||[]),...snapshot.milestones].slice(-200),sequence:value.sequence,snapshot,receivedAt:now,history:substantive?[...(existing.history||[]),{sequence:value.sequence,at:now,state:snapshot.state,stage:snapshot.stage,checkpoint:snapshot.checkpoint,checkpointAt:snapshot.checkpointAt,commit:snapshot.commit}].slice(-100):(existing.history||[])};delete next.revision;
- const saved=await env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,key,existing.revision).run();
+ const progressWrite=env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,key,existing.revision);
+ const publicWrites=substantive&&company==='wonplace'?await taskStaffUpdateStatements(env,ticket,snapshot,existing.taskId,value.sequence,now,'SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?',[collection,key,existing.revision]):[];
+ const saved=publicWrites.length?(await env.DB.batch([...publicWrites,progressWrite])).at(-1):await progressWrite.run();
  if(saved.meta.changes)try{await taskPresence(env,next,ticket,snapshot);}catch{console.warn(JSON.stringify({event:'ticket_presence_failed',taskId:next.taskId}));}
  return saved.meta.changes?reply({accepted:true,sequence:value.sequence,label:taskLabel(snapshot.taskTitle||ticket.title),color:taskColor(value.taskId)}):reply({error:'Progress changed; retry the same event'},409);
 }

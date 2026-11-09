@@ -3,7 +3,7 @@ import {verifySource} from './company-signing.js';
 import {handleCompanyTickets,readBody,ticketFields} from './company-tickets.js';
 export const roomColors=['#83bcb0','#8faed5','#baa1d3','#c4b385','#87b9ca','#c599aa','#a2bb87','#aeabe0'];
 export function taskColor(id){let hash=0;for(const c of id)hash=(Math.imul(hash,31)+c.charCodeAt(0))>>>0;return roomColors[hash%roomColors.length];}
-export const collaborationFields=['title','description','steps','expected','actual','environment','links','labels','assignee','note'];
+export const collaborationFields=['title','description','steps','expected','actual','environment','links','labels','assignee','staffTitle','publicUpdate','note'];
 export function presenceInput(value){
  if(!value||Object.keys(value).some(k=>!['field','draft','caret','status'].includes(k)))throw Error('Invalid presence');
  const {field=null,draft='',caret=draft.length,status='working'}=value;
@@ -64,7 +64,7 @@ export async function sourceCollaboration(request,env){
   const result=await hub.publishTask({...identity,...presence},value.expectedSequence);return reply(result,result.accepted?200:409);
  }
  // The existing ticket endpoint performs an atomic revision check and records agent attribution.
- let patch;try{patch=ticketFields(value.patch);if(!value.patch||Object.keys(value.patch).some(k=>!collaborationFields.includes(k)&&!['status','priority','type','dueDate'].includes(k)))throw Error('Unsupported ticket change');if('note'in value.patch){if(typeof value.patch.note!=='string'||!value.patch.note.trim()||value.patch.note.length>6000)throw Error('Invalid note');patch.note=value.patch.note;}}catch(error){return reply({error:error.message},400);}
+ let patch;try{patch=ticketFields(value.patch);if(!value.patch||Object.keys(value.patch).some(k=>!collaborationFields.includes(k)&&!['status','priority','type','dueDate','staffVisible'].includes(k)))throw Error('Unsupported ticket change');if('note'in value.patch){if(typeof value.patch.note!=='string'||!value.patch.note.trim()||value.patch.note.length>6000)throw Error('Invalid note');patch.note=value.patch.note;}}catch(error){return reply({error:error.message},400);}
  if(!Object.keys(patch).length||!Number.isInteger(value.expectedRevision))return reply({error:'Changes and expectedRevision required'},400);
  const actor={...member,agent:task.agent,taskId:task.taskId,humanName:member.name,name:(task.agent==='claude'?'Claude':'Codex')+' for '+member.name};
  const response=await handleCompanyTickets(new Request('https://voyage/api/company-tickets/'+issue.id+'?company='+company,{method:'PATCH',body:JSON.stringify({...patch,expectedRevision:value.expectedRevision})}),env,actor,['api','company-tickets',issue.id]);
