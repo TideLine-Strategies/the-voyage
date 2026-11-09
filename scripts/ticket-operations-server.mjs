@@ -70,7 +70,7 @@ createServer(async(req,res)=>{
    job.tiling=tileTerminalDisplay();await put(nonceFile,job);
    execFileSync('/usr/bin/open',['-a','Terminal',command],{timeout:10000});job.status='draft_opened';await put(nonceFile,job);respond(res,202,{jobId:job.id,status:job.status,message:'Terminal opened with an unsubmitted Codex draft.'});setTimeout(()=>{job.tiling=tileTerminalDisplay();void put(nonceFile,job);},1500);return;
   }
-  const args=p.mode==='interactive'?interactiveArgs(p,repos[p.company],path.join(runtime,'scripts/ticket-codex-session.mjs'),promptFile):launchArgs(p,repos[p.company]);if(p.mode!=='interactive'&&p.agent==='codex'&&images.length)args.splice(args.length-1,0,...images.flatMap(f=>['--image',f]));
+  const args=p.mode==='interactive'?interactiveArgs(p,repos[p.company],path.join(runtime,'scripts/ticket-codex-session.mjs'),promptFile):launchArgs(p,repos[p.company],images);
   const stdinFile=path.join(work,'prompt.txt');await fs.writeFile(stdinFile,prompt,{mode:0o600});
   const input=await fs.open(stdinFile,'r'),out=await fs.open(path.join(work,'agent.log'),'a',0o600);
   // Independent process group and file-backed IO survive helper reloads. No pipe EOF or unconsumed pipe can terminate the supervisor.
