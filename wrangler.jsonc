@@ -8,7 +8,8 @@
   ],
   "workers_dev": true,
   "vars": {
-
+    "WONPLACE_SUPPORT_WEBHOOKS": "true",
+    "WONPLACE_SUPPORT_AUTOMATION": "true"
   },
   "routes": [
     {
