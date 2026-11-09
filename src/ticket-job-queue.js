@@ -1,3 +1,4 @@
+import {flushWonPlaceCallbacks} from './wonplace-webhooks.js';
 import {drainSupportIntake,supportPolicy,forwardSupportDelivery} from './wonplace-support.js';
 import {ticketTasks} from './ticket-task-progress.js';
 import {handoffPackage,ticketSweep} from './ticket-handoffs.js';
@@ -48,6 +49,7 @@ export async function sourceTicketQueue(request,env,readJson){
  if(value.action==='digest'&&company==='tideline'){const d=value.digest;if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d.day)||!['sent','preview','review_failed','send_intent','delivery_uncertain','review_ready'].includes(d.status))return reply({error:'Invalid digest status'},400);await put(env,runtimeCollection,'digest',{day:d.day,status:d.status,messageId:d.status==='sent'?String(d.messageId||'').slice(0,300):null,reportedAt:Date.now()});return reply({accepted:true});}
  if(!repos.includes(company)||!uuid.test(value.runtimeId||''))return reply({error:'Invalid worker'},400);
  if(value.action==='poll'){
+  if(company==='wonplace')try{await flushWonPlaceCallbacks(env);}catch{/* Durable callbacks remain queued. */}
   let supportIntake=null;if(company==='wonplace')try{supportIntake=await drainSupportIntake(env,value.runtimeId);}catch{supportIntake={enabled:true,blocked:'Support intake unavailable. Existing jobs are retained.'};}
   const p=value.progress,progress=p&&Number.isSafeInteger(p.checkedAt)&&p.checkedAt<=Date.now()+300000&&['ok','reporting_failed'].includes(p.status)?{checkedAt:p.checkedAt,status:p.status,currentUnlinked:Number.isSafeInteger(p.currentUnlinked)&&p.currentUnlinked>=0?p.currentUnlinked:null,recoveryUnlinked:Number.isSafeInteger(p.recoveryUnlinked)&&p.recoveryUnlinked>=0?p.recoveryUnlinked:null,unlinked:Array.isArray(p.unlinked)?p.unlinked.filter(t=>/^[0-9a-f]{12}$/.test(t)).slice(0,200):[],failed:Array.isArray(p.failed)?p.failed.filter(t=>/^[0-9a-f]{12}$/.test(t)).slice(0,200):[]}:null;
   await put(env,runtimeCollection,company,{runtimeId:value.runtimeId,lastSeen:Date.now(),progress,agents:['codex','claude'].filter(a=>value.agents?.includes(a))});

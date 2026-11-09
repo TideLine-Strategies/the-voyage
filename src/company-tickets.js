@@ -1,3 +1,4 @@
+import {callbackStatement,creationCallbackStatement,flushWonPlaceCallbacks} from './wonplace-webhooks.js';
 import {ticketResolutionBlocker} from './ticket-resolution-gate.js';
 import {appendWorkReport,contributor,invalidateHumanReviews} from './ticket-work-report.js';
 // Product engineering workspace. Original staff reports remain in WonPlace.
@@ -11,9 +12,10 @@ const text=(v,max)=>{if(typeof v!=='string'||v.length>max)fail('Invalid or overs
 export function ticketFields(v){
  if(!v||typeof v!=='object'||Array.isArray(v))fail('Invalid ticket');
  const out={};
- for(const [key,max]of Object.entries({title:200,description:12000,assignee:120,steps:8000,expected:4000,actual:4000,environment:1000,labels:300,dueDate:10,links:2000}))if(key in v)out[key]=text(v[key],max);
+ for(const [key,max]of Object.entries({title:200,description:12000,assignee:120,steps:8000,expected:4000,actual:4000,environment:1000,labels:300,dueDate:10,links:2000,staffTitle:160,publicUpdate:2000}))if(key in v)out[key]=text(v[key],max);
  if('title'in out&&!out.title)fail('Title is required');
  for(const [key,values]of Object.entries({status:['backlog','open','in_progress','blocked','in_review','resolved'],priority:['urgent','high','normal','low'],type:['bug','feature','task','incident']}))if(key in v){if(!values.includes(v[key]))fail('Invalid '+key);out[key]=v[key];}
+ if('staffVisible'in v){if(typeof v.staffVisible!=='boolean')fail('Choose staff visibility');out.staffVisible=v.staffVisible;}
  if(out.dueDate&&!/^\d{4}-\d{2}-\d{2}$/.test(out.dueDate))fail('Invalid due date');
  if(out.links)for(const link of out.links.split('\n').filter(Boolean)){let u;try{u=new URL(link);}catch{fail('Links must be full HTTPS URLs');}if(u.protocol!=='https:'||u.username||u.password)fail('Links must be HTTPS without credentials');}
  return out;
@@ -28,7 +30,7 @@ export function decodeScreenshot(value){
  else fail('Use PNG, JPEG or WebP screenshots',415);
  return {data,name:name||'screenshot',type,size:bytes.length};
 }
-export async function handleCompanyTickets(request,env,actor,path){
+export async function handleCompanyTickets(request,env,actor,path,executionContext){
  if(actor.role!=='edit')return reply({error:'Company tickets are available to editors only.'},403);
  const company=new URL(request.url).searchParams.get('company');if(!companies.has(company))return reply({error:'Choose a valid product'},400);
  const id=path[2],operation=path[3],file=path[4];if((id&&!uuid.test(id))||path.length>5||(operation&&!['attachments','work','human-review'].includes(operation))||(file&&(operation!=='attachments'||!uuid.test(file))))return reply({error:'Not found'},404);
@@ -42,7 +44,7 @@ export async function handleCompanyTickets(request,env,actor,path){
    // Stable workspace ID for an original report prevents duplicate triage tickets.
    const newId=v.sourceId||v.id;if(!uuid.test(newId||''))fail('A valid request ID is required');
    const issue={id:newId,company,code:'ENG-'+newId.slice(0,8).toUpperCase(),status:'open',priority:'normal',type:'bug',...fields,sourceId:v.sourceId||null,createdAt:now,createdBy:who,updatedAt:now,attachments:[],notes:[],history:[{at:now,by:who,action:'Created ticket'}],deleted:false};
-   await db.prepare('INSERT OR IGNORE INTO documents (collection,id,data_json,updated_at) VALUES (?,?,?,?)').bind(collection,stored+newId,JSON.stringify(issue),now).run();
+   const createStatement=db.prepare('INSERT OR IGNORE INTO documents (collection,id,data_json,updated_at) VALUES (?,?,?,?)').bind(collection,stored+newId,JSON.stringify(issue),now),callback=company==='wonplace'?creationCallbackStatement(env,issue):null;if(callback)await db.batch([createStatement,...callback]);else await createStatement.run();if(callback&&executionContext)executionContext.waitUntil(flushWonPlaceCallbacks(env).catch(()=>{}));
    const row=await db.prepare('SELECT data_json,revision FROM documents WHERE collection=? AND id=?').bind(collection,stored+newId).first();return reply({issue:{...JSON.parse(row.data_json),revision:row.revision}},201);
   }
   const issue=await get();if(!issue)return reply({error:'Ticket not found'},404);
@@ -75,7 +77,7 @@ export async function handleCompanyTickets(request,env,actor,path){
   else if(request.method==='PATCH'){
    if(issue.deleted&&v.restore!==true)fail('Restore the ticket first',409);
    if(['humanReviews','reviewLog','reviewVersion','workReports','reviewer','author'].some(k=>k in v))fail('Use the report or human-review operation');
-   const fields=ticketFields(v);if(fields.status==='resolved'&&issue.status!=='resolved'){const blocker=await ticketResolutionBlocker(env,company,issue);if(blocker)return reply({error:blocker},409);}Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';if(changed.some(k=>['title','description','steps','expected','actual','links','status'].includes(k)))invalidateHumanReviews(next,who,now,'Ticket completion details changed');
+   const fields=ticketFields(v);if(company==='wonplace'&&(issue.staffVisible||issue.sourceId)&&fields.staffVisible===false)fail('A published staff link cannot be removed by editing ticket fields',409);if(fields.status==='resolved'&&issue.status!=='resolved'){const blocker=await ticketResolutionBlocker(env,company,issue);if(blocker)return reply({error:blocker},409);}Object.assign(next,fields);const changed=Object.keys(fields).filter(k=>issue[k]!==fields[k]);action=changed.length?'Updated '+changed.join(', '):'Updated ticket';if(changed.some(k=>['title','description','steps','expected','actual','links','status'].includes(k)))invalidateHumanReviews(next,who,now,'Ticket completion details changed');
    if(v.restore===true){next.deleted=false;action='Restored ticket';}
    if(v.note!==undefined){const body=text(v.note,6000);if(!body)fail('Note is empty');if(issue.notes.length>=200)fail('Maximum 200 notes; use a linked document for more');next.notes=[...issue.notes,{id:crypto.randomUUID(),at:now,by:who,body,author:contributor(actor)}];action='Added note';}
   }else return reply({error:'Method not allowed'},405);
@@ -85,8 +87,10 @@ export async function handleCompanyTickets(request,env,actor,path){
   // Conditional child writes and parent revision update share one atomic D1 batch.
   if(attachment)statements.push(db.prepare('INSERT INTO documents (collection,id,data_json,updated_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)').bind(images,stored+id+':'+attachment.id,JSON.stringify(attachment),now,collection,stored+id,issue.revision));
   if(operation&&request.method==='DELETE')statements.push(db.prepare('DELETE FROM documents WHERE collection=? AND id=? AND EXISTS (SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?)').bind(images,stored+id+':'+file,collection,stored+id,issue.revision));
+  if(company==='wonplace'){const callback=callbackStatement(env,next,issue.revision+1,issue.revision);if(callback)statements.push(...callback);}
   statements.push(db.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,stored+id,issue.revision));
   const results=await db.batch(statements);if(results.at(-1).meta.changes!==1)return reply({error:'This ticket changed. Reload before saving; your draft has been kept.'},409);
+  if(company==='wonplace'&&executionContext)executionContext.waitUntil(flushWonPlaceCallbacks(env).catch(()=>{}));
   return reply({issue:{...next,revision:issue.revision+1},reviewer:{id:actor.id,name:who}});
  }catch(error){if(error.status)return reply({error:error.message},error.status);throw error;}
 }
