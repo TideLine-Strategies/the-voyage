@@ -27,6 +27,16 @@ export function progressSnapshot(value){
  const milestones=value.milestones||[];if(!Array.isArray(milestones)||milestones.length>50||milestones.some((m,i)=>!m||Object.keys(m).some(k=>!['id','at','kind'].includes(k))||!Number.isSafeInteger(m.id)||m.id<1||i>0&&m.id<=milestones[i-1].id||!Number.isSafeInteger(m.at)||m.at<0||m.at>Date.now()+300000||typeof m.kind!=='string'||!/^[a-z_:-]{1,80}$/.test(m.kind)))throw Error('Invalid coordinator milestones');
  return {...(value.blocker?{blocker:value.blocker}:{}),...(value.taskTitle?{taskTitle:value.taskTitle}:{}),delivery,liveAcceptance,milestones,state:value.state,stage:value.stage,heartbeatAt:value.heartbeatAt||null,checkpoint:value.checkpoint||'',checkpointAt:value.checkpointAt||null,commit:value.commit||null,activity:'unverified',ticketAcceptance:'pending'};
 }
+// Preserve completion independently of the bounded operational journal. Older
+// tasks can acquire a proof from a fresh authenticated complete snapshot; its
+// server observation time deliberately requires a new final work report.
+export function completionProofFor(existing,snapshot,now){
+ if(snapshot.state!=='complete'||!/^[a-f0-9]{40}$/.test(snapshot.commit||''))return null;
+ const old=existing.completionProof;
+ if(existing.snapshot?.state==='complete'&&old?.commit===snapshot.commit&&Number.isSafeInteger(old.at)&&old.at>0&&old.at<=now)return old;
+ const milestone=[...(existing.snapshot?.state==='complete'&&existing.snapshot?.commit===snapshot.commit?existing.milestones||[]:[]),...(snapshot.milestones||[])].filter(m=>m.kind==='complete').at(-1);
+ return {commit:snapshot.commit,at:milestone?.at||now,source:milestone?'coordinator-milestone':'signed-complete-snapshot',...(milestone?{milestoneId:milestone.id}:{})};
+}
 export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  const company=new URL(request.url).pathname.split('/')[3];
  if(request.method!=='POST'||new URL(request.url).pathname.split('/').length!==4||!identities[company])return reply({error:'Not found'},404);
@@ -78,7 +88,7 @@ export async function sourceTaskProgress(request,env,readJson,transport=fetch){
  if(value.sequence!==existing.sequence+1)return reply({error:'Progress sequence changed; reconcile before retry'},409);
  const substantive=snapshot.milestones.length>0||JSON.stringify({...snapshot,heartbeatAt:null,milestones:[]})!==JSON.stringify({...existing.snapshot,heartbeatAt:null,milestones:[]});
  if(snapshot.milestones.length&&snapshot.milestones[0].id<=(existing.eventCursor||0))return reply({error:'Milestone cursor already accepted'},409);
- const next={...existing,eventCursor:snapshot.milestones.at(-1)?.id||existing.eventCursor||0,milestones:[...(existing.milestones||[]),...snapshot.milestones].slice(-200),sequence:value.sequence,snapshot,receivedAt:now,history:substantive?[...(existing.history||[]),{sequence:value.sequence,at:now,state:snapshot.state,stage:snapshot.stage,checkpoint:snapshot.checkpoint,checkpointAt:snapshot.checkpointAt,commit:snapshot.commit}].slice(-100):(existing.history||[])};delete next.revision;
+ const next={...existing,completionProof:completionProofFor(existing,snapshot,now),eventCursor:snapshot.milestones.at(-1)?.id||existing.eventCursor||0,milestones:[...(existing.milestones||[]),...snapshot.milestones].slice(-200),sequence:value.sequence,snapshot,receivedAt:now,history:substantive?[...(existing.history||[]),{sequence:value.sequence,at:now,state:snapshot.state,stage:snapshot.stage,checkpoint:snapshot.checkpoint,checkpointAt:snapshot.checkpointAt,commit:snapshot.commit}].slice(-100):(existing.history||[])};delete next.revision;
  const progressWrite=env.DB.prepare('UPDATE documents SET data_json=?,revision=revision+1,updated_at=? WHERE collection=? AND id=? AND revision=?').bind(JSON.stringify(next),now,collection,key,existing.revision);
  const publicWrites=substantive&&company==='wonplace'?await taskStaffUpdateStatements(env,ticket,snapshot,existing.taskId,value.sequence,now,'SELECT 1 FROM documents WHERE collection=? AND id=? AND revision=?',[collection,key,existing.revision]):[];
  const saved=publicWrites.length?(await env.DB.batch([...publicWrites,progressWrite])).at(-1):await progressWrite.run();
