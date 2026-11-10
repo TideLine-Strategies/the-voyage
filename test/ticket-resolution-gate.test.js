@@ -25,5 +25,5 @@ test('completion cannot follow an unfinished task, a different commit or a stale
  assert.equal(completionProofFor(old,{...done,commit:'b'.repeat(40)},600).at,600);
  assert.equal(completionProofFor(old,{...done,commit:null},600),null);
  const task={...old,snapshot:{...done,state:'repair_required'}};assert.match(await ticketResolutionBlocker(envFor(task),'voyage',{id:ticketId,workReports:[final(1000)]}),/not complete/);
- task.snapshot=done;task.completionProof={...old.completionProof,commit:'b'.repeat(40)};assert.match(await ticketResolutionBlocker(envFor(task),'voyage',{id:ticketId,workReports:[final(1000)]}),/completed coordinator milestone/);
+ task.snapshot=done;task.milestones=[];task.completionProof={...old.completionProof,commit:'b'.repeat(40)};assert.match(await ticketResolutionBlocker(envFor(task),'voyage',{id:ticketId,workReports:[final(1000)]}),/completed coordinator milestone/);
 });
