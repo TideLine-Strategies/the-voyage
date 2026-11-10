@@ -34,7 +34,7 @@ export function completionProofFor(existing,snapshot,now){
  if(snapshot.state!=='complete'||!/^[a-f0-9]{40}$/.test(snapshot.commit||''))return null;
  const old=existing.completionProof;
  if(existing.snapshot?.state==='complete'&&old?.commit===snapshot.commit&&Number.isSafeInteger(old.at)&&old.at>0&&old.at<=now)return old;
- const milestone=[...(existing.snapshot?.state==='complete'?existing.milestones||[]:[]),...(snapshot.milestones||[])].filter(m=>m.kind==='complete').at(-1);
+ const milestone=[...(existing.snapshot?.state==='complete'&&existing.snapshot?.commit===snapshot.commit?existing.milestones||[]:[]),...(snapshot.milestones||[])].filter(m=>m.kind==='complete').at(-1);
  return {commit:snapshot.commit,at:milestone?.at||now,source:milestone?'coordinator-milestone':'signed-complete-snapshot',...(milestone?{milestoneId:milestone.id}:{})};
 }
 export async function sourceTaskProgress(request,env,readJson,transport=fetch){

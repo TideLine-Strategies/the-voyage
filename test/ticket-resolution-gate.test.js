@@ -20,7 +20,7 @@ test('old tasks need a fresh signed complete observation and a report recorded a
  assert.equal(await ticketResolutionBlocker(envFor(task),'voyage',{id:ticketId,workReports:[final(501)]}),null);
 });
 test('completion cannot follow an unfinished task, a different commit or a stale proof',async()=>{
- const done={state:'complete',commit,delivery:'merge',milestones:[]};const old={snapshot:done,completionProof:completionProofFor({},done,500)};
+ const done={state:'complete',commit,delivery:'merge',milestones:[]};const old={snapshot:done,milestones:[{id:1,kind:'complete',at:100}],completionProof:completionProofFor({},done,500)};
  assert.equal(completionProofFor(old,{...done,state:'working'},600),null);
  assert.equal(completionProofFor(old,{...done,commit:'b'.repeat(40)},600).at,600);
  assert.equal(completionProofFor(old,{...done,commit:null},600),null);
