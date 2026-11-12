@@ -13,6 +13,7 @@ export function ticketFields(v){
  if(!v||typeof v!=='object'||Array.isArray(v))fail('Invalid ticket');
  const out={};
  for(const [key,max]of Object.entries({title:200,description:12000,assignee:120,steps:8000,expected:4000,actual:4000,environment:1000,labels:300,dueDate:10,links:2000,staffTitle:160,publicUpdate:2000}))if(key in v)out[key]=text(v[key],max);
+ if('urgency'in v){if(v.urgency!==null&&(!Number.isInteger(v.urgency)||v.urgency<0||v.urgency>100))fail('Invalid urgency');out.urgency=v.urgency;}
  if('title'in out&&!out.title)fail('Title is required');
  for(const [key,values]of Object.entries({status:['backlog','open','in_progress','blocked','in_review','resolved'],priority:['urgent','high','normal','low'],type:['bug','feature','task','incident']}))if(key in v){if(!values.includes(v[key]))fail('Invalid '+key);out[key]=v[key];}
  if('staffVisible'in v){if(typeof v.staffVisible!=='boolean')fail('Choose staff visibility');out.staffVisible=v.staffVisible;}
