@@ -7,7 +7,7 @@ export function workReportFields(value){
  const links=value.links||[];if(!Array.isArray(links)||links.length>12)fail('Use up to 12 verification links');
  return {requestId:value.requestId,performer:value.performer||'me',summary:text(value.summary,4000,true),changes:text(value.changes||'',8000),checks:text(value.checks||'',6000),links:links.map(link=>{if(!link||Object.keys(link).some(k=>!['label','url'].includes(k)))fail('Invalid verification link');let u;try{u=new URL(link.url);}catch{fail('Use full HTTPS verification links');}if(u.protocol!=='https:'||u.username||u.password||u.href.length>2000)fail('Verification links must be HTTPS without credentials');return {label:text(link.label||'Check fix',120,true),url:u.href};})};
 }
-export function contributor(actor){return actor.agent?{kind:'agent',id:actor.agent,name:actor.agent==='claude'?'Claude':'Codex',requestedBy:{id:actor.id,name:actor.humanName||actor.id}}:{kind:'human',id:actor.id,name:String(actor.name||actor.id).slice(0,120)};}
+export function contributor(actor){return actor.agent?{kind:'agent',id:actor.agent,name:actor.agent==='spring'?'Spring':actor.agent==='claude'?'Claude':'Codex',requestedBy:{id:actor.id,name:actor.humanName||actor.id}}:{kind:'human',id:actor.id,name:String(actor.name||actor.id).slice(0,120)};}
 export function invalidateHumanReviews(ticket,by,at,reason){
  ticket.reviewVersion=(ticket.reviewVersion||0)+1;
  if((ticket.humanReviews||[]).length){ticket.reviewLog=[...(ticket.reviewLog||[]),{id:crypto.randomUUID(),at,action:'invalidated',by,reason,previous:ticket.humanReviews}];ticket.humanReviews=[];}
